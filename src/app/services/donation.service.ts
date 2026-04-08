@@ -15,6 +15,7 @@ export interface Donation {
   userId?: number;
   userName?: string;
   donationDate?: string;
+  status?: string;
 }
 
 @Injectable({
@@ -27,16 +28,24 @@ export class DonationService {
   constructor(private http: HttpClient) {}
 
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('vero_jwt_token');
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
   }
 
-  // ── Don à un partenaire ───────────────────────────────────────────────────
-  createDonationForPartner(donation: Donation,
-                           partnerId: number): Observable<Donation> {
+  // ── Créer un don pour un événement ─────────────────────────────────────────
+  createDonationForEvent(donation: Donation, eventId: number): Observable<Donation> {
+    return this.http.post<Donation>(
+      `${this.apiUrl}/event/${eventId}`,
+      donation,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // ── Créer un don pour un partenaire ────────────────────────────────────────
+  createDonationForPartner(donation: Donation, partnerId: number): Observable<Donation> {
     return this.http.post<Donation>(
       `${this.apiUrl}/partner/${partnerId}`,
       donation,
@@ -44,17 +53,15 @@ export class DonationService {
     );
   }
 
-  // ── Don à un événement ────────────────────────────────────────────────────
-  createDonationForEvent(donation: Donation,
-                         eventId: number): Observable<Donation> {
-    return this.http.post<Donation>(
-      `${this.apiUrl}/event/${eventId}`,
-      donation,
+  // ── Tous les dons (admin) ──────────────────────────────────────────────────
+  getAll(): Observable<Donation[]> {
+    return this.http.get<Donation[]>(
+      this.apiUrl,
       { headers: this.getHeaders() }
     );
   }
 
-  // ── Mes dons ──────────────────────────────────────────────────────────────
+  // ── Mes dons ───────────────────────────────────────────────────────────────
   getMyDonations(userId: number): Observable<Donation[]> {
     return this.http.get<Donation[]>(
       `${this.apiUrl}/user/${userId}`,
@@ -62,7 +69,7 @@ export class DonationService {
     );
   }
 
-  // ── Dons d'un événement ───────────────────────────────────────────────────
+  // ── Dons d'un événement ────────────────────────────────────────────────────
   getDonationsByEvent(eventId: number): Observable<Donation[]> {
     return this.http.get<Donation[]>(
       `${this.apiUrl}/event/${eventId}`,
@@ -70,7 +77,7 @@ export class DonationService {
     );
   }
 
-  // ── Total d'un événement ──────────────────────────────────────────────────
+  // ── Total d'un événement ───────────────────────────────────────────────────
   getTotalByEvent(eventId: number): Observable<number> {
     return this.http.get<number>(
       `${this.apiUrl}/event/${eventId}/total`,
@@ -78,10 +85,36 @@ export class DonationService {
     );
   }
 
-  // ── Total d'un partenaire ─────────────────────────────────────────────────
+  // ── Total d'un partenaire ──────────────────────────────────────────────────
   getTotalByPartner(partnerId: number): Observable<number> {
     return this.http.get<number>(
       `${this.apiUrl}/partner/${partnerId}/total`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // ── Modifier un don ────────────────────────────────────────────────────────
+  update(id: number, donation: Partial<Donation>): Observable<Donation> {
+    return this.http.put<Donation>(
+      `${this.apiUrl}/${id}`,
+      donation,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // ── Supprimer un don ───────────────────────────────────────────────────────
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/${id}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // ── Valider un don (admin) ─────────────────────────────────────────────────
+  validate(id: number): Observable<Donation> {
+    return this.http.put<Donation>(
+      `${this.apiUrl}/${id}/validate`,
+      {},
       { headers: this.getHeaders() }
     );
   }

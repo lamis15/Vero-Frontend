@@ -15,8 +15,8 @@ import { AuthService } from '../../services/auth.service';
 export class EventsComponent implements OnInit, OnDestroy {
 
   events: Event[] = [];
-  showModal  = false;
-  editMode   = false;
+  showModal = false;
+  editMode = false;
   selectedId?: number;
   successMsg = '';
   form: Event = this.resetForm();
@@ -26,10 +26,10 @@ export class EventsComponent implements OnInit, OnDestroy {
   private roleSub!: Subscription;
 
   constructor(
-    private api:  EventApiService,
+    private api: EventApiService,
     private auth: AuthService,
-    private cdr:  ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.load();
@@ -48,7 +48,7 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   load(): void {
     this.api.getAll().subscribe({
-      next:  res => this.events = res,
+      next: res => this.events = res,
       error: err => console.error('Erreur chargement événements', err)
     });
   }
@@ -58,14 +58,14 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   // --- RÔLES ---
-  isAdmin():   boolean { return this.auth.isAdmin; }
+  isAdmin(): boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
-  isUser():    boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
+  isUser(): boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
   // --- MODAL CRÉATION ---
   openCreate(): void {
-    this.editMode  = false;
+    this.editMode = false;
     this.selectedId = undefined;
     this.form = this.resetForm();
     this.showModal = true;
@@ -73,11 +73,11 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   // --- MODAL ÉDITION ---
   openEdit(ev: Event): void {
-    this.editMode  = true;
+    this.editMode = true;
     this.selectedId = ev.id;
     this.form = { ...ev };
     this.form.startDate = this.toDatetimeLocal(ev.startDate);
-    this.form.endDate   = this.toDatetimeLocal(ev.endDate);
+    this.form.endDate = this.toDatetimeLocal(ev.endDate);
     this.showModal = true;
   }
 
@@ -111,7 +111,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   deleteEvent(id: number): void {
     if (!confirm('Supprimer définitivement cet événement ?')) return;
     this.api.delete(id).subscribe({
-      next:  () => { this.load(); this.showSuccess('Événement supprimé !'); },
+      next: () => { this.load(); this.showSuccess('Événement supprimé !'); },
       error: err => alert('Impossible : ' + (err.error?.message || 'Erreur serveur'))
     });
   }
@@ -119,7 +119,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   // --- RÉSERVATION ---
   joinEvent(id: number): void {
     this.api.reserve(id).subscribe({
-      next:  () => this.showSuccess('Demande de réservation envoyée !'),
+      next: () => this.showSuccess('Demande de réservation envoyée !'),
       error: err => alert(err.error?.message || 'Erreur lors de la réservation')
     });
   }

@@ -19,16 +19,16 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
   },
-  { 
-    path: 'community', 
-    loadComponent: () => import('./components/community/community.component').then(m => m.CommunityComponent) 
+  {
+    path: 'community',
+    loadComponent: () => import('./components/community/community.component').then(m => m.CommunityComponent)
   },
-  { 
-    path: 'community/:id', 
-    loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent) 
+  {
+    path: 'community/:id',
+    loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent)
   },
   { path: 'petitions', component: PetitionComponent },
   { path: '**', redirectTo: '' }
-  
-  
+
+
 ];
