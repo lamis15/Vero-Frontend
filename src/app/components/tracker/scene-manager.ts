@@ -82,7 +82,7 @@ export class EcosystemScene {
       powerPreference: 'high-performance'
     });
     this.renderer.setSize(w, h);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped at 1.5x to save GPU
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.shadowMap.enabled = true;
@@ -165,18 +165,15 @@ export class EcosystemScene {
   // ─── GLASS DOME ─────────────────────────────────────
 
   private buildDome(): void {
-    const domeGeo = new THREE.SphereGeometry(2.4, 64, 64, 0, Math.PI * 2, 0, Math.PI * 0.55);
-    const domeMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      metalness: 0.0,
-      roughness: 0.05,
-      transmission: 0.92,
-      thickness: 0.3,
-      ior: 1.5,
+    const domeGeo = new THREE.SphereGeometry(2.4, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.55);
+    // Heavy transmission dropped to standard transparency for performance
+    const domeMat = new THREE.MeshStandardMaterial({
+      color: 0xccffea,
+      metalness: 0.1,
+      roughness: 0.1,
       transparent: true,
-      opacity: 0.25,
-      side: THREE.DoubleSide,
-      envMapIntensity: 1.0,
+      opacity: 0.15,
+      side: THREE.BackSide // Render mainly the inner reflection to fake glass edges best
     });
     this.dome = new THREE.Mesh(domeGeo, domeMat);
     this.dome.position.y = 0;
@@ -306,8 +303,8 @@ export class EcosystemScene {
     this.sunLight = new THREE.DirectionalLight(0xfff8e7, 1.2);
     this.sunLight.position.set(5, 8, 3);
     this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.width = 1024;
-    this.sunLight.shadow.mapSize.height = 1024;
+    this.sunLight.shadow.mapSize.width = 512; // Downgraded from 1024 for framing speed
+    this.sunLight.shadow.mapSize.height = 512;
     this.sunLight.shadow.camera.near = 0.1;
     this.sunLight.shadow.camera.far = 20;
     this.scene.add(this.sunLight);

@@ -171,6 +171,23 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
           this.computeRing();
           this.computeEcoHealth();
           this.cdr.markForCheck();
+
+          // 2. Fetch AI tips asynchronously so it doesn't block the instant UI render
+          this.tipService.getRecommended().subscribe({
+            next: (tipsResponse) => {
+              this.ngZone.run(() => {
+                this.tips = tipsResponse || [];
+                this.cdr.markForCheck();
+              });
+            },
+            error: () => {
+              this.ngZone.run(() => {
+                this.tips = ['Reduce car travel this week.', 'Opt for plant-based meals to save 4kg of CO2.']; // Default fallbacks
+                this.cdr.markForCheck();
+              });
+            }
+          });
+
         });
       },
       error: () => {
@@ -208,22 +225,28 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     const pct  = Math.min((this.totalCarbon || 0) / 10000, 1);
     this.ringOffset = CIRC * (1 - pct);
 
-    // Animated counter: count up from 0 to totalCarbon
+    // Animated counter: count up from 0 to totalCarbon with throttled updates
     const target   = this.totalCarbon;
-    const duration = 1800;
+    const duration = 1500;
     const start    = performance.now();
     const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
 
+    let lastUpdate = 0;
     const tick = (now: number) => {
       const elapsed  = Math.min(now - start, duration);
       const progress = easeOutQuart(elapsed / duration);
-      this.ngZone.run(() => {
-        this.displayCarbon = Math.round(progress * target * 10) / 10;
-        this.cdr.markForCheck();
-      });
+      const val = Math.round(progress * target * 10) / 10;
+      
+      // Throttle angular updates to 20fps instead of 60fps+ for the number dial
+      if (now - lastUpdate > 50 || elapsed === duration) {
+        this.displayCarbon = val;
+        this.cdr.detectChanges(); // Use localized detection instead of entire tree
+        lastUpdate = now;
+      }
       if (elapsed < duration) requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    // Run loop entirely outside angular, only ticking the local view
+    this.ngZone.runOutsideAngular(() => requestAnimationFrame(tick));
   }
 
   // ─── Eco Health ───

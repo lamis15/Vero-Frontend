@@ -96,11 +96,15 @@
 
                 <div style="flex: 1"></div>
                 
-                @if (currentUserEmail && c.user?.email === currentUserEmail) {
+                @if (currentUserEmail && (c.user?.email === currentUserEmail || post?.user?.email === currentUserEmail)) {
                   <div class="owner-actions" style="display: flex; gap: 16px;">
-                    <button class="action-btn" (click)="startEditComment(c, $event)" title="Edit">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    </button>
+                    <!-- Edit is only allowed for the actual comment author -->
+                    @if (c.user?.email === currentUserEmail) {
+                      <button class="action-btn" (click)="startEditComment(c, $event)" title="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                      </button>
+                    }
+                    <!-- Delete is allowed for the comment author OR the parent post author -->
                     <button class="action-btn" style="color: #c44" (click)="deleteComment(c.id!, $event)" title="Delete">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>

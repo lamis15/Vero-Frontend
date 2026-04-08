@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ForumService } from '../../services/forum.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { Notification } from '../../services/forum.models';
 
 @Component({
@@ -17,10 +18,12 @@ export class NavComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   showDropdown = false;
   private pollInterval: any;
+  private knownNotifIds = new Set<number>();
 
   constructor(
     private forumService: ForumService,
     public authService: AuthService,
+    private toastService: ToastService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -40,6 +43,19 @@ export class NavComponent implements OnInit, OnDestroy {
 
   fetchNotifications() {
     this.forumService.getUnreadNotifications().subscribe(nots => {
+      const isFirstLoad = this.knownNotifIds.size === 0;
+
+      // Check for strictly new notifications to trigger a toast
+      nots.forEach(n => {
+        if (!this.knownNotifIds.has(n.id)) {
+          this.knownNotifIds.add(n.id);
+          // Don't toast on initial load, only on hot-polling
+          if (!isFirstLoad) {
+            this.toastService.show('New Activity', n.message, 'info');
+          }
+        }
+      });
+
       this.notifications = nots.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       this.unreadCount = this.notifications.filter(n => !n.isRead).length;
       this.cdr.markForCheck();

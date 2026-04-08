@@ -6,6 +6,7 @@ import { ForumService } from '../../services/forum.service';
 import { Post } from '../../services/forum.models';
 import { FadeInDirective } from '../../fade-in.directive';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-community',
@@ -34,6 +35,7 @@ export class CommunityComponent implements OnInit {
   constructor(
     private forumService: ForumService,
     private authService: AuthService,
+    private toastService: ToastService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) {}
@@ -57,11 +59,18 @@ export class CommunityComponent implements OnInit {
   deletePost(id: number, event: Event) {
     event.stopPropagation();
     event.preventDefault(); // Prevents the router link
-    if (!confirm('Are you sure you want to delete this discussion?')) return;
     
-    this.forumService.deletePost(id).subscribe(() => {
-      this.posts = this.posts.filter(p => p.id !== id);
-      this.cdr.markForCheck();
+    // Removed native window.confirm() because some browsers/extensions silently block it, 
+    // causing the entire function to crash.
+    
+    this.forumService.deletePost(id).subscribe({
+      next: () => {
+        this.posts = this.posts.filter(p => p.id !== id);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.toastService.show('Deletion Failed', err.error?.message || err.message, 'alert');
+      }
     });
   }
 
