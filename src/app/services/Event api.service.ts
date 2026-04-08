@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Event {
   id?: number;
@@ -15,32 +16,38 @@ export interface Event {
 
 @Injectable({ providedIn: 'root' })
 export class EventApiService {
-  private base = 'http://localhost:8080/api';
+
+  private base = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) {}
 
-  private headers(): HttpHeaders {
-    const token = localStorage.getItem('token') || '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
-  }
+  // NOTE: The Authorization header is added automatically by authInterceptor.
+  // No need to set it manually here.
 
   getAll(): Observable<Event[]> {
-    return this.http.get<Event[]>(`${this.base}/events`, { headers: this.headers() });
+    return this.http.get<Event[]>(`${this.base}/events`);
   }
 
   create(event: Event): Observable<Event> {
-    return this.http.post<Event>(`${this.base}/events`, event, { headers: this.headers() });
+    return this.http.post<Event>(`${this.base}/events`, event);
   }
 
   update(id: number, event: Event): Observable<Event> {
-    return this.http.put<Event>(`${this.base}/events/${id}`, event, { headers: this.headers() });
+    return this.http.put<Event>(`${this.base}/events/${id}`, event);
   }
 
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/events/${id}`, { headers: this.headers() });
+    return this.http.delete<void>(`${this.base}/events/${id}`);
+  }
+
+  cancel(id: number): Observable<Event> {
+    return this.http.put<Event>(`${this.base}/events/${id}/cancel`, {});
   }
 
   reserve(eventId: number): Observable<any> {
-    return this.http.post(`${this.base}/reservations/request/event/${eventId}`, {}, { headers: this.headers() });
+    return this.http.post(
+      `${this.base}/reservations/request/event/${eventId}`,
+      {}
+    );
   }
 }
