@@ -1,101 +1,100 @@
 <div class="events-page">
-  <div class="toast-notif" *ngIf="successMsg">
-    <span class="icon">✨</span> {{ successMsg }}
-  </div>
+
+  <div class="toast-notif" *ngIf="successMsg">✨ {{ successMsg }}</div>
 
   <header class="hero-container">
-    <div class="hero-content">
-      <span class="tagline">Community Action —</span>
-      <h1 class="hero-title">Act together,<br><span class="italic-green">change more</span></h1>
-      <p class="hero-subtitle">
-        Rejoignez des initiatives locales et des marches mondiales pour le climat qui font une réelle différence.
-      </p>
-    </div>
+    <span class="tagline">Green Community —</span>
+    <h1 class="hero-title">Manage your<br><span class="italic-green">impact</span></h1>
   </header>
 
-  <button class="fab-add" *ngIf="isPartner() || isAdmin()" (click)="openCreate()" title="Ajouter un événement">
-    <span class="plus-icon">+</span>
-  </button>
+  <!-- FAB button for Admin/Partner -->
+  <button class="fab-add" *ngIf="canManage()" (click)="openCreate()" title="Créer un événement">+</button>
 
-  <main class="content-wrapper">
-    <div class="grid-container">
-      <article class="event-card" *ngFor="let ev of events">
-        <div class="card-media">
-          <img [src]="'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=600'" alt="Nature">
-          <div class="date-overlay">
-            <span class="day">{{ ev.startDate | date:'dd' }}</span>
-            <span class="month">{{ ev.startDate | date:'MMM' }}</span>
-          </div>
+  <div class="grid-container">
+    <article class="event-card" *ngFor="let ev of events">
+
+      <div class="card-media">
+        <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800" alt="Nature">
+        <div class="date-overlay">
+          <span class="day">{{ ev.startDate | date:'dd' }}</span>
+          <span class="month">{{ ev.startDate | date:'MMM' }}</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <span class="category-tag">● {{ ev.status }}</span>
+        <h3 class="event-title">{{ ev.title }}</h3>
+        <p class="event-desc">{{ ev.description }}</p>
+
+        <div class="event-stats-bar">
+          <span>📍 {{ ev.location }}</span>
+          <span>👥 {{ ev.capacity }} places</span>
         </div>
 
-        <div class="card-body">
-          <div class="category-wrapper">
-            <span class="category-tag">● {{ ev.status || 'Upcoming' }}</span>
+        <footer class="card-footer">
+          <!-- Join button for regular users -->
+          <button class="btn-join" *ngIf="isUser()" (click)="joinEvent(ev.id!)">
+            Join Now
+          </button>
+
+          <!-- Edit / Delete for Admin and Partner -->
+          <div class="admin-quick-actions" *ngIf="canManage()">
+            <button class="btn-icon-alt" (click)="openEdit(ev)" title="Modifier">✏️</button>
+            <button class="btn-icon-alt delete" (click)="deleteEvent(ev.id!)" title="Supprimer">🗑️</button>
           </div>
+        </footer>
+      </div>
 
-          <h3 class="event-title">{{ ev.title }}</h3>
-          <p class="event-desc">{{ ev.description }}</p>
-          
-          <div class="event-stats-bar">
-            <div class="stat-item">
-              <span class="stat-icon">📍</span>
-              <span class="stat-text">{{ ev.location }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-icon">👥</span>
-              <span class="stat-text">{{ ev.capacity }} places</span>
-            </div>
-          </div>
+    </article>
+  </div>
 
-          <footer class="card-footer">
-            <button *ngIf="isUser()" (click)="reserve(ev.id!)" class="btn-join">
-              Join Now
-            </button>
-            
-            <div class="admin-quick-actions" *ngIf="canManage(ev)">
-              <button (click)="openEdit(ev)" class="btn-icon-alt">✏️</button>
-              <button (click)="deleteEvent(ev)" class="btn-icon-alt delete">🗑️</button>
-            </div>
-          </footer>
-        </div>
-      </article>
-    </div>
-  </main>
-
+  <!-- MODAL ADD / EDIT -->
   <div class="modal-backdrop" *ngIf="showModal">
     <div class="modal-window">
-      <div class="modal-header">
-        <h2>{{ editMode ? 'Modifier' : 'Nouvel' }} Événement</h2>
-        <button class="btn-close" (click)="showModal = false">×</button>
-      </div>
-      <form (submit)="submitForm()" class="modal-form">
-        <div class="input-group">
-          <label>Titre</label>
-          <input [(ngModel)]="form.title" name="title" placeholder="ex: Nettoyage de plage" required>
-        </div>
-        <div class="input-group">
-          <label>Description</label>
-          <textarea [(ngModel)]="form.description" name="description" placeholder="Détails..." rows="3"></textarea>
-        </div>
+
+      <h2 style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+        {{ editMode ? 'Modifier l\'événement' : 'Nouvel événement' }}
+        <button class="btn-link" (click)="showModal = false">✕</button>
+      </h2>
+
+      <div class="modal-form">
+        <label>Titre *</label>
+        <input [(ngModel)]="form.title" name="title" placeholder="Ex: Nettoyage côtier">
+
+        <label>Description</label>
+        <textarea [(ngModel)]="form.description" name="description" rows="3" placeholder="Brève description..."></textarea>
+
         <div class="form-row">
-          <div class="input-group">
+          <div>
             <label>Lieu</label>
             <input [(ngModel)]="form.location" name="location" placeholder="Ville">
           </div>
-          <div class="input-group">
-            <label>Places</label>
-            <input type="number" [(ngModel)]="form.capacity" name="capacity">
+          <div>
+            <label>Capacité</label>
+            <input type="number" [(ngModel)]="form.capacity" name="capacity" placeholder="50">
           </div>
         </div>
-        <div class="input-group">
-          <label>Date de début</label>
-          <input type="datetime-local" [(ngModel)]="form.startDate" name="startDate">
+
+        <div class="form-row">
+          <div>
+            <label>Début *</label>
+            <input type="datetime-local" [(ngModel)]="form.startDate" name="startDate">
+          </div>
+          <div>
+            <label>Fin *</label>
+            <input type="datetime-local" [(ngModel)]="form.endDate" name="endDate">
+          </div>
         </div>
-        <div class="modal-footer-btns">
-          <button type="button" (click)="showModal = false" class="btn-link">Annuler</button>
-          <button type="submit" class="btn-submit-full">{{ editMode ? 'Mettre à jour' : 'Publier' }}</button>
-        </div>
-      </form>
+      </div>
+
+      <div class="modal-footer-btns">
+        <button class="btn-link" (click)="showModal = false">Annuler</button>
+        <button class="btn-submit-main" (click)="submitForm()">
+          {{ editMode ? 'Mettre à jour' : 'Créer' }}
+        </button>
+      </div>
+
     </div>
   </div>
+
 </div>
