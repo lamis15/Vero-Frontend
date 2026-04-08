@@ -13,8 +13,28 @@
   <!-- FAB (Admin/Partner) -->
   <button class="fab-add" *ngIf="canManage()" (click)="openCreate()" title="Créer un événement">+</button>
 
-  <!-- Cards Grid -->
-  <div class="grid-container">
+  <!-- ── Loading skeleton ──────────────────────────────────────────────────── -->
+  <div class="skeleton-grid" *ngIf="loading">
+    <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]"></div>
+  </div>
+
+  <!-- ── Error state ───────────────────────────────────────────────────────── -->
+  <div class="events-error" *ngIf="!loading && loadError">
+    <div class="error-icon">⚠️</div>
+    <h2 class="error-title">Impossible de charger les événements</h2>
+    <p class="error-sub">Vérifiez votre connexion ou réessayez.</p>
+    <button class="btn-retry" (click)="load()">↺ Réessayer</button>
+  </div>
+
+  <!-- ── Empty state ───────────────────────────────────────────────────────── -->
+  <div class="events-empty" *ngIf="!loading && !loadError && events.length === 0">
+    <div class="empty-icon">🌱</div>
+    <h2 class="empty-title">Aucun événement pour le moment</h2>
+    <p class="empty-sub">Revenez bientôt pour découvrir les prochains événements communautaires.</p>
+  </div>
+
+  <!-- ── Cards Grid ────────────────────────────────────────────────────────── -->
+  <div class="grid-container" *ngIf="!loading && !loadError && events.length > 0">
     <article class="event-card" *ngFor="let ev of events">
       <div class="card-media">
         <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800" alt="Nature">
@@ -45,7 +65,7 @@
               (click)="openJoinModal(ev)"
               [title]="ev.status === 'CANCELLED' ? 'Événement annulé' : ev.status === 'COMPLETED' ? 'Événement terminé' : 'Participer'"
             >
-              Join Now
+              🎟️ Join Now
             </button>
             <span class="btn-joined" *ngIf="hasJoined(ev.id!)">
               ✓ Inscrit
@@ -110,7 +130,7 @@
     </div>
   </div>
 
-  <!-- ── Modal : Rejoindre un événement ──────────────────────────────────── -->
+  <!-- ── Modal : Rejoindre un événement ────────────────────────────────────── -->
   <div class="modal-backdrop" *ngIf="showJoinModal" (click)="closeJoinModal()">
     <div class="modal-join" (click)="$event.stopPropagation()">
 
@@ -139,6 +159,11 @@
         Vous serez notifié(e) de la confirmation.
       </p>
 
+      <!-- Inline API error -->
+      <div class="modal-inline-error" *ngIf="joinError" style="margin-top: 15px; margin-bottom: 0;">
+        ⚠️ {{ joinError }}
+      </div>
+
       <div class="join-actions">
         <button class="btn-join-cancel" (click)="closeJoinModal()" [disabled]="joinLoading">
           Annuler
@@ -152,7 +177,7 @@
     </div>
   </div>
 
-  <!-- ── Modal Confirmation (remplace window.confirm) ──────────────────────── -->
+  <!-- ── Modal Confirmation (suppression) ──────────────────────────────────── -->
   <div class="modal-backdrop" *ngIf="showConfirmModal" (click)="confirmNo()">
     <div class="modal-confirm" (click)="$event.stopPropagation()">
       <div class="confirm-icon">🗑️</div>

@@ -110,3 +110,20 @@ nav {
 .btn-mark:hover { color: var(--forest); }
 
 .notif-empty { padding: 32px; text-align: center; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--smoke); }
+
+/* Mes réservations link */
+.nav-reservations {
+  background: rgba(44, 91, 44, 0.08) !important;
+  color: var(--forest) !important;
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border: 1px solid rgba(44, 91, 44, 0.15);
+  transition: background 0.2s, border-color 0.2s !important;
+}
+.nav-reservations:hover,
+.nav-reservations.active-link {
+  background: rgba(44, 91, 44, 0.16) !important;
+  border-color: rgba(44, 91, 44, 0.3) !important;
+}

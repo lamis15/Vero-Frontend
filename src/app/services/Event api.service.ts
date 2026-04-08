@@ -14,6 +14,13 @@ export interface Event {
   status?: 'UPCOMING' | 'ONGOING' | 'CANCELLED' | 'COMPLETED';
 }
 
+export interface Reservation {
+  id: number;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED';
+  createdAt: string;
+  event: Event;
+}
+
 @Injectable({ providedIn: 'root' })
 export class EventApiService {
 
@@ -24,6 +31,7 @@ export class EventApiService {
   // NOTE: The Authorization header is added automatically by authInterceptor.
   // No need to set it manually here.
 
+  // ── Events ──────────────────────────────────────────────────────────────────
   getAll(): Observable<Event[]> {
     return this.http.get<Event[]>(`${this.base}/events`);
   }
@@ -44,10 +52,21 @@ export class EventApiService {
     return this.http.put<Event>(`${this.base}/events/${id}/cancel`, {});
   }
 
-  reserve(eventId: number): Observable<any> {
-    return this.http.post(
+  // ── Reservations ─────────────────────────────────────────────────────────
+  reserve(eventId: number): Observable<Reservation> {
+    return this.http.post<Reservation>(
       `${this.base}/reservations/request/event/${eventId}`,
       {}
     );
+  }
+
+  getMyReservations(): Observable<Reservation[]> {
+    return this.http.get<Reservation[]>(`${this.base}/reservations/my`);
+  }
+
+  cancelReservation(reservationId: number): Observable<void> {
+    // Using PUT .../cancel — the standard Spring Boot soft-cancel pattern.
+    // If your backend uses DELETE instead, change this to http.delete<void>(...)
+    return this.http.put<void>(`${this.base}/reservations/${reservationId}/cancel`, {});
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { Event, EventApiService } from '../../services/Event api.service';
+import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -21,6 +21,8 @@ export class EventsComponent implements OnInit, OnDestroy {
   successMsg = '';
   errorMsg   = '';
   form: Event = this.resetForm();
+  loading    = true;
+  loadError  = false;
 
   showConfirmModal = false;
   confirmMessage   = '';
@@ -30,6 +32,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   showJoinModal    = false;
   joinTargetEvent: Event | null = null;
   joinLoading      = false;
+  joinError        = '';
   joinedEventIds   = new Set<number>();
 
   currentRole: string | null = null;
@@ -43,6 +46,10 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
+    // Sync joined badge from real API for regular users
+    if (this.auth.isLoggedIn && !this.auth.isAdmin && !this.auth.isPartner) {
+      this.loadMyReservations();
+    }
     this.roleSub = this.auth.roleStream$.subscribe(role => {
       this.currentRole = role;
       this.cdr.markForCheck();
@@ -52,9 +59,28 @@ export class EventsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.roleSub?.unsubscribe(); }
 
   load(): void {
+    this.loading   = true;
+    this.loadError = false;
     this.api.getAll().subscribe({
-      next:  res => this.events = res,
-      error: ()  => this.showError('Erreur chargement événements')
+      next:  res => { this.events = res; this.loading = false; },
+      error: err => {
+        this.loading   = false;
+        this.loadError = true;
+        console.error('Events API error:', err);
+      }
+    });
+  }
+
+  loadMyReservations(): void {
+    this.api.getMyReservations().subscribe({
+      next: (reservations: Reservation[]) => {
+        reservations
+          .filter(r => r.status === 'PENDING' || r.status === 'CONFIRMED')
+          .forEach(r => {
+            if (r.event?.id) this.joinedEventIds.add(r.event.id);
+          });
+      },
+      error: () => {} // silent — badge just won't pre-fill
     });
   }
 
@@ -163,18 +189,21 @@ export class EventsComponent implements OnInit, OnDestroy {
   // ── Réservation ───────────────────────────────────────────────────────────
   openJoinModal(ev: Event): void {
     this.joinTargetEvent = ev;
-    this.showJoinModal = true;
+    this.joinError       = '';
+    this.showJoinModal   = true;
   }
 
   closeJoinModal(): void {
-    this.showJoinModal = false;
+    this.showJoinModal   = false;
     this.joinTargetEvent = null;
-    this.joinLoading = false;
+    this.joinLoading     = false;
+    this.joinError       = '';
   }
 
   confirmJoin(): void {
     if (!this.joinTargetEvent?.id || this.joinLoading) return;
     this.joinLoading = true;
+    this.joinError   = '';
     const id = this.joinTargetEvent.id;
 
     this.api.reserve(id).subscribe({
@@ -185,14 +214,26 @@ export class EventsComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.joinLoading = false;
-        const msg = err.error?.message || 'Erreur lors de la réservation';
+        console.error('Join event error:', err);
+        const msg = err.error?.message || '';
+        
         // Check if already registered
         if (err.status === 409 || msg.toLowerCase().includes('already') || msg.toLowerCase().includes('déjà')) {
           this.joinedEventIds.add(id);
           this.closeJoinModal();
           this.showSuccess('Vous participez déjà à cet événement !');
         } else {
-          this.showError(msg);
+          // Show error inline in the modal
+          const status = err.status;
+          if (status === 404) {
+             this.joinError = `Endpoint introuvable (404). L'API de réservation n'existe peut-être pas à POST /api/reservations/request/event/${id}`;
+          } else if (status === 403) {
+             this.joinError = 'Permission refusée (403). Réservé aux utilisateurs standards.';
+          } else if (status === 405) {
+             this.joinError = 'Méthode POST non autorisée (405).';
+          } else {
+             this.joinError = msg || `Erreur serveur ${status || ''}.`;
+          }
         }
       }
     });
