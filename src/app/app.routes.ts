@@ -4,6 +4,7 @@ import { TrackerComponent } from './components/tracker/tracker.component';
 import { ShopComponent } from './components/shop/shop.component';
 import { EventsComponent } from './components/events/events.component';
 import { DonateComponent } from './components/donate/donate.component';
+import { PetitionComponent } from './components/petition/petition';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -26,5 +27,8 @@ export const routes: Routes = [
     path: 'community/:id', 
     loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent) 
   },
+  { path: 'petitions', component: PetitionComponent },
   { path: '**', redirectTo: '' }
+  
+  
 ];

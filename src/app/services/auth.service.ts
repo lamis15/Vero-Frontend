@@ -32,7 +32,18 @@ export class AuthService {
       return payload.sub; // Spring Boot JWT sets subject to email
     } catch { return null; }
   }
+get currentUserRole(): string | null {
+  const token = this.getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.role || null;
+  } catch { return null; }
+}
 
+get isAdmin(): boolean {
+  return this.currentUserRole === 'ADMIN';
+}
   login(email: string, password: string): Observable<{ token: string }> {
     return this.http.post<{ token: string }>(`${this.API}/login`, { email, password }).pipe(
       tap(res => {

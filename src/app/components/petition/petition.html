@@ -1,0 +1,463 @@
+<div class="petition-hero">
+  <div class="hero-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="section-tag">Community Petitions ——</div>
+    <h1 class="hero-title">Your voice,<br><em>amplified</em></h1>
+    <p class="hero-sub">
+      Launch ecological petitions, rally your community,
+      and drive real change — one signature at a time.
+    </p>
+    <div class="hero-counters" *ngIf="stats">
+      <div class="counter-pill">
+        <span class="counter-num">{{ stats.active }}</span>
+        <span class="counter-label">Active</span>
+      </div>
+      <div class="counter-divider"></div>
+      <div class="counter-pill">
+        <span class="counter-num">{{ stats.totalSignatures }}</span>
+        <span class="counter-label">Signatures</span>
+      </div>
+      <div class="counter-divider"></div>
+      <div class="counter-pill">
+        <span class="counter-num">{{ stats.achieved }}</span>
+        <span class="counter-label">Achieved</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="petition-section">
+
+  <!-- ── Tab Navigation ──────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn"
+            [class.active]="activeTab === 'browse'"
+            (click)="activeTab = 'browse'">
+      <span class="tab-icon">🔍</span> Browse petitions
+    </button>
+
+    <button class="tab-btn"
+            *ngIf="!isAdmin"
+            [class.active]="activeTab === 'create'"
+            (click)="activeTab = 'create'">
+      <span class="tab-icon">✍️</span> Start a petition
+    </button>
+
+    <button class="tab-btn"
+            *ngIf="!isAdmin"
+            [class.active]="activeTab === 'my'"
+            (click)="activeTab = 'my'; loadMyPetitions()">
+      <span class="tab-icon">👤</span> My petitions
+    </button>
+
+    <button class="tab-btn"
+            *ngIf="isAdmin"
+            [class.active]="activeTab === 'admin'"
+            (click)="activeTab = 'admin'; loadAllPetitions()">
+      <span class="tab-icon">⚙️</span> Admin
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 1 : BROWSE
+       ════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'browse'">
+
+    <div class="filter-row">
+      <button class="cat-pill"
+              [class.active]="activeFilter === 'all'"
+              (click)="filterBy('all')">All</button>
+      <button class="cat-pill"
+              [class.active]="activeFilter === cat.key"
+              *ngFor="let cat of categories"
+              (click)="filterBy(cat.key)">
+        {{ cat.emoji }} {{ cat.label }}
+      </button>
+    </div>
+
+    <div class="petition-grid" *ngIf="!browseLoading">
+      <div class="p-card"
+           *ngFor="let p of filteredPetitions; let i = index"
+           [style.animation-delay]="i * 0.07 + 's'"
+           (click)="selectPetition(p)">
+
+        <div class="p-card-badge"
+             [class]="'badge-' + (p.status || 'ACTIVE').toLowerCase()">
+          {{ getCategoryEmoji(p.category) }} {{ formatCategory(p.category) }}
+        </div>
+
+        <div class="p-card-body">
+          <h3 class="p-card-title">{{ p.title }}</h3>
+          <p class="p-card-desc">
+            {{ p.description | slice:0:100 }}
+            {{ (p.description?.length || 0) > 100 ? '…' : '' }}
+          </p>
+        </div>
+
+        <div class="p-card-location" *ngIf="p.city">
+          📍 {{ p.city }}
+          <span *ngIf="p.region">, {{ p.region }}</span>
+        </div>
+
+        <div class="p-card-progress">
+          <div class="p-progress-track">
+            <div class="p-progress-fill"
+                 [style.width.%]="getProgress(p)"></div>
+          </div>
+          <div class="p-progress-nums">
+            <span class="p-sigs">{{ p.currentSignatures || 0 }}</span>
+            <span class="p-goal">/ {{ p.targetSignatures }}</span>
+          </div>
+        </div>
+
+        <div class="p-card-foot">
+          <span class="p-deadline" *ngIf="p.deadline">
+            {{ formatDeadline(p.deadline) }}
+          </span>
+          <span class="p-deadline" *ngIf="!p.deadline"></span>
+
+          <button class="btn-sign"
+                  *ngIf="!isAdmin"
+                  (click)="quickSign(p, $event)">
+            Sign ✍️
+          </button>
+
+          <span class="admin-view-badge" *ngIf="isAdmin">
+            👁 Read only
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-wrap" *ngIf="browseLoading">
+      <div class="loader-ring"></div>
+      <p>Loading petitions...</p>
+    </div>
+
+    <div class="empty-wrap"
+         *ngIf="!browseLoading && filteredPetitions.length === 0">
+      <div class="empty-leaf">🍃</div>
+      <h3>No petitions found</h3>
+      <p>Be the first to start an ecological initiative!</p>
+      <button class="btn-start"
+              *ngIf="!isAdmin"
+              (click)="activeTab = 'create'">
+        Start a petition →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 2 : CREATE
+       ════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'create' && !isAdmin">
+    <div class="create-layout">
+      <div class="create-left">
+        <div class="create-card">
+          <div class="create-header">
+            <div class="create-emoji">📝</div>
+            <div>
+              <h2 class="create-title">Start a petition</h2>
+              <p class="create-sub">
+                Bring your ecological cause to the community.
+              </p>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Title</label>
+            <input class="field-input"
+                   type="text"
+                   placeholder="Ex: More bike lanes in Tunis"
+                   [(ngModel)]="newPetition.title"
+                   maxlength="200">
+            <div class="field-hint">
+              {{ newPetition.title.length }}/200 — minimum 10 characters
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Description</label>
+            <textarea class="field-textarea"
+                      rows="5"
+                      placeholder="Describe your initiative and why it matters…"
+                      [(ngModel)]="newPetition.description"></textarea>
+            <div class="field-hint">minimum 30 characters</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Category</label>
+              <select class="field-select"
+                      [(ngModel)]="newPetition.category">
+                <option value="">Choose…</option>
+                <option *ngFor="let cat of categories"
+                        [value]="cat.key">
+                  {{ cat.emoji }} {{ cat.label }}
+                </option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Signature goal</label>
+              <div class="goal-pills">
+                <button class="goal-pill"
+                        *ngFor="let g of [100, 500, 1000, 5000]"
+                        [class.active]="newPetition.targetSignatures === g"
+                        (click)="newPetition.targetSignatures = g">
+                  {{ g >= 1000 ? (g / 1000) + 'k' : g }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">City</label>
+              <input class="field-input"
+                     type="text"
+                     placeholder="Tunis"
+                     [(ngModel)]="newPetition.city">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Region</label>
+              <input class="field-input"
+                     type="text"
+                     placeholder="Tunis"
+                     [(ngModel)]="newPetition.region">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Deadline</label>
+            <input class="field-input"
+                   type="date"
+                   [(ngModel)]="deadlineDate">
+          </div>
+
+          <div class="msg msg-error" *ngIf="errorMessage">
+            ⚠️ {{ errorMessage }}
+          </div>
+          <div class="msg msg-success" *ngIf="successMessage">
+            🌱 {{ successMessage }}
+          </div>
+
+          <div class="eco-banner">
+            <span class="eco-banner-icon">🌿</span>
+            <span>
+              Your petition will be checked by our ecological filter,
+              then reviewed by an admin before publishing.
+            </span>
+          </div>
+
+          <button class="btn-publish"
+                  (click)="submitPetition()"
+                  [disabled]="createState === 'processing'">
+            <ng-container [ngSwitch]="createState">
+              <span *ngSwitchCase="'idle'">Publish petition →</span>
+              <span *ngSwitchCase="'processing'">Submitting…</span>
+              <span *ngSwitchDefault>🌱 Petition created!</span>
+            </ng-container>
+          </button>
+        </div>
+      </div>
+
+      <div class="create-right">
+        <div class="preview-label">Live preview</div>
+        <div class="p-card preview-card">
+          <div class="p-card-badge badge-pending">
+            {{ getCategoryEmoji(newPetition.category) }}
+            {{ newPetition.category
+                ? formatCategory(newPetition.category)
+                : 'Category' }}
+          </div>
+          <div class="p-card-body">
+            <h3 class="p-card-title">
+              {{ newPetition.title || 'Your petition title…' }}
+            </h3>
+            <p class="p-card-desc">
+              {{ (newPetition.description || 'Your description will appear here…')
+                  | slice:0:120 }}
+            </p>
+          </div>
+          <div class="p-card-location" *ngIf="newPetition.city">
+            📍 {{ newPetition.city }}
+            <span *ngIf="newPetition.region">, {{ newPetition.region }}</span>
+          </div>
+          <div class="p-card-progress">
+            <div class="p-progress-track">
+              <div class="p-progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="p-progress-nums">
+              <span class="p-sigs">0</span>
+              <span class="p-goal">/ {{ newPetition.targetSignatures }}</span>
+            </div>
+          </div>
+          <div class="p-card-foot">
+            <span class="p-deadline">
+              {{ deadlineDate ? '⏳ ' + deadlineDate : '' }}
+            </span>
+            <button class="btn-sign" disabled>Sign ✍️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 3 : MY PETITIONS
+       ════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'my' && !isAdmin">
+
+    <div class="loading-wrap" *ngIf="myLoading">
+      <div class="loader-ring"></div>
+      <p>Loading your petitions...</p>
+    </div>
+
+    <div class="petition-grid" *ngIf="!myLoading && myPetitions.length > 0">
+      <div class="p-card"
+           *ngFor="let p of myPetitions; let i = index"
+           [style.animation-delay]="i * 0.07 + 's'">
+
+        <div class="p-card-badge"
+             [class]="'badge-' + (p.status || 'ACTIVE').toLowerCase()">
+          {{ p.status }}
+        </div>
+
+        <div class="p-card-body">
+          <h3 class="p-card-title">{{ p.title }}</h3>
+          <p class="p-card-desc">{{ p.description | slice:0:100 }}</p>
+        </div>
+
+        <div class="p-card-location" *ngIf="p.city">
+          📍 {{ p.city }}
+          <span *ngIf="p.region">, {{ p.region }}</span>
+        </div>
+
+        <div class="p-card-progress">
+          <div class="p-progress-track">
+            <div class="p-progress-fill"
+                 [style.width.%]="getProgress(p)"></div>
+          </div>
+          <div class="p-progress-nums">
+            <span class="p-sigs">{{ p.currentSignatures || 0 }}</span>
+            <span class="p-goal">/ {{ p.targetSignatures }}</span>
+          </div>
+        </div>
+
+        <div class="p-card-foot">
+          <button class="btn-edit" (click)="editPetition(p)">Edit</button>
+          <button class="btn-delete" (click)="deletePetition(p)">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-wrap"
+         *ngIf="!myLoading && myPetitions.length === 0">
+      <div class="empty-leaf">📋</div>
+      <h3>No petitions yet</h3>
+      <p>You haven't created any petitions.</p>
+      <button class="btn-start" (click)="activeTab = 'create'">
+        Create your first →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       TAB 4 : ADMIN
+       ════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" *ngIf="activeTab === 'admin' && isAdmin">
+
+    <div class="loading-wrap" *ngIf="adminLoading">
+      <div class="loader-ring"></div>
+      <p>Loading admin data...</p>
+    </div>
+
+    <div *ngIf="!adminLoading">
+
+      <!-- Pending -->
+      <h2 class="admin-title">
+        Pending validation ({{ pendingPetitions.length }})
+      </h2>
+
+      <div class="petition-grid" *ngIf="pendingPetitions.length > 0">
+        <div class="p-card" *ngFor="let p of pendingPetitions">
+          <div class="p-card-badge badge-pending">
+            ⏳ {{ formatCategory(p.category) }}
+          </div>
+          <div class="p-card-body">
+            <h3 class="p-card-title">{{ p.title }}</h3>
+            <p class="p-card-desc">{{ p.description | slice:0:120 }}</p>
+          </div>
+          <div class="p-card-location" *ngIf="p.city">
+            📍 {{ p.city }}
+          </div>
+          <div class="p-card-foot" style="gap:8px">
+            <button class="btn-validate" (click)="validatePetition(p)">✅ Validate</button>
+            <button class="btn-reject" (click)="rejectPetition(p)">❌ Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-wrap" *ngIf="pendingPetitions.length === 0">
+        <div class="empty-leaf">✅</div>
+        <h3>No pending petitions</h3>
+        <p>All petitions have been reviewed.</p>
+      </div>
+
+      <!-- All petitions with filter -->
+      <div style="margin-top:48px; margin-bottom:16px;
+                  display:flex; align-items:center;
+                  justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <h2 class="admin-title" style="margin:0">
+          All petitions ({{ getFilteredAdmin().length }})
+        </h2>
+        <div class="filter-row" style="margin:0">
+          <button class="cat-pill" [class.active]="adminFilter === 'all'" (click)="adminFilter = 'all'">All</button>
+          <button class="cat-pill" [class.active]="adminFilter === 'ACTIVE'" (click)="adminFilter = 'ACTIVE'">Active</button>
+          <button class="cat-pill" [class.active]="adminFilter === 'PENDING'" (click)="adminFilter = 'PENDING'">Pending</button>
+          <button class="cat-pill" [class.active]="adminFilter === 'ACHIEVED'" (click)="adminFilter = 'ACHIEVED'">Achieved</button>
+          <button class="cat-pill" [class.active]="adminFilter === 'REJECTED'" (click)="adminFilter = 'REJECTED'">Rejected</button>
+          <button class="cat-pill" [class.active]="adminFilter === 'CLOSED'" (click)="adminFilter = 'CLOSED'">Closed</button>
+        </div>
+      </div>
+
+      <div class="petition-grid">
+        <div class="p-card" *ngFor="let p of getFilteredAdmin()">
+          <div class="p-card-badge"
+               [class]="'badge-' + (p.status || 'active').toLowerCase()">
+            {{ p.status }} — {{ formatCategory(p.category) }}
+          </div>
+          <div class="p-card-body">
+            <h3 class="p-card-title">{{ p.title }}</h3>
+            <p class="p-card-desc">{{ p.description | slice:0:100 }}</p>
+          </div>
+          <div class="p-card-location" *ngIf="p.city">
+            📍 {{ p.city }}
+            <span *ngIf="p.region">, {{ p.region }}</span>
+          </div>
+          <div class="p-card-progress">
+            <div class="p-progress-track">
+              <div class="p-progress-fill" [style.width.%]="getProgress(p)"></div>
+            </div>
+            <div class="p-progress-nums">
+              <span class="p-sigs">{{ p.currentSignatures || 0 }}</span>
+              <span class="p-goal">/ {{ p.targetSignatures }}</span>
+            </div>
+          </div>
+          <div class="p-card-foot" style="gap:8px; flex-wrap:wrap">
+            <button class="btn-validate" *ngIf="p.status === 'PENDING'" (click)="validatePetition(p)">✅ Validate</button>
+            <button class="btn-reject" *ngIf="p.status === 'PENDING'" (click)="rejectPetition(p)">❌ Reject</button>
+            <button class="btn-sign" *ngIf="p.status === 'ACTIVE'" (click)="closePetition(p)">🔒 Close</button>
+            <button class="btn-delete" (click)="adminDeletePetition(p)">🗑 Delete</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
