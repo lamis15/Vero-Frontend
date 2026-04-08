@@ -15,12 +15,10 @@ import { AuthService } from '../../services/auth.service';
 })
 export class DonateComponent implements OnInit, OnDestroy {
 
-  // ── Events list ────────────────────────────────────────────────────────────
   events: Event[] = [];
   selectedEventIndex = -1;
   eventsLoading = true;
 
-  // ── Donation form ──────────────────────────────────────────────────────────
   selectedAmount: number | null = 20;
   customAmount: number | null = null;
   donateState: 'idle' | 'processing' | 'confirmed' | 'error' = 'idle';
@@ -31,33 +29,33 @@ export class DonateComponent implements OnInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
 
-  // ── Donations list for selected event ──────────────────────────────────────
+  donationType: 'MONEY' | 'MATERIAL' | 'TIME' = 'MONEY';
+  materialQuantity = '';
+  volunteerHours: number | null = null;
+
   donations: Donation[] = [];
   donationsLoading = false;
   totalDonated = 0;
 
-  // ── Edit state ─────────────────────────────────────────────────────────────
   editingDonation: Donation | null = null;
   editAmount = 0;
   editMessage = '';
   editAnonymous = false;
+  editType: 'MONEY' | 'MATERIAL' | 'TIME' = 'MONEY';
+  editQuantity = '';
   editState: 'idle' | 'processing' | 'confirmed' = 'idle';
 
-  // ── Role / Auth ────────────────────────────────────────────────────────────
   currentRole: string | null = null;
   currentUserEmail: string | null = null;
   private roleSub!: Subscription;
 
-  // ── Delete / Validate tracking ─────────────────────────────────────────────
   deletingId: number | null = null;
   validatingId: number | null = null;
 
-  // ── Active view ────────────────────────────────────────────────────────────
   activeTab: 'donate' | 'history' = 'donate';
 
-  // ── Steps (kept from original) ─────────────────────────────────────────────
   donationSteps = [
-    { title: 'You donate', desc: 'Choose an event, select an amount, and pay securely.' },
+    { title: 'You donate', desc: 'Choose an event, select an amount or volunteer your time.' },
     { title: 'We record it', desc: 'Your transaction is permanently recorded and traceable.' },
     { title: 'Funds reach the event', desc: 'Funds are released directly to verified event organizers.' },
     { title: 'Track your impact', desc: 'Watch real-time updates as your donation creates change.' }
@@ -83,7 +81,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.roleSub?.unsubscribe();
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   get isAdmin(): boolean { return this.currentRole === 'ADMIN'; }
   get isLoggedIn(): boolean { return this.authService.isLoggedIn; }
 
@@ -104,7 +101,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     return this.isAdmin;
   }
 
-  // ── Load events ────────────────────────────────────────────────────────────
   loadEvents(): void {
     this.eventsLoading = true;
     this.eventService.getAll().subscribe({
@@ -124,7 +120,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.loadDonationsForEvent();
   }
 
-  // ── Load donations for selected event ──────────────────────────────────────
   loadDonationsForEvent(): void {
     const ev = this.selectedEvent;
     if (!ev?.id) return;
@@ -144,7 +139,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Amount selection ───────────────────────────────────────────────────────
   selectAmount(amount: number): void {
     this.selectedAmount = amount;
     this.customAmount = null;
@@ -154,30 +148,40 @@ export class DonateComponent implements OnInit, OnDestroy {
     return this.customAmount || this.selectedAmount || 0;
   }
 
-  // ── Create donation ────────────────────────────────────────────────────────
   handleDonate(): void {
     if (this.donateState !== 'idle') return;
 
     const ev = this.selectedEvent;
     if (!ev?.id) {
-      this.errorMessage = 'Veuillez sélectionner un événement';
+      this.errorMessage = 'Please select an event';
       this.autoClearError();
       return;
     }
 
     const amount = this.getFinalAmount();
-    if (amount <= 0) {
-      this.errorMessage = 'Veuillez sélectionner un montant';
+
+    if (this.donationType === 'MONEY' && amount <= 0) {
+      this.errorMessage = 'Please select an amount';
+      this.autoClearError();
+      return;
+    }
+    if (this.donationType === 'MATERIAL' && !this.materialQuantity.trim()) {
+      this.errorMessage = 'Please describe what you are donating';
+      this.autoClearError();
+      return;
+    }
+    if (this.donationType === 'TIME' && (!this.volunteerHours || this.volunteerHours <= 0)) {
+      this.errorMessage = 'Please select volunteer hours';
       this.autoClearError();
       return;
     }
     if (!this.fullName.trim()) {
-      this.errorMessage = 'Veuillez entrer votre nom';
+      this.errorMessage = 'Please enter your name';
       this.autoClearError();
       return;
     }
     if (!this.email.trim() || !this.isValidEmail(this.email)) {
-      this.errorMessage = 'Veuillez entrer un email valide';
+      this.errorMessage = 'Please enter a valid email';
       this.autoClearError();
       return;
     }
@@ -186,8 +190,9 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.donateState = 'processing';
 
     const donation: Donation = {
-      amount,
-      type: 'MONEY',
+      amount: this.donationType === 'MONEY' ? amount : (this.donationType === 'TIME' ? this.volunteerHours || 0 : 0),
+      type: this.donationType,
+      quantity: this.donationType === 'MATERIAL' ? this.materialQuantity : undefined,
       message: this.message || `Don de ${this.fullName} — ${ev.title}`,
       anonymous: this.isAnonymous,
       transactionId: `TXN-${Date.now()}`
@@ -196,7 +201,7 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.donationService.createDonationForEvent(donation, ev.id).subscribe({
       next: () => {
         this.donateState = 'confirmed';
-        this.successMessage = 'Donation effectuée avec succès !';
+        this.successMessage = 'Donation successful!';
         this.loadDonationsForEvent();
         setTimeout(() => {
           this.donateState = 'idle';
@@ -206,18 +211,19 @@ export class DonateComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.donateState = 'error';
-        this.errorMessage = err.error?.message || 'Échec de la donation. Réessayez.';
+        this.errorMessage = err.error?.message || 'Donation failed. Please try again.';
         setTimeout(() => { this.donateState = 'idle'; }, 3000);
       }
     });
   }
 
-  // ── Edit donation ──────────────────────────────────────────────────────────
   openEdit(donation: Donation): void {
     this.editingDonation = { ...donation };
     this.editAmount = donation.amount;
     this.editMessage = donation.message || '';
     this.editAnonymous = donation.anonymous;
+    this.editType = (donation.type as any) || 'MONEY';
+    this.editQuantity = donation.quantity || '';
     this.editState = 'idle';
     this.errorMessage = '';
   }
@@ -230,8 +236,8 @@ export class DonateComponent implements OnInit, OnDestroy {
   submitEdit(): void {
     if (this.editState !== 'idle' || !this.editingDonation?.id) return;
 
-    if (this.editAmount <= 0) {
-      this.errorMessage = 'Le montant doit être supérieur à 0';
+    if (this.editType === 'MONEY' && this.editAmount <= 0) {
+      this.errorMessage = 'Amount must be greater than 0';
       this.autoClearError();
       return;
     }
@@ -243,11 +249,12 @@ export class DonateComponent implements OnInit, OnDestroy {
       amount: this.editAmount,
       message: this.editMessage,
       anonymous: this.editAnonymous,
-      type: 'MONEY'
+      type: this.editType,
+      quantity: this.editType === 'MATERIAL' ? this.editQuantity : undefined
     }).subscribe({
       next: () => {
         this.editState = 'confirmed';
-        this.successMessage = 'Donation mise à jour !';
+        this.successMessage = 'Donation updated!';
         setTimeout(() => {
           this.editState = 'idle';
           this.successMessage = '';
@@ -257,15 +264,14 @@ export class DonateComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.editState = 'idle';
-        this.errorMessage = err.error?.message || 'Échec de la mise à jour.';
+        this.errorMessage = err.error?.message || 'Update failed.';
       }
     });
   }
 
-  // ── Delete donation ────────────────────────────────────────────────────────
   deleteDonation(donation: Donation): void {
     if (!donation.id || this.deletingId === donation.id) return;
-    if (!confirm('Supprimer cette donation ?')) return;
+    if (!confirm('Delete this donation?')) return;
 
     this.deletingId = donation.id;
     this.donations = this.donations.filter(d => d.id !== donation.id);
@@ -273,7 +279,7 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.donationService.delete(donation.id).subscribe({
       next: () => {
         this.deletingId = null;
-        this.successMessage = 'Donation supprimée !';
+        this.successMessage = 'Donation deleted!';
         setTimeout(() => this.successMessage = '', 3000);
         this.loadDonationsForEvent();
       },
@@ -284,7 +290,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Validate donation (admin) ──────────────────────────────────────────────
   validateDonation(donation: Donation): void {
     if (!donation.id || this.validatingId === donation.id) return;
 
@@ -292,18 +297,17 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.donationService.validate(donation.id).subscribe({
       next: () => {
         this.validatingId = null;
-        this.successMessage = 'Donation validée !';
+        this.successMessage = 'Donation validated!';
         setTimeout(() => this.successMessage = '', 3000);
         this.loadDonationsForEvent();
       },
       error: (err: any) => {
         this.validatingId = null;
-        this.errorMessage = err.error?.message || 'Échec de la validation.';
+        this.errorMessage = err.error?.message || 'Validation failed.';
       }
     });
   }
 
-  // ── Util ───────────────────────────────────────────────────────────────────
   autoClearError(): void {
     setTimeout(() => this.errorMessage = '', 4000);
   }
@@ -319,18 +323,21 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.email = '';
     this.message = '';
     this.isAnonymous = false;
+    this.donationType = 'MONEY';
+    this.materialQuantity = '';
+    this.volunteerHours = null;
   }
 
   getTimeAgo(dateStr?: string): string {
     if (!dateStr) return '';
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'À l\'instant';
-    if (mins < 60) return `Il y a ${mins}min`;
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}min ago`;
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `Il y a ${hours}h`;
+    if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
-    return `Il y a ${days}j`;
+    return `${days}d ago`;
   }
 
   getDonorInitials(donation: Donation): string {
@@ -340,8 +347,17 @@ export class DonateComponent implements OnInit, OnDestroy {
   }
 
   getDonorName(donation: Donation): string {
-    if (donation.anonymous) return 'Anonyme';
-    return donation.userName || 'Utilisateur';
+    if (donation.anonymous) return 'Anonymous';
+    return donation.userName || 'User';
+  }
+
+  getDonationTypeIcon(type: string): string {
+    switch (type) {
+      case 'MONEY': return '💶';
+      case 'MATERIAL': return '📦';
+      case 'TIME': return '⏰';
+      default: return '💚';
+    }
   }
 
   getEventStatusClass(status?: string): string {
