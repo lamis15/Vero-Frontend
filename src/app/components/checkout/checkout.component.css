@@ -1,19 +1,11 @@
+/* ── Checkout Layout ── */
 .checkout-section {
   min-height: calc(100vh - var(--nav-h));
   padding: 80px 48px;
   background: var(--cream);
 }
-
-.checkout-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.checkout-main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
+.checkout-container { max-width: 800px; margin: 0 auto; }
+.checkout-main { display: flex; flex-direction: column; gap: 24px; }
 
 .checkout-card {
   background: white;
@@ -21,7 +13,6 @@
   padding: 32px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
-
 .card-title {
   font-family: 'Playfair Display', serif;
   font-size: 24px;
@@ -30,179 +21,76 @@
   margin: 0 0 24px 0;
 }
 
-/* Order Summary */
+/* ── Order Summary ── */
 .order-items {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding-bottom: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+  margin-bottom: 24px; padding-bottom: 24px;
   border-bottom: 2px solid var(--cream);
 }
+.order-item { display: flex; justify-content: space-between; align-items: center; }
+.item-info  { display: flex; align-items: center; gap: 12px; }
+.item-name  { font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--charcoal); font-weight: 500; }
+.item-qty   { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--smoke); background: var(--cream); padding: 4px 8px; border-radius: 6px; }
+.item-price { font-family: 'DM Mono', monospace; font-size: 15px; color: var(--forest); font-weight: 600; }
+.order-total { display: flex; justify-content: space-between; align-items: center; font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--charcoal); font-weight: 600; }
+.total-amount { font-family: 'DM Mono', monospace; font-size: 24px; color: var(--forest); font-weight: 700; }
 
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.item-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.item-name {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  color: var(--charcoal);
-  font-weight: 500;
-}
-
-.item-qty {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  color: var(--smoke);
-  background: var(--cream);
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.item-price {
-  font-family: 'DM Mono', monospace;
-  font-size: 15px;
-  color: var(--forest);
-  font-weight: 600;
-}
-
-.order-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  color: var(--charcoal);
-  font-weight: 600;
-}
-
-.total-amount {
-  font-family: 'DM Mono', monospace;
-  font-size: 24px;
-  color: var(--forest);
-  font-weight: 700;
-}
-
-/* Form */
-.form-group {
-  margin-bottom: 24px;
-}
-
+/* ── Form ── */
+.form-group { margin-bottom: 24px; }
 .form-group label {
-  display: block;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--charcoal);
-  margin-bottom: 8px;
+  display: block; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600; color: var(--charcoal); margin-bottom: 8px;
 }
-
 .form-group textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid rgba(44, 44, 40, 0.1);
-  border-radius: 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  color: var(--charcoal);
-  resize: vertical;
-  transition: border-color 0.2s;
+  width: 100%; padding: 12px 16px;
+  border: 2px solid rgba(44, 44, 40, 0.1); border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--charcoal);
+  resize: vertical; transition: border-color 0.2s;
+  display: block; box-sizing: border-box;     /* ✅ important */
 }
+.form-group textarea:focus   { outline: none; border-color: var(--fern); }
+.form-group textarea::placeholder { color: var(--smoke); }
 
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--fern);
-}
-
-.form-group textarea::placeholder {
-  color: var(--smoke);
-}
-
-/* Stripe Card Element */
-.card-element {
+/* ── Stripe Card Element — VERSION CORRIGÉE ── */
+#card-element {
   padding: 16px;
   border: 2px solid rgba(44, 44, 40, 0.1);
   border-radius: 12px;
   background: white;
+  min-height: 50px;
+  width: 100%;
+  display: block;           /* ✅ PAS flex — sinon l'iframe Stripe est écrasée */
+  box-sizing: border-box;
   transition: border-color 0.2s;
 }
-
-.card-element:focus-within {
-  border-color: var(--fern);
-}
-
-/* Error Message */
-.error-message {
-  background: #fee;
-  color: #c33;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-/* Pay Button */
-.btn-pay {
+/* Stripe injecte ces classes automatiquement dans le DOM */
+.StripeElement {
   width: 100%;
-  background: var(--forest);
-  color: white;
-  border: none;
-  padding: 16px 32px;
-  border-radius: 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 16px;
+  display: block;           /* ✅ CRITIQUE pour que le champ s'affiche */
 }
+.StripeElement--focus,
+#card-element:focus-within  { border-color: var(--fern); }
+.StripeElement--invalid     { border-color: #ef4444; }
 
-.btn-pay:hover:not(:disabled) {
-  background: var(--moss);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(26, 46, 26, 0.2);
+/* ── Error / Button / Notice ── */
+.error-message {
+  background: #fee; color: #c33; padding: 12px 16px;
+  border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 16px;
 }
-
-.btn-pay:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.btn-pay {
+  width: 100%; background: var(--forest); color: white; border: none;
+  padding: 16px 32px; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-bottom: 16px;
 }
+.btn-pay:hover:not(:disabled) { background: var(--moss); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26, 46, 26, 0.2); }
+.btn-pay:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* Secure Notice */
-.secure-notice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  color: var(--smoke);
-}
+.secure-notice { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--smoke); }
+.secure-notice svg { color: var(--fern); }
 
-.secure-notice svg {
-  color: var(--fern);
-}
-
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .checkout-section {
-    padding: 40px 20px;
-  }
-
-  .checkout-card {
-    padding: 24px;
-  }
-
-  .card-title {
-    font-size: 20px;
-  }
+  .checkout-section { padding: 40px 20px; }
+  .checkout-card    { padding: 24px; }
+  .card-title       { font-size: 20px; }
 }

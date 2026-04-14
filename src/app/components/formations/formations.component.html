@@ -1,98 +1,115 @@
-<div class="formations-container">
-  <h1>📚 Formations & Sessions</h1>
+<section class="formations-page" [class.dark]="isDark">
 
-  <div *ngIf="loading" class="loading">
-    <div class="spinner"></div>
-    <p>Chargement des formations...</p>
-  </div>
-
-  <div *ngIf="error" class="error">
-    <p>{{ error }}</p>
-  </div>
-
-  <div *ngIf="!loading && !error" class="formations-grid">
-    <div *ngFor="let formation of formations" class="formation-card">
-      <div class="formation-header">
-        <h2>{{ formation.title }}</h2>
-        <span class="status-badge" [class]="formation.status.toLowerCase()">
-          {{ getStatusLabel(formation.status) }}
-        </span>
-      </div>
-      
-      <p class="description">{{ formation.description }}</p>
-      
-      <div class="formation-details">
-        <div class="detail">
-          <span class="icon">⏱️</span>
-          <span class="label">Durée:</span>
-          <span class="value">{{ formation.duration }}h</span>
-        </div>
-        <div class="detail">
-          <span class="icon">👥</span>
-          <span class="label">Places:</span>
-          <span class="value">{{ getAvailableSpots(formation) }} / {{ formation.maxCapacity }}</span>
-        </div>
-        <div class="detail">
-          <span class="icon">📝</span>
-          <span class="label">Inscrits:</span>
-          <span class="value">{{ formation.participantIds?.length || 0 }}</span>
-        </div>
-      </div>
-
-      <div class="formation-actions">
-        <button 
-          class="btn-register" 
-          (click)="register(formation.id!)"
-          [disabled]="getAvailableSpots(formation) === 0">
-          {{ getAvailableSpots(formation) === 0 ? '❌ Complet' : '✅ S\'inscrire' }}
-        </button>
-        
-        <button 
-          class="btn-sessions" 
-          (click)="toggleSessions(formation.id!)">
-          {{ isSessionsExpanded(formation.id!) ? '🔼 Masquer les sessions' : '🔽 Voir les sessions' }}
-        </button>
-      </div>
-
-      <!-- Sessions Section -->
-      <div *ngIf="isSessionsExpanded(formation.id!)" class="sessions-section">
-        <h3>📅 Sessions programmées</h3>
-        
-        <div *ngIf="getSessionsForFormation(formation.id!).length === 0" class="no-sessions">
-          <p>Aucune session programmée pour cette formation.</p>
-        </div>
-
-        <div *ngFor="let session of getSessionsForFormation(formation.id!)" class="session-card">
-          <div class="session-header">
-            <h4>{{ session.title }}</h4>
-            <span class="session-status" [class]="session.status.toLowerCase()">
-              {{ getStatusLabel(session.status) }}
-            </span>
-          </div>
-          
-          <div class="session-details">
-            <div class="session-info">
-              <span class="icon">📅</span>
-              <span class="label">Début:</span>
-              <span class="value">{{ formatDate(session.startDate) }}</span>
-            </div>
-            <div class="session-info">
-              <span class="icon">🏁</span>
-              <span class="label">Fin:</span>
-              <span class="value">{{ formatDate(session.endDate) }}</span>
-            </div>
-            <div class="session-info" *ngIf="session.meetLink">
-              <span class="icon">🔗</span>
-              <span class="label">Lien:</span>
-              <a [href]="session.meetLink" target="_blank" class="meet-link">Rejoindre la session</a>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-text">
+      <h1>Les meilleures <em>formations</em><br>pour développer vos compétences.</h1>
+      <p>{{ formations.length }} formations disponibles · Experts certifiés · Paiement sécurisé</p>
+    </div>
+    <div class="hero-actions">
+      <button class="theme-btn" (click)="isDark = !isDark">
+        @if (isDark) {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        } @else {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        }
+      </button>
     </div>
   </div>
 
-  <div *ngIf="!loading && !error && formations.length === 0" class="no-formations">
-    <p>Aucune formation disponible pour le moment.</p>
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filters">
+      <button class="chip" [class.active]="filter === 'all'" (click)="filter = 'all'">All</button>
+      <button class="chip" [class.active]="filter === 'PLANNED'" (click)="filter = 'PLANNED'">Planifiée</button>
+      <button class="chip" [class.active]="filter === 'IN_PROGRESS'" (click)="filter = 'IN_PROGRESS'">En cours</button>
+      <button class="chip" [class.active]="filter === 'COMPLETED'" (click)="filter = 'COMPLETED'">Terminée</button>
+    </div>
+    <span class="results-count">{{ filteredFormations().length }} résultat{{ filteredFormations().length > 1 ? 's' : '' }}</span>
   </div>
-</div>
+
+  <!-- States -->
+  @if (loading) {
+    <div class="state-center">
+      <div class="spinner"></div>
+      <span>Chargement...</span>
+    </div>
+  } @else if (error) {
+    <div class="state-center err">{{ error }}</div>
+  } @else if (filteredFormations().length === 0) {
+    <div class="state-center">Aucune formation disponible.</div>
+  } @else {
+
+    <!-- Grid -->
+    <div class="grid">
+      @for (f of filteredFormations(); track f.id; let i = $index) {
+        <article class="card"
+                 (mousemove)="tilt($event, $any($event.currentTarget))"
+                 (mouseleave)="untilt($any($event.currentTarget))">
+
+          <!-- Visual -->
+          <div class="card-visual" [ngClass]="getGradient(i)">
+            <span class="card-emoji">{{ getIcon(f) }}</span>
+
+            <!-- Status pin top-right -->
+            <span class="status-pin" [ngClass]="badgeClass(f.status)">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              </svg>
+              {{ badgeLabel(f.status) }}
+            </span>
+            @if (f.pinned) {
+              <span class="pin-indicator" title="Formation épinglée">📌</span>
+            }
+
+            <!-- Price top-left -->
+            <span class="price-chip" [class.free]="!hasPrice(f)">
+              {{ hasPrice(f) ? '€' + f.price!.toFixed(2) : 'Gratuit' }}
+            </span>
+          </div>
+
+          <!-- Footer info (lapa-style) -->
+          <div class="card-footer">
+            <div class="card-meta">
+              <span class="card-category">{{ badgeLabel(f.status) }}</span>
+            </div>
+            <h3 class="card-name">{{ f.title }}</h3>
+            <p class="card-desc">{{ f.description }}</p>
+
+            <!-- Progress bar -->
+            <div class="progress-row">
+              <div class="progress-track">
+                <div class="progress-fill" [ngClass]="getProgressClass(f)" [style.width.%]="getProgress(f)"></div>
+              </div>
+              <span class="progress-label" [ngClass]="getProgressClass(f)">{{ getProgress(f) }}%</span>
+            </div>
+
+            <!-- Stats + CTA -->
+            <div class="card-bottom">
+              <div class="card-stats">
+                <span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {{ f.duration }}h
+                </span>
+                <span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  {{ f.participantIds?.length || 0 }}/{{ f.maxCapacity }}
+                </span>
+                <span [class.full]="getAvailableSpots(f) === 0">
+                  {{ getAvailableSpots(f) === 0 ? 'Complet' : getAvailableSpots(f) + ' places' }}
+                </span>
+              </div>
+              <div class="card-cta">
+                <button class="btn-details" (click)="viewDetails(f.id!)" title="Voir détails">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </article>
+      }
+    </div>
+  }
+
+</section>

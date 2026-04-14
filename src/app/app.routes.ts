@@ -31,8 +31,20 @@ export const routes: Routes = [
     loadComponent: () => import('./components/formations/formations.component').then(m => m.FormationsComponent)
   },
   {
+    path: 'formations/:id',
+    loadComponent: () => import('./components/formation-detail/formation-detail.component').then(m => m.FormationDetailComponent)
+  },
+  {
+    path: 'formations/:id/quiz',
+    loadComponent: () => import('./components/quiz/quiz.component').then(m => m.QuizComponent)
+  },
+  {
     path: 'checkout',
     loadComponent: () => import('./components/checkout/checkout.component').then(m => m.CheckoutComponent)
+  },
+  {
+    path: 'cart',
+    loadComponent: () => import('./components/cart/cart').then(m => m.CartComponent)
   },
   {
     path: 'orders',

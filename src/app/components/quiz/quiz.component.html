@@ -1,0 +1,87 @@
+<div class="quiz-container">
+  <button class="btn-back" (click)="goBack()">← Retour à la formation</button>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement du quiz...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+    <button class="btn-back" (click)="goBack()">← Retour</button>
+  </div>
+
+  <!-- Result -->
+  <div *ngIf="result && !loading" class="result-section">
+    <div class="result-card" [class.passed]="result.passed" [class.failed]="!result.passed">
+      <div class="result-icon">{{ result.passed ? '🏆' : '😔' }}</div>
+      <h2>{{ result.passed ? 'Félicitations !' : 'Dommage...' }}</h2>
+      <div class="score-display">
+        <span class="score-value">{{ result.score }}%</span>
+        <span class="score-label">Score obtenu</span>
+      </div>
+      <p *ngIf="result.passed" class="result-message">
+        Vous avez réussi le quiz ! Votre certificat a été généré et envoyé par email.
+      </p>
+      <p *ngIf="!result.passed" class="result-message">
+        Vous n'avez pas atteint le score minimum requis. Vous pouvez réessayer ultérieurement.
+      </p>
+      <button *ngIf="result.passed" class="btn-certificate" (click)="downloadCertificate()">
+        🏆 Télécharger mon certificat
+      </button>
+      <button class="btn-back-result" (click)="goBack()">Retour à la formation</button>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div *ngIf="quiz && !loading && !result" class="quiz-content">
+    <div class="quiz-header">
+      <h1>{{ quiz.title }}</h1>
+      <p class="quiz-info">{{ quiz.questions.length }} question(s) · Score minimum : {{ quiz.passingScore }}%</p>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="(answers.size / quiz.questions.length) * 100"></div>
+      </div>
+      <p class="progress-text">{{ answers.size }} / {{ quiz.questions.length }} réponses</p>
+    </div>
+
+    <div class="questions-list">
+      <div *ngFor="let question of quiz.questions; let qi = index" class="question-card">
+        <div class="question-number">Question {{ qi + 1 }}</div>
+        <p class="question-text">{{ question.text }}</p>
+        <div class="options-list">
+          <label
+            *ngFor="let option of question.options"
+            class="option-label"
+            [class.selected]="isSelected(question.id, option.id)"
+            (click)="selectOption(question.id, option.id)">
+            <input
+              type="radio"
+              [name]="'q' + question.id"
+              [value]="option.id"
+              [checked]="isSelected(question.id, option.id)"
+              (change)="selectOption(question.id, option.id)">
+            <span class="option-text">{{ option.text }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button
+        class="btn-submit"
+        (click)="submitQuiz()"
+        [disabled]="!allAnswered() || submitting">
+        @if (submitting) {
+          <span class="spinner-sm"></span> Envoi en cours...
+        } @else {
+          Soumettre mes réponses
+        }
+      </button>
+      <p *ngIf="!allAnswered()" class="submit-hint">
+        Répondez à toutes les questions pour soumettre.
+      </p>
+    </div>
+  </div>
+</div>

@@ -965,3 +965,179 @@ textarea:valid:not(:placeholder-shown),
 select:valid:not(:placeholder-shown) {
   border-color: #2c5f2d;
 }
+
+/* Formation Management Styles */
+.formations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.formation-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.formation-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.formation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.formation-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c2c28;
+  flex: 1;
+}
+
+.formation-description {
+  color: #666;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.formation-details {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
+  font-size: 0.9375rem;
+}
+
+.detail-item svg {
+  color: #7fb069;
+}
+
+.formation-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.formation-actions .btn-icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  font-size: 0.875rem;
+}
+
+.empty-state-card {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  color: #999;
+}
+
+.empty-state-card svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state-card p {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+/* Status badges for formations */
+.status-planned {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-in-progress {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-completed {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-scheduled {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-cancelled {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Back button inline */
+.btn-back-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(127, 176, 105, 0.1);
+  border: 1px solid rgba(127, 176, 105, 0.3);
+  border-radius: 8px;
+  color: #7fb069;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9375rem;
+  margin-bottom: 1rem;
+}
+
+.btn-back-inline:hover {
+  background: rgba(127, 176, 105, 0.2);
+}
+
+/* Meet link styling */
+.meet-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #7fb069;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.meet-link:hover {
+  color: #6a9a58;
+  text-decoration: underline;
+}
+
+.text-muted {
+  color: #999;
+}
+
+/* Form hints */
+.form-hint {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  color: #666;
+}

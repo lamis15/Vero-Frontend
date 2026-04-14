@@ -41,55 +41,12 @@
       </div>
 
       <div class="nav-cart">
-        <button class="btn-cart" [class.animate]="cartAnimate" (click)="toggleCartDropdown($event)">
+        <a routerLink="/cart" class="btn-cart" [class.animate]="cartAnimate">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
           @if (cartCount > 0) {
             <span class="badge cart-badge">{{ cartCount }}</span>
           }
-        </button>
-
-        @if (showCartDropdown) {
-          <div class="cart-dropdown" (click)="$event.stopPropagation()">
-            <div class="cart-header">
-              <span>Shopping Cart</span>
-              @if (cartItems.length > 0) {
-                <button class="btn-clear" (click)="clearCart()">Clear All</button>
-              }
-            </div>
-            <div class="cart-list">
-              @for (item of cartItems; track item.product.id) {
-                <div class="cart-item">
-                  <div class="cart-item-info">
-                    <div class="cart-item-name">{{ item.product.name }}</div>
-                    <div class="cart-item-price">€{{ item.product.price.toFixed(2) }}</div>
-                  </div>
-                  <div class="cart-item-actions">
-                    <div class="quantity-controls">
-                      <button class="btn-qty" (click)="decrementQuantity(item.product.id)">−</button>
-                      <span class="quantity">{{ item.quantity }}</span>
-                      <button class="btn-qty" (click)="incrementQuantity(item.product.id)">+</button>
-                    </div>
-                    <button class="btn-remove" (click)="removeFromCart(item.product.id)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                  </div>
-                </div>
-              }
-              @if (cartItems.length === 0) {
-                <div class="cart-empty">Your cart is empty</div>
-              }
-            </div>
-            @if (cartItems.length > 0) {
-              <div class="cart-footer">
-                <div class="cart-total">
-                  <span>Total:</span>
-                  <span class="total-amount">€{{ getCartTotal().toFixed(2) }}</span>
-                </div>
-                <button class="btn-checkout" (click)="openCheckoutModal()">Checkout</button>
-              </div>
-            }
-          </div>
-        }
+        </a>
       </div>
     }
 
@@ -219,7 +176,7 @@
                     <rect x="14" y="14" width="7" height="7"></rect>
                     <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
-                  <span>Admin Dashboard</span>
+                  <span>My dashboard</span>
                 </a>
               }
               <a routerLink="/profile" class="profile-menu-item" (click)="showProfileDropdown = false">

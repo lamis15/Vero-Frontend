@@ -7,7 +7,10 @@ import { ProductService } from '../../services/product.service';
 import { OrderService } from '../../services/order.service';
 import { UserService } from '../../services/user.service';
 import { NotificationService } from '../../services/notification.service';
+import { FormationService } from '../../services/formation.service';
+import { SessionService } from '../../services/session.service';
 import { Product, Order } from '../../services/product.models';
+import { Formation, FormationResource, FormationStatus, Session, SessionStatus } from '../../services/formation.models';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -127,11 +130,69 @@ export class AdminComponent implements OnInit {
     { name: 'Local', flag: '🌍' }
   ];
 
+  // Formations
+  formations: Formation[] = [];
+  formationsLoading = false;
+  showFormationModal = false;
+  editingFormation: Formation | null = null;
+  formationForm: {
+    title: string;
+    description: string;
+    duration: number;
+    maxCapacity: number;
+    price: number;
+    status: FormationStatus;
+  } = {
+    title: '',
+    description: '',
+    duration: 0,
+    maxCapacity: 0,
+    price: 0,
+    status: 'PLANNED' as FormationStatus
+  };
+
+  // Sessions
+  sessions: Session[] = [];
+  sessionsLoading = false;
+  showSessionModal = false;
+  editingSession: Session | null = null;
+  sessionForm = {
+    title: '',
+    startDate: '',
+    endDate: '',
+    status: 'SCHEDULED' as SessionStatus,
+    meetLink: '',
+    trainerId: 0,
+    formationId: 0
+  };
+  selectedFormationForSessions: Formation | null = null;
+
+  formationStatuses = ['PLANNED', 'IN_PROGRESS', 'COMPLETED'];
+  sessionStatuses = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+
+  // AI Description
+  generatingDescription = false;
+
+  // Resources
+  selectedResourceFile: File | null = null;
+  resourceUploading = false;
+  formationResources: FormationResource[] = [];
+
+  // Quiz
+  showQuizModal = false;
+  quizForm: {
+    title: string;
+    passingScore: number;
+    questions: Array<{ text: string; options: Array<{ text: string; isCorrect: boolean }> }>;
+  } = { title: '', passingScore: 80, questions: [] };
+
   constructor(
     private authService: AuthService,
     private productService: ProductService,
     private orderService: OrderService,
     private userService: UserService,
+    private formationService: FormationService,
+    private sessionService: SessionService,
     private router: Router,
     private notificationService: NotificationService
   ) {}
@@ -156,6 +217,7 @@ export class AdminComponent implements OnInit {
   loadDashboardData() {
     this.loadProducts();
     this.loadOrders();
+    this.loadFormations();
     this.loading = false;
   }
 
@@ -166,6 +228,9 @@ export class AdminComponent implements OnInit {
     }
     if (tab === 'orders' && this.orders.length === 0) {
       this.loadOrders();
+    }
+    if (tab === 'formations' && this.formations.length === 0) {
+      this.loadFormations();
     }
   }
 
@@ -419,5 +484,451 @@ export class AdminComponent implements OnInit {
 
   getProductColor(category: string): string {
     return this.categoryColors[category] || '#f0f0f0';
+  }
+
+  // Formation Management
+  loadFormations() {
+    this.formationsLoading = true;
+    this.formationService.getAll().subscribe({
+      next: (formations) => {
+        this.formations = formations;
+        this.formationsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading formations:', err);
+        this.notificationService.error('Error loading formations');
+        this.formationsLoading = false;
+      }
+    });
+  }
+
+  openFormationModal(formation?: Formation) {
+    if (formation) {
+      this.editingFormation = formation;
+      this.formationForm = {
+        title: formation.title,
+        description: formation.description,
+        duration: formation.duration,
+        maxCapacity: formation.maxCapacity,
+        price: formation.price || 0,
+        status: formation.status
+      };
+    } else {
+      this.editingFormation = null;
+      this.formationForm = {
+        title: '',
+        description: '',
+        duration: 0,
+        maxCapacity: 0,
+        price: 0,
+        status: 'PLANNED' as FormationStatus
+      };
+    }
+    this.showFormationModal = true;
+  }
+
+  closeFormationModal() {
+    this.showFormationModal = false;
+    this.editingFormation = null;
+  }
+
+  saveFormation() {
+    if (!this.formationForm.title || this.formationForm.title.trim() === '') {
+      this.notificationService.warning('Please enter a formation title');
+      return;
+    }
+
+    if (!this.formationForm.description || this.formationForm.description.trim() === '') {
+      this.notificationService.warning('Please enter a formation description');
+      return;
+    }
+
+    if (!this.formationForm.duration || this.formationForm.duration <= 0) {
+      this.notificationService.warning('Please enter a valid duration (greater than 0)');
+      return;
+    }
+
+    if (!this.formationForm.maxCapacity || this.formationForm.maxCapacity <= 0) {
+      this.notificationService.warning('Please enter a valid capacity (greater than 0)');
+      return;
+    }
+
+    const formationData: any = { ...this.formationForm };
+    
+    if (this.editingFormation) {
+      formationData.id = this.editingFormation.id;
+      formationData.participantIds = this.editingFormation.participantIds || [];
+      this.formationService.update(formationData).subscribe({
+        next: () => {
+          this.notificationService.success('Formation updated successfully!');
+          this.loadFormations();
+          this.closeFormationModal();
+        },
+        error: (err) => {
+          console.error('Error updating formation:', err);
+          this.notificationService.error('Error updating formation. Please try again.');
+        }
+      });
+    } else {
+      this.formationService.create(formationData).subscribe({
+        next: () => {
+          this.notificationService.success('Formation created successfully!');
+          this.loadFormations();
+          this.closeFormationModal();
+        },
+        error: (err) => {
+          console.error('Error creating formation:', err);
+          this.notificationService.error('Error creating formation. Please try again.');
+        }
+      });
+    }
+  }
+
+  deleteFormation(id: number) {
+    if (confirm('Are you sure you want to delete this formation? All associated sessions will also be deleted.')) {
+      this.formationService.delete(id).subscribe({
+        next: () => {
+          this.notificationService.success('Formation deleted successfully!');
+          this.loadFormations();
+        },
+        error: (err) => {
+          console.error('Error deleting formation:', err);
+          this.notificationService.error('Error deleting formation. Please try again.');
+        }
+      });
+    }
+  }
+
+  updateFormationStatus(id: number, status: FormationStatus) {
+    this.formationService.updateStatus(id, status).subscribe({
+      next: () => {
+        this.notificationService.success('Formation status updated!');
+        this.loadFormations();
+      },
+      error: (err) => {
+        console.error('Error updating formation status:', err);
+        this.notificationService.error('Error updating status. Please try again.');
+      }
+    });
+  }
+
+  // Session Management
+  viewFormationSessions(formation: Formation) {
+    this.selectedFormationForSessions = formation;
+    this.loadSessionsForFormation(formation.id!);
+  }
+
+  closeSessionsView() {
+    this.selectedFormationForSessions = null;
+    this.sessions = [];
+  }
+
+  loadSessionsForFormation(formationId: number) {
+    this.sessionsLoading = true;
+    this.sessionService.getByFormation(formationId).subscribe({
+      next: (sessions) => {
+        this.sessions = sessions;
+        this.sessionsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading sessions:', err);
+        this.notificationService.error('Error loading sessions');
+        this.sessionsLoading = false;
+      }
+    });
+  }
+
+  openSessionModal(session?: Session) {
+    if (!this.selectedFormationForSessions) {
+      this.notificationService.warning('Please select a formation first');
+      return;
+    }
+
+    if (session) {
+      this.editingSession = session;
+      this.sessionForm = {
+        title: session.title,
+        startDate: session.startDate.substring(0, 16), // Format for datetime-local
+        endDate: session.endDate.substring(0, 16),
+        status: session.status,
+        meetLink: session.meetLink || '',
+        trainerId: session.trainerId,
+        formationId: this.selectedFormationForSessions.id!
+      };
+    } else {
+      this.editingSession = null;
+      this.sessionForm = {
+        title: '',
+        startDate: '',
+        endDate: '',
+        status: 'SCHEDULED' as SessionStatus,
+        meetLink: '',
+        trainerId: this.currentUser?.id || 0,
+        formationId: this.selectedFormationForSessions.id!
+      };
+    }
+    this.showSessionModal = true;
+  }
+
+  closeSessionModal() {
+    this.showSessionModal = false;
+    this.editingSession = null;
+  }
+
+  saveSession() {
+    if (!this.sessionForm.title || this.sessionForm.title.trim() === '') {
+      this.notificationService.warning('Please enter a session title');
+      return;
+    }
+
+    if (!this.sessionForm.startDate) {
+      this.notificationService.warning('Please select a start date');
+      return;
+    }
+
+    if (!this.sessionForm.endDate) {
+      this.notificationService.warning('Please select an end date');
+      return;
+    }
+
+    const startDate = new Date(this.sessionForm.startDate);
+    const endDate = new Date(this.sessionForm.endDate);
+
+    if (endDate <= startDate) {
+      this.notificationService.warning('End date must be after start date');
+      return;
+    }
+
+    const sessionData: any = {
+      title: this.sessionForm.title,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      status: this.sessionForm.status,
+      meetLink: this.sessionForm.meetLink,
+      trainerId: this.sessionForm.trainerId
+    };
+    
+    if (this.editingSession) {
+      sessionData.id = this.editingSession.id;
+      this.sessionService.update(sessionData).subscribe({
+        next: () => {
+          this.notificationService.success('Session updated successfully!');
+          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
+          this.closeSessionModal();
+        },
+        error: (err) => {
+          console.error('Error updating session:', err);
+          this.notificationService.error('Error updating session. Please try again.');
+        }
+      });
+    } else {
+      this.sessionService.create(sessionData, this.sessionForm.formationId).subscribe({
+        next: () => {
+          this.notificationService.success('Session created successfully!');
+          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
+          this.closeSessionModal();
+        },
+        error: (err) => {
+          console.error('Error creating session:', err);
+          this.notificationService.error('Error creating session. Please try again.');
+        }
+      });
+    }
+  }
+
+  deleteSession(id: number) {
+    if (confirm('Are you sure you want to delete this session?')) {
+      this.sessionService.delete(id).subscribe({
+        next: () => {
+          this.notificationService.success('Session deleted successfully!');
+          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
+        },
+        error: (err) => {
+          console.error('Error deleting session:', err);
+          this.notificationService.error('Error deleting session. Please try again.');
+        }
+      });
+    }
+  }
+
+  updateSessionStatus(id: number, status: SessionStatus) {
+    this.sessionService.updateStatus(id, status).subscribe({
+      next: () => {
+        this.notificationService.success('Session status updated!');
+        this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
+      },
+      error: (err) => {
+        console.error('Error updating session status:', err);
+        this.notificationService.error('Error updating status. Please try again.');
+      }
+    });
+  }
+
+  getFormationStatusClass(status: FormationStatus): string {
+    const statusMap: Record<string, string> = {
+      'PLANNED': 'status-planned',
+      'IN_PROGRESS': 'status-in-progress',
+      'COMPLETED': 'status-completed'
+    };
+    return statusMap[status] || 'status-planned';
+  }
+
+  getSessionStatusClass(status: SessionStatus): string {
+    const statusMap: Record<string, string> = {
+      'SCHEDULED': 'status-scheduled',
+      'IN_PROGRESS': 'status-in-progress',
+      'COMPLETED': 'status-completed',
+      'CANCELLED': 'status-cancelled'
+    };
+    return statusMap[status] || 'status-scheduled';
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  // AI Description Generation
+  generateDescription(): void {
+    if (!this.formationForm.title || this.formationForm.title.trim() === '') {
+      this.notificationService.warning('Veuillez saisir un titre avant de générer une description');
+      return;
+    }
+    this.generatingDescription = true;
+    this.formationService.generateDescription(this.formationForm.title, this.formationForm.duration).subscribe({
+      next: (res) => {
+        this.formationForm.description = res.description;
+        this.generatingDescription = false;
+      },
+      error: (err) => {
+        console.error('Error generating description:', err);
+        this.notificationService.error('Erreur lors de la génération de la description');
+        this.generatingDescription = false;
+      }
+    });
+  }
+
+  // Pin Toggle
+  togglePin(formation: Formation): void {
+    this.formationService.togglePin(formation.id!).subscribe({
+      next: (updated) => {
+        formation.pinned = updated.pinned;
+        this.formations.sort((a, b) => {
+          if (a.pinned === b.pinned) return 0;
+          return a.pinned ? -1 : 1;
+        });
+      },
+      error: (err) => {
+        console.error('Error toggling pin:', err);
+        this.notificationService.error("Erreur lors du changement d'épinglage");
+      }
+    });
+  }
+
+  // Resources
+  onResourceFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedResourceFile = input.files[0];
+    }
+  }
+
+  uploadResource(formationId: number): void {
+    if (!this.selectedResourceFile) {
+      this.notificationService.warning('Veuillez sélectionner un fichier');
+      return;
+    }
+    this.resourceUploading = true;
+    this.formationService.uploadResource(formationId, this.selectedResourceFile).subscribe({
+      next: () => {
+        this.notificationService.success('Ressource uploadée avec succès');
+        this.selectedResourceFile = null;
+        this.resourceUploading = false;
+        this.loadResources(formationId);
+      },
+      error: (err) => {
+        console.error('Error uploading resource:', err);
+        this.notificationService.error("Erreur lors de l'upload de la ressource");
+        this.resourceUploading = false;
+      }
+    });
+  }
+
+  deleteResource(formationId: number, resourceId: number): void {
+    if (confirm('Supprimer cette ressource ?')) {
+      this.formationService.deleteResource(formationId, resourceId).subscribe({
+        next: () => {
+          this.notificationService.success('Ressource supprimée');
+          this.loadResources(formationId);
+        },
+        error: (err) => {
+          console.error('Error deleting resource:', err);
+          this.notificationService.error('Erreur lors de la suppression');
+        }
+      });
+    }
+  }
+
+  loadResources(formationId: number): void {
+    this.formationService.getResources(formationId).subscribe({
+      next: (resources) => { this.formationResources = resources; },
+      error: (err) => { console.error('Error loading resources:', err); }
+    });
+  }
+
+  // Quiz
+  openQuizModal(): void {
+    this.quizForm = { title: '', passingScore: 80, questions: [] };
+    this.showQuizModal = true;
+  }
+
+  closeQuizModal(): void {
+    this.showQuizModal = false;
+  }
+
+  addQuestion(): void {
+    this.quizForm.questions.push({ text: '', options: [
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false }
+    ]});
+  }
+
+  removeQuestion(index: number): void {
+    this.quizForm.questions.splice(index, 1);
+  }
+
+  addOption(qIndex: number): void {
+    this.quizForm.questions[qIndex].options.push({ text: '', isCorrect: false });
+  }
+
+  removeOption(qIndex: number, oIndex: number): void {
+    this.quizForm.questions[qIndex].options.splice(oIndex, 1);
+  }
+
+  saveQuiz(formationId: number): void {
+    if (!this.quizForm.title.trim()) {
+      this.notificationService.warning('Veuillez saisir un titre pour le quiz');
+      return;
+    }
+    if (this.quizForm.questions.length === 0) {
+      this.notificationService.warning('Veuillez ajouter au moins une question');
+      return;
+    }
+    this.formationService.createQuiz(formationId, this.quizForm).subscribe({
+      next: () => {
+        this.notificationService.success('Quiz créé avec succès');
+        this.closeQuizModal();
+      },
+      error: (err) => {
+        console.error('Error creating quiz:', err);
+        this.notificationService.error('Erreur lors de la création du quiz');
+      }
+    });
   }
 }

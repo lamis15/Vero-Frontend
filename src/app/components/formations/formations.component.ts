@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormationService } from '../../services/formation.service';
-import { SessionService } from '../../services/session.service';
-import { Formation, Session } from '../../services/formation.models';
+import { Formation } from '../../services/formation.models';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+
+const ICONS = ['💍', '🌿', '♻️', '🌸', '👗', '🌱', '📚', '🎓', '🔬', '🎨'];
+const GRADIENTS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'];
 
 @Component({
   selector: 'app-formations',
@@ -15,16 +18,16 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class FormationsComponent implements OnInit {
   formations: Formation[] = [];
-  sessions: { [formationId: number]: Session[] } = {};
   loading = true;
   error: string | null = null;
-  selectedFormationId: number | null = null;
+  isDark = false;
+  filter = 'all';
 
   constructor(
     private formationService: FormationService,
-    private sessionService: SessionService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -46,89 +49,80 @@ export class FormationsComponent implements OnInit {
     });
   }
 
-  loadSessions(formationId: number): void {
-    if (this.sessions[formationId]) {
-      return; // Already loaded
-    }
-
-    this.sessionService.getByFormation(formationId).subscribe({
-      next: (data) => {
-        this.sessions[formationId] = data;
-      },
-      error: (err) => {
-        console.error('Error loading sessions:', err);
-        this.notificationService.show('Erreur lors du chargement des sessions', 'error');
-      }
-    });
-  }
-
-  toggleSessions(formationId: number): void {
-    if (this.selectedFormationId === formationId) {
-      this.selectedFormationId = null;
-    } else {
-      this.selectedFormationId = formationId;
-      this.loadSessions(formationId);
-    }
+  filteredFormations(): Formation[] {
+    if (this.filter === 'all') return this.formations;
+    return this.formations.filter(f => f.status === this.filter);
   }
 
   register(formationId: number): void {
     if (!this.authService.isLoggedIn) {
       this.notificationService.show('Veuillez vous connecter pour vous inscrire', 'warning');
+      this.router.navigate(['/login']);
       return;
     }
+    this.router.navigate(['/formations', formationId, 'checkout']);
+  }
 
-    this.authService.getCurrentUser().subscribe({
-      next: (user) => {
-        this.formationService.register(formationId, user.id).subscribe({
-          next: () => {
-            this.notificationService.show('Inscription réussie !', 'success');
-            this.loadFormations();
-          },
-          error: (err) => {
-            console.error(err);
-            this.notificationService.show('Erreur lors de l\'inscription', 'error');
-          }
-        });
-      },
-      error: (err) => {
-        console.error(err);
-        this.notificationService.show('Erreur lors de la récupération de l\'utilisateur', 'error');
-      }
-    });
+  viewDetails(formationId: number): void {
+    this.router.navigate(['/formations', formationId]);
   }
 
   getAvailableSpots(formation: Formation): number {
-    const registered = formation.participantIds?.length || 0;
-    return formation.maxCapacity - registered;
+    return formation.maxCapacity - (formation.participantIds?.length || 0);
   }
 
-  getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
+  hasPrice(formation: Formation): boolean {
+    const p = formation.price;
+    return p !== null && p !== undefined && Number(p) > 0;
+  }
+
+  getProgress(formation: Formation): number {
+    if (!formation.maxCapacity) return 0;
+    return Math.round(((formation.participantIds?.length || 0) / formation.maxCapacity) * 100);
+  }
+
+  getProgressClass(formation: Formation): string {
+    const pct = this.getProgress(formation);
+    if (pct >= 70) return 'red';
+    if (pct >= 50) return 'orange';
+    return 'green';
+  }
+
+  badgeClass(status: string): string {
+    const map: Record<string, string> = {
+      'PLANNED': 'planifiee',
+      'IN_PROGRESS': 'en-cours',
+      'COMPLETED': 'terminee'
+    };
+    return map[status] || 'planifiee';
+  }
+
+  badgeLabel(status: string): string {
+    const map: Record<string, string> = {
       'PLANNED': 'Planifiée',
       'IN_PROGRESS': 'En cours',
-      'COMPLETED': 'Terminée',
-      'SCHEDULED': 'Programmée',
-      'CANCELLED': 'Annulée'
+      'COMPLETED': 'Terminée'
     };
-    return labels[status] || status;
+    return map[status] || status;
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  getGradient(index: number): string {
+    return GRADIENTS[index % GRADIENTS.length];
   }
 
-  getSessionsForFormation(formationId: number): Session[] {
-    return this.sessions[formationId] || [];
+  getIcon(formation: Formation): string {
+    const idx = (formation.id || 0) % ICONS.length;
+    return ICONS[idx];
   }
 
-  isSessionsExpanded(formationId: number): boolean {
-    return this.selectedFormationId === formationId;
+  tilt(e: MouseEvent, el: HTMLElement): void {
+    const r = el.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width - 0.5) * 18;
+    const y = -((e.clientY - r.top) / r.height - 0.5) * 14;
+    el.style.transform = `perspective(800px) rotateY(${x}deg) rotateX(${y}deg) translateY(-6px)`;
+  }
+
+  untilt(el: HTMLElement): void {
+    el.style.transform = '';
   }
 }

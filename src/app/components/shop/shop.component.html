@@ -146,13 +146,16 @@
               } @else {
                 {{ getProductEmoji(product.category) }}
               }
-              <div class="product-badge">{{ getEcoBadge(product) }}</div>
-              @if (product.stock <= 0) {
-                <div class="out-of-stock-badge">Out of Stock</div>
-              }
+              <div class="product-badges">
+                <div class="product-badge">{{ getEcoBadge(product) }}</div>
+                @if (product.stock > 0) {
+                  <div class="available-badge">Available</div>
+                } @else {
+                  <div class="out-of-stock-badge">Out of Stock</div>
+                }
+              </div>
             </div>
             <div class="product-body">
-              <div class="product-brand">{{ product.origin || 'Local' }}</div>
               <div class="product-name">{{ product.name }}</div>
               <div class="product-footer">
                 <div class="product-price">€{{ product.price.toFixed(2) }}</div>
@@ -170,14 +173,24 @@
                   </button>
                   <button 
                     class="btn-add" 
-                    [ngStyle]="{'background': product.added ? 'var(--sage)' : 'var(--forest)'}" 
+                    [class.added]="product.added"
                     [disabled]="product.stock <= 0"
-                    (click)="addToCart(product)">
-                    {{ product.added ? '✓' : '+' }}
+                    (click)="addToCart(product)"
+                    title="Ajouter au panier">
+                    @if (product.added) {
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    } @else {
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                      </svg>
+                    }
                   </button>
                 </div>
               </div>
-              <div class="product-stock">Stock: {{ product.stock }}</div>
             </div>
           </div>
           }

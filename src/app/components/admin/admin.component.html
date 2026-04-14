@@ -360,8 +360,222 @@
 
       @if (activeTab === 'formations') {
         <div class="admin-content">
-          <h1>Formation Management</h1>
-          <p class="placeholder">Formation management interface coming soon...</p>
+          @if (!selectedFormationForSessions) {
+            <div class="content-header">
+              <h1>Formation Management</h1>
+              <button class="btn-primary" (click)="openFormationModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Formation
+              </button>
+            </div>
+
+            @if (formationsLoading) {
+              <div class="loading">Loading formations...</div>
+            } @else {
+              <div class="formations-grid">
+                @for (formation of formations; track formation.id) {
+                  <div class="formation-card">
+                    <div class="formation-header">
+                      <h3>{{ formation.title }}</h3>
+                      <span class="status-badge" [ngClass]="getFormationStatusClass(formation.status)">
+                        {{ formation.status }}
+                      </span>
+                    </div>
+                    <p class="formation-description">{{ formation.description }}</p>
+                    <div class="formation-details">
+                      <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>{{ formation.duration }}h</span>
+                      </div>
+                      <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <span>{{ formation.participantIds?.length || 0 }}/{{ formation.maxCapacity }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="12" y1="1" x2="12" y2="23"></line>
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>{{ formation.price ? '€' + formation.price.toFixed(2) : 'Gratuit' }}</span>
+                      </div>
+                    </div>
+                    <div class="formation-actions">
+                      <button class="btn-icon btn-pin" (click)="togglePin(formation)" [title]="formation.pinned ? 'Désépingler' : 'Épingler'">
+                        {{ formation.pinned ? '📌' : '📍' }}
+                      </button>
+                      <button class="btn-icon btn-view" (click)="viewFormationSessions(formation)" title="View Sessions">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Sessions
+                      </button>
+                      <button class="btn-icon btn-edit" (click)="openFormationModal(formation)" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                      <button class="btn-icon btn-delete" (click)="deleteFormation(formation.id!)" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                }
+                @if (formations.length === 0) {
+                  <div class="empty-state-card">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <p>No formations found. Add your first formation!</p>
+                  </div>
+                }
+              </div>
+            }
+          } @else {
+            <div class="content-header">
+              <div>
+                <button class="btn-back-inline" (click)="closeSessionsView()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Back to Formations
+                </button>
+                <h1>Sessions for: {{ selectedFormationForSessions.title }}</h1>
+              </div>
+              <div class="header-actions">
+                <button class="btn-secondary" (click)="openQuizModal()">
+                  📝 Créer un quiz
+                </button>
+                <button class="btn-primary" (click)="openSessionModal()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Add Session
+                </button>
+              </div>
+            </div>
+
+            <!-- Resources Section -->
+            <div class="resources-section">
+              <h3>📎 Ressources de la formation</h3>
+              <div class="resource-upload">
+                <input type="file" id="resourceFile" (change)="onResourceFileSelected($event)" style="display:none">
+                <label for="resourceFile" class="btn-secondary" style="cursor:pointer">
+                  Choisir un fichier
+                </label>
+                @if (selectedResourceFile) {
+                  <span class="file-name">{{ selectedResourceFile.name }}</span>
+                }
+                <button class="btn-primary" (click)="uploadResource(selectedFormationForSessions.id!)" [disabled]="resourceUploading || !selectedResourceFile">
+                  @if (resourceUploading) { Envoi... } @else { Uploader }
+                </button>
+                <button class="btn-secondary" (click)="loadResources(selectedFormationForSessions.id!)">
+                  🔄 Actualiser
+                </button>
+              </div>
+              @if (formationResources.length > 0) {
+                <ul class="resource-list">
+                  @for (res of formationResources; track res.id) {
+                    <li class="resource-item">
+                      <span>{{ res.originalFileName }}</span>
+                      <span class="resource-size">{{ (res.fileSize / 1024 / 1024).toFixed(2) }} MB</span>
+                      <button class="btn-icon btn-delete" (click)="deleteResource(selectedFormationForSessions.id!, res.id)" title="Supprimer">🗑️</button>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-muted">Aucune ressource pour cette formation.</p>
+              }
+            </div>
+
+            @if (sessionsLoading) {
+              <div class="loading">Loading sessions...</div>
+            } @else {
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Title</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Status</th>
+                      <th>Meeting Link</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (session of sessions; track session.id) {
+                      <tr>
+                        <td>{{ session.id }}</td>
+                        <td>{{ session.title }}</td>
+                        <td>{{ formatDate(session.startDate) }}</td>
+                        <td>{{ formatDate(session.endDate) }}</td>
+                        <td>
+                          <span class="status-badge" [ngClass]="getSessionStatusClass(session.status)">
+                            {{ session.status }}
+                          </span>
+                        </td>
+                        <td>
+                          @if (session.meetLink) {
+                            <a [href]="session.meetLink" target="_blank" class="meet-link">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                              </svg>
+                              Join
+                            </a>
+                          } @else {
+                            <span class="text-muted">-</span>
+                          }
+                        </td>
+                        <td>
+                          <div class="action-buttons">
+                            <button class="btn-icon btn-edit" (click)="openSessionModal(session)" title="Edit">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                              </svg>
+                            </button>
+                            <button class="btn-icon btn-delete" (click)="deleteSession(session.id!)" title="Delete">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                    @if (sessions.length === 0) {
+                      <tr>
+                        <td colspan="7" class="empty-state">No sessions found. Add your first session!</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
         </div>
       }
 
@@ -512,6 +726,240 @@
         <button class="btn-primary" (click)="saveProduct()">
           {{ editingProduct ? 'Update' : 'Create' }} Product
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Formation Modal -->
+@if (showFormationModal) {
+  <div class="modal-overlay" (click)="closeFormationModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingFormation ? 'Edit Formation' : 'Add New Formation' }}</h2>
+        <button class="modal-close" (click)="closeFormationModal()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="formationTitle">Title <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="formationTitle" 
+            [(ngModel)]="formationForm.title" 
+            placeholder="Enter formation title"
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="formationDescription">Description <span class="required">*</span></label>
+          <div class="description-with-ai">
+            <textarea 
+              id="formationDescription" 
+              [(ngModel)]="formationForm.description" 
+              placeholder="Enter formation description"
+              rows="4"
+              required></textarea>
+            <button type="button" class="btn-ai" (click)="generateDescription()" [disabled]="generatingDescription">
+              @if (generatingDescription) {
+                <span class="spinner-sm"></span> Génération...
+              } @else {
+                ✨ Générer avec l'IA
+              }
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formationDuration">Duration (hours) <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="formationDuration" 
+              [(ngModel)]="formationForm.duration" 
+              placeholder="0"
+              min="1"
+              required>
+          </div>
+
+          <div class="form-group">
+            <label for="formationCapacity">Max Capacity <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="formationCapacity" 
+              [(ngModel)]="formationForm.maxCapacity" 
+              placeholder="0"
+              min="1"
+              required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="formationPrice">Prix d'inscription (€)</label>
+          <input 
+            type="number" 
+            id="formationPrice" 
+            [(ngModel)]="formationForm.price" 
+            placeholder="0.00"
+            step="0.01"
+            min="0">
+          <p class="form-hint">Laisser à 0 pour une formation gratuite</p>
+        </div>
+
+        <div class="form-group">
+          <label for="formationStatus">Status <span class="required">*</span></label>
+          <select id="formationStatus" [(ngModel)]="formationForm.status" required>
+            @for (status of formationStatuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </div>
+
+        <p class="form-note"><span class="required">*</span> Required fields</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeFormationModal()">Cancel</button>
+        <button class="btn-primary" (click)="saveFormation()">
+          {{ editingFormation ? 'Update' : 'Create' }} Formation
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Session Modal -->
+@if (showSessionModal) {
+  <div class="modal-overlay" (click)="closeSessionModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingSession ? 'Edit Session' : 'Add New Session' }}</h2>
+        <button class="modal-close" (click)="closeSessionModal()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="sessionTitle">Title <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="sessionTitle" 
+            [(ngModel)]="sessionForm.title" 
+            placeholder="Enter session title"
+            required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sessionStartDate">Start Date <span class="required">*</span></label>
+            <input 
+              type="datetime-local" 
+              id="sessionStartDate" 
+              [(ngModel)]="sessionForm.startDate" 
+              required>
+          </div>
+
+          <div class="form-group">
+            <label for="sessionEndDate">End Date <span class="required">*</span></label>
+            <input 
+              type="datetime-local" 
+              id="sessionEndDate" 
+              [(ngModel)]="sessionForm.endDate" 
+              required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sessionStatus">Status <span class="required">*</span></label>
+          <select id="sessionStatus" [(ngModel)]="sessionForm.status" required>
+            @for (status of sessionStatuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sessionMeetLink">Meeting Link</label>
+          <input 
+            type="url" 
+            id="sessionMeetLink" 
+            [(ngModel)]="sessionForm.meetLink" 
+            placeholder="https://meet.google.com/xxx-xxxx-xxx">
+          <p class="form-hint">Leave empty to auto-generate a Google Meet link</p>
+        </div>
+
+        <p class="form-note"><span class="required">*</span> Required fields</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeSessionModal()">Cancel</button>
+        <button class="btn-primary" (click)="saveSession()">
+          {{ editingSession ? 'Update' : 'Create' }} Session
+        </button>
+      </div>
+    </div>
+  </div>
+}
+<!-- Quiz Modal -->
+@if (showQuizModal) {
+  <div class="modal-overlay" (click)="closeQuizModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Créer un quiz</h2>
+        <button class="modal-close" (click)="closeQuizModal()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Titre du quiz <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="quizForm.title" placeholder="Titre du quiz">
+        </div>
+        <div class="form-group">
+          <label>Score de passage (%) <span class="required">*</span></label>
+          <input type="number" [(ngModel)]="quizForm.passingScore" min="0" max="100">
+        </div>
+        <div class="quiz-questions">
+          <h3>Questions</h3>
+          @for (q of quizForm.questions; track $index; let qi = $index) {
+            <div class="quiz-question-block">
+              <div class="form-group">
+                <label>Question {{ qi + 1 }}</label>
+                <input type="text" [(ngModel)]="q.text" placeholder="Texte de la question">
+                <button class="btn-icon btn-delete" (click)="removeQuestion(qi)">🗑️</button>
+              </div>
+              <div class="quiz-options">
+                @for (opt of q.options; track $index; let oi = $index) {
+                  <div class="quiz-option-row">
+                    <input type="text" [(ngModel)]="opt.text" placeholder="Option {{ oi + 1 }}">
+                    <label>
+                      <input type="checkbox" [(ngModel)]="opt.isCorrect"> Correcte
+                    </label>
+                    <button class="btn-icon btn-delete" (click)="removeOption(qi, oi)">✕</button>
+                  </div>
+                }
+                <button class="btn-secondary" (click)="addOption(qi)">+ Option</button>
+              </div>
+            </div>
+          }
+          <button class="btn-secondary" (click)="addQuestion()">+ Ajouter une question</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeQuizModal()">Annuler</button>
+        <button class="btn-primary" (click)="saveQuiz(selectedFormationForSessions!.id!)">Créer le quiz</button>
       </div>
     </div>
   </div>

@@ -59,7 +59,9 @@ export class NavComponent implements OnInit, OnDestroy {
       // Get current user role
       this.authService.getCurrentUser().subscribe({
         next: (user) => {
+          console.log('Fetched user info:', user);
           this.currentUserRole = user.role;
+          this.cdr.markForCheck(); // Trigger change detection
         },
         error: (err) => {
           console.error('Error getting user role:', err);
@@ -160,7 +162,7 @@ export class NavComponent implements OnInit, OnDestroy {
   }
 
   isAdmin(): boolean {
-    return this.currentUserRole === 'ADMIN';
+    return this.currentUserRole?.toUpperCase() === 'ADMIN';
   }
 
   triggerCartAnimation() {
