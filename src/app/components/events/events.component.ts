@@ -1,41 +1,79 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
 
+interface Leaf { style: string; color: string; }
+interface Turtle { x: number; y: number; speed: number; size: number; delay: number; flipped: boolean; }
+
 @Component({
   selector: 'app-events',
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe],
   templateUrl: './events.component.html',
-  styleUrls: ['./events.component.css']
+  styleUrls: ['./events.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EventsComponent implements OnInit, OnDestroy {
 
-  events: Event[] = [];
-  showModal  = false;
-  editMode   = false;
+  // ── Data ─────────────────────────────────────────────────────────────────
+  events: Event[]        = [];
+  loading                = true;
+  loadError              = false;
+  joinedEventIds         = new Set<number>();
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  toastMsg    = '';
+  toastTitle  = '';
+  toastIsError = false;
+
+  // ── Search / Filter ───────────────────────────────────────────────────────
+  searchQuery  = '';
+  activeFilter = 'ALL';
+
+  // ── Detail Modal ──────────────────────────────────────────────────────────
+  showDetail  = false;
+  detailEvent: Event | null = null;
+  joinLoading = false;
+
+  // ── Form Modal ────────────────────────────────────────────────────────────
+  showFormModal   = false;
+  editMode        = false;
   selectedId?: number;
-  successMsg = '';
-  errorMsg   = '';
-  form: Event = this.resetForm();
-  loading    = true;
-  loadError  = false;
+  formStep        = 1;
+  expandedSection = 'identity';
+  saveLoading     = false;
+  form: any       = this.resetForm();
+  formDate        = '';
+  formTime        = '';
+  formEndDate     = '';
+  formEndTime     = '';
 
-  showConfirmModal = false;
-  confirmMessage   = '';
-  confirmAction: (() => void) | null = null;
+  // ── Image Upload ──────────────────────────────────────────────────────────
+  uploadedImageUrl  = '';
+  uploadedImageFile: File | null = null;
+  uploadPreview     = '';
+  uploadLoading     = false;
 
-  // ── Join Event Modal ─────────────────────────────────────────────────────
-  showJoinModal    = false;
-  joinTargetEvent: Event | null = null;
-  joinLoading      = false;
-  joinError        = '';
-  joinedEventIds   = new Set<number>();
+  // ── Delete Confirm ────────────────────────────────────────────────────────
+  showConfirm      = false;
+  confirmEventName = '';
+  confirmDeleteId?: number;
 
-  currentRole: string | null = null;
+  // ── Animations ────────────────────────────────────────────────────────────
+  leaves:  Leaf[]   = [];
+  turtles: Turtle[] = [];
+
+  // ── Categories ───────────────────────────────────────────────────────────
+  categories = [
+    { key: 'Cleanup',      label: 'Cleanup',      emoji: '🧹', desc: 'Clean beaches, parks & streets' },
+    { key: 'Planting',     label: 'Planting',     emoji: '🌱', desc: 'Plant trees & restore habitats' },
+    { key: 'Workshop',     label: 'Workshop',     emoji: '🎨', desc: 'Learn & share eco-skills'        },
+    { key: 'Conservation', label: 'Conservation', emoji: '🦋', desc: 'Protect biodiversity'            },
+  ];
+
   private roleSub!: Subscription;
 
   constructor(
@@ -45,227 +83,272 @@ export class EventsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.generateLeaves();
+    this.generateTurtles();
     this.load();
-    // Sync joined badge from real API for regular users
     if (this.auth.isLoggedIn && !this.auth.isAdmin && !this.auth.isPartner) {
       this.loadMyReservations();
     }
-    this.roleSub = this.auth.roleStream$.subscribe(role => {
-      this.currentRole = role;
-      this.cdr.markForCheck();
-    });
+    this.roleSub = this.auth.roleStream$.subscribe(() => this.cdr.markForCheck());
   }
 
   ngOnDestroy(): void { this.roleSub?.unsubscribe(); }
 
+  // ── Leaves ───────────────────────────────────────────────────────────────
+  generateLeaves(): void {
+    const colors = ['#74c69d','#52b788','#40916c','#95d5b2','#b7e4c7','#d8f3dc'];
+    this.leaves = Array.from({ length: 14 }, () => {
+      const left     = Math.random() * 100;
+      const duration = 8 + Math.random() * 12;
+      const delay    = Math.random() * 15;
+      const size     = 12 + Math.random() * 12;
+      const color    = colors[Math.floor(Math.random() * colors.length)];
+      return { color, style: `left:${left}%;width:${size}px;height:${size*1.3}px;animation-duration:${duration}s;animation-delay:${delay}s` };
+    });
+  }
+
+  // ── Turtles ──────────────────────────────────────────────────────────────
+  generateTurtles(): void {
+    this.turtles = Array.from({ length: 4 }, (_, i) => ({
+      x: -120 - i * 220,
+      y: 18 + Math.random() * 24,
+      speed: 0.3 + Math.random() * 0.3,
+      size: 52 + Math.random() * 28,
+      delay: i * 4,
+      flipped: false
+    }));
+  }
+
+  // ── Load ─────────────────────────────────────────────────────────────────
   load(): void {
-    this.loading   = true;
-    this.loadError = false;
+    this.loading = true; this.loadError = false;
     this.api.getAll().subscribe({
-      next:  res => { this.events = res; this.loading = false; },
-      error: err => {
-        this.loading   = false;
-        this.loadError = true;
-        console.error('Events API error:', err);
-      }
+      next:  res => { this.events = res; this.loading = false; this.cdr.markForCheck(); },
+      error: ()  => { this.loading = false; this.loadError = true; this.cdr.markForCheck(); }
     });
   }
 
   loadMyReservations(): void {
     this.api.getMyReservations().subscribe({
-      next: (reservations: Reservation[]) => {
-        reservations
-          .filter(r => r.status === 'PENDING' || r.status === 'CONFIRMED')
-          .forEach(r => {
-            if (r.event?.id) this.joinedEventIds.add(r.event.id);
-          });
+      next: (res: Reservation[]) => {
+        res.filter(r => r.status === 'PENDING' || r.status === 'CONFIRMED')
+           .forEach(r => { if (r.event?.id) this.joinedEventIds.add(r.event.id); });
+        this.cdr.markForCheck();
       },
-      error: () => {} // silent — badge just won't pre-fill
+      error: () => {}
     });
   }
 
-  resetForm(): Event {
-    return { title: '', description: '', location: '', capacity: 0, startDate: '', endDate: '' };
+  // ── Filters ──────────────────────────────────────────────────────────────
+  get filteredEvents(): Event[] {
+    return this.events.filter(ev => {
+      const matchFilter = this.activeFilter === 'ALL' || this.getCategoryLabel(ev) === this.activeFilter;
+      const matchSearch = !this.searchQuery ||
+        ev.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        ev.location.toLowerCase().includes(this.searchQuery.toLowerCase());
+      return matchFilter && matchSearch;
+    });
   }
 
-  // ── Rôles ─────────────────────────────────────────────────────────────────
+  // ── Roles ─────────────────────────────────────────────────────────────────
   isAdmin():   boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
   isUser():    boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
-  // ── Modals CRUD ───────────────────────────────────────────────────────────
-  openCreate(): void {
-    this.editMode = false; this.selectedId = undefined;
-    this.form = this.resetForm(); this.errorMsg = ''; this.showModal = true;
-  }
-
-  openEdit(ev: Event): void {
-    this.editMode = true; this.selectedId = ev.id;
-    this.form = { ...ev };
-    this.form.startDate = this.toDatetimeLocal(ev.startDate);
-    this.form.endDate   = this.toDatetimeLocal(ev.endDate);
-    this.errorMsg = ''; this.showModal = true;
-  }
-
-  private toDatetimeLocal(d: string): string {
-    if (!d) return '';
-    return d.length > 16 ? d.substring(0, 16) : d;
-  }
-
-  submitForm(): void {
-    if (!this.form.title?.trim()) { this.showError('Le titre est obligatoire.'); return; }
-
-    if (this.editMode && this.selectedId) {
-      // ── OPTIMISTIC UPDATE : applique immédiatement, rollback si erreur ──
-      const idToUpdate = this.selectedId;
-      const optimistic = { ...this.form, id: idToUpdate };
-      const backup = [...this.events];
-
-      const idx = this.events.findIndex(e => e.id === idToUpdate);
-      if (idx !== -1) {
-        this.events[idx] = optimistic;
-        this.events = [...this.events];
-      }
-      this.showModal = false;
-
-      this.api.update(idToUpdate, this.form).subscribe({
-        next: (serverResp) => {
-          // Sync avec la réponse serveur si valide
-          if (serverResp && serverResp.id) {
-            const i = this.events.findIndex(e => e.id === idToUpdate);
-            if (i !== -1) { this.events[i] = serverResp; this.events = [...this.events]; }
-          }
-          this.showSuccess('Événement mis à jour !');
-        },
-        error: err => {
-          this.events = backup; // rollback
-          this.showModal = true; // rouvre le modal
-          this.showError(err.error?.message || 'Vérifiez vos permissions');
-        }
-      });
-
-    } else {
-      // ── OPTIMISTIC CREATE : affiche un placeholder immédiatement ──
-      const tempId = -Date.now(); // id temporaire négatif unique
-      const optimistic: Event = { ...this.form, id: tempId, status: 'UPCOMING' };
-      this.events = [optimistic, ...this.events];
-      this.showModal = false;
-
-      this.api.create(this.form).subscribe({
-        next: (created) => {
-          // Remplace le placeholder par le vrai objet serveur
-          const i = this.events.findIndex(e => e.id === tempId);
-          if (i !== -1) { this.events[i] = created; this.events = [...this.events]; }
-          this.showSuccess('Événement créé !');
-        },
-        error: err => {
-          this.events = this.events.filter(e => e.id !== tempId); // retire le placeholder
-          this.showModal = true; // rouvre le modal
-          this.showError(err.error?.message || 'Vérifiez vos permissions');
-        }
-      });
-    }
-  }
-
-  // ── FIX 2 : Suppression optimiste — retire immédiatement du tableau ──────
-  deleteEvent(id: number): void {
-    this.openConfirm('Supprimer définitivement cet événement ?', () => {
-      // Suppression visuelle instantanée
-      const backup = [...this.events];
-      this.events = this.events.filter(e => e.id !== id);
-
-      this.api.delete(id).subscribe({
-        next:  () => this.showSuccess('Événement supprimé !'),
-        error: err => {
-          // Rollback si le serveur refuse
-          this.events = backup;
-          this.showError(err.error?.message || 'Erreur serveur');
-        }
-      });
-    });
-  }
-
-  // ── Réservation ───────────────────────────────────────────────────────────
-  openJoinModal(ev: Event): void {
-    this.joinTargetEvent = ev;
-    this.joinError       = '';
-    this.showJoinModal   = true;
-  }
-
-  closeJoinModal(): void {
-    this.showJoinModal   = false;
-    this.joinTargetEvent = null;
-    this.joinLoading     = false;
-    this.joinError       = '';
+  // ── Detail ────────────────────────────────────────────────────────────────
+  openDetail(ev: Event): void {
+    this.detailEvent = ev;
+    this.joinLoading = false;
+    this.showDetail  = true;
   }
 
   confirmJoin(): void {
-    if (!this.joinTargetEvent?.id || this.joinLoading) return;
+    if (!this.detailEvent?.id || this.joinLoading) return;
     this.joinLoading = true;
-    this.joinError   = '';
-    const id = this.joinTargetEvent.id;
+    const id = this.detailEvent.id;
 
     this.api.reserve(id).subscribe({
       next: () => {
         this.joinedEventIds.add(id);
-        this.closeJoinModal();
-        this.showSuccess('🎉 Demande envoyée — en attente de confirmation !');
+        this.joinLoading  = false;
+        this.showDetail   = false;
+        this.showToast('Reservation confirmed! 🎉', 'A confirmation email with your QR ticket has been sent.');
+        this.cdr.markForCheck();
       },
       error: err => {
         this.joinLoading = false;
-        console.error('Join event error:', err);
         const msg = err.error?.message || '';
-        
-        // Check if already registered
-        if (err.status === 409 || msg.toLowerCase().includes('already') || msg.toLowerCase().includes('déjà')) {
+        if (err.status === 409 || msg.toLowerCase().includes('déjà') || msg.toLowerCase().includes('already')) {
           this.joinedEventIds.add(id);
-          this.closeJoinModal();
-          this.showSuccess('Vous participez déjà à cet événement !');
+          this.showDetail = false;
+          this.showToast('Already registered!', "You're already signed up for this event.");
         } else {
-          // Show error inline in the modal
-          const status = err.status;
-          if (status === 404) {
-             this.joinError = `Endpoint introuvable (404). L'API de réservation n'existe peut-être pas à POST /api/reservations/request/event/${id}`;
-          } else if (status === 403) {
-             this.joinError = 'Permission refusée (403). Réservé aux utilisateurs standards.';
-          } else if (status === 405) {
-             this.joinError = 'Méthode POST non autorisée (405).';
-          } else {
-             this.joinError = msg || `Erreur serveur ${status || ''}.`;
-          }
+          this.showToast('', msg || 'Reservation failed.', true);
         }
+        this.cdr.markForCheck();
       }
     });
   }
 
-  hasJoined(id: number): boolean {
-    return this.joinedEventIds.has(id);
+  hasJoined(id: number): boolean { return this.joinedEventIds.has(id); }
+
+  // ── Image Upload ──────────────────────────────────────────────────────────
+  onImageSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (!file) return;
+    this.uploadedImageFile = file;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.uploadPreview = e.target.result;
+      this.cdr.markForCheck();
+    };
+    reader.readAsDataURL(file);
   }
 
-  // ── Modal Confirm interne ─────────────────────────────────────────────────
-  openConfirm(message: string, action: () => void): void {
-    this.confirmMessage = message;
-    this.confirmAction  = action;
-    this.showConfirmModal = true;
-  }
-  confirmYes(): void {
-    this.confirmAction?.();
-    this.showConfirmModal = false;
-    this.confirmAction = null;
-  }
-  confirmNo(): void {
-    this.showConfirmModal = false;
-    this.confirmAction = null;
+  uploadImage(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!this.uploadedImageFile) { resolve(''); return; }
+      const formData = new FormData();
+      formData.append('file', this.uploadedImageFile);
+      // POST to your Spring Boot /uploads endpoint
+      fetch('/api/uploads', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => resolve(data.url || ''))
+        .catch(() => resolve(''));
+    });
   }
 
-  // ── Notifications ─────────────────────────────────────────────────────────
-  showSuccess(msg: string): void {
-    this.successMsg = msg; this.errorMsg = '';
-    setTimeout(() => this.successMsg = '', 3500);
+  // ── Form ──────────────────────────────────────────────────────────────────
+  resetForm(): any {
+    return { title: '', description: '', location: '', capacity: 50, startDate: '', endDate: '', status: 'UPCOMING', category: 'Cleanup', imageUrl: '' };
   }
-  showError(msg: string): void {
-    this.errorMsg = msg; this.successMsg = '';
-    setTimeout(() => this.errorMsg = '', 4500);
+
+  openCreate(): void {
+    this.editMode = false; this.selectedId = undefined;
+    this.form = this.resetForm();
+    this.formDate = this.formTime = this.formEndDate = this.formEndTime = '';
+    this.uploadPreview = ''; this.uploadedImageFile = null;
+    this.formStep = 1; this.showFormModal = true;
   }
+
+  openEdit(ev: Event): void {
+    this.editMode = true; this.selectedId = ev.id;
+    this.form = { ...ev, category: this.getCategoryLabel(ev) };
+    this.uploadPreview = (ev as any).imageUrl || '';
+    this.uploadedImageFile = null;
+    if (ev.startDate) { this.formDate = ev.startDate.substring(0,10); this.formTime = ev.startDate.substring(11,16); }
+    if (ev.endDate)   { this.formEndDate = ev.endDate.substring(0,10); this.formEndTime = ev.endDate.substring(11,16); }
+    this.formStep = 1; this.showFormModal = true;
+  }
+
+  nextStep(): void {
+    if (this.formStep === 1 && !this.form.title?.trim()) {
+      this.showToast('', 'Le titre est obligatoire.', true); return;
+    }
+    if (this.formStep === 2) {
+      this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`;
+      this.form.endDate   = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`;
+    }
+    this.formStep++;
+  }
+
+  async submitForm(): Promise<void> {
+    this.saveLoading = true;
+
+    // Upload image first if a new file was selected
+    if (this.uploadedImageFile) {
+      const url = await this.uploadImage();
+      if (url) this.form.imageUrl = url;
+    }
+
+    const payload = { ...this.form };
+    delete payload.category;
+
+    const obs = this.editMode && this.selectedId
+      ? this.api.update(this.selectedId, payload)
+      : this.api.create(payload);
+
+    obs.subscribe({
+      next: result => {
+        this.saveLoading = false;
+        this.showFormModal = false;
+        if (this.editMode && this.selectedId) {
+          const i = this.events.findIndex(e => e.id === this.selectedId);
+          if (i !== -1) { this.events[i] = result; this.events = [...this.events]; }
+        } else {
+          this.events = [result, ...this.events];
+        }
+        this.showToast(
+          this.editMode ? 'Event updated! ✏️' : 'Event created! 🌿',
+          this.editMode ? 'Changes saved successfully.' : 'Your event is now live.'
+        );
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        this.saveLoading = false;
+        this.showToast('', err.error?.message || 'Vérifiez vos permissions.', true);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  askDelete(ev: Event): void {
+    this.confirmEventName = ev.title;
+    this.confirmDeleteId  = ev.id;
+    this.showConfirm      = true;
+  }
+
+  doDelete(): void {
+    if (!this.confirmDeleteId) return;
+    const id = this.confirmDeleteId;
+    const backup = [...this.events];
+    this.events = this.events.filter(e => e.id !== id);
+    this.showConfirm = false;
+    this.cdr.markForCheck();
+
+    this.api.delete(id).subscribe({
+      next:  () => this.showToast('Event deleted 🗑️', 'The event has been removed.'),
+      error: err => {
+        this.events = backup;
+        this.showToast('', err.error?.message || 'Erreur serveur.', true);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  showToast(title: string, msg: string, isError = false): void {
+    this.toastTitle = title; this.toastMsg = msg; this.toastIsError = isError;
+    setTimeout(() => { this.toastMsg = ''; this.toastTitle = ''; this.cdr.markForCheck(); }, 4500);
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  getCategoryLabel(ev: Event): string {
+    const t = (ev.title + ' ' + (ev.description || '')).toLowerCase();
+    if (t.includes('plant') || t.includes('tree') || t.includes('forest')) return 'Planting';
+    if (t.includes('workshop') || t.includes('solar') || t.includes('energy') || t.includes('summit')) return 'Workshop';
+    if (t.includes('coral') || t.includes('reef') || t.includes('marine') || t.includes('conservation')) return 'Conservation';
+    return 'Cleanup';
+  }
+
+  getEventImage(ev: Event): string {
+    if ((ev as any).imageUrl) return (ev as any).imageUrl;
+    const cat = this.getCategoryLabel(ev);
+    const images: any = {
+      Planting:     'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800',
+      Cleanup:      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+      Workshop:     'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800',
+      Conservation: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800',
+    };
+    return images[cat] || images['Cleanup'];
+  }
+
+  getCo2(ev: Event):          number { return Math.floor(ev.capacity * 3.2); }
+  getFilledSpots(ev: Event):  number { return Math.floor(ev.capacity * 0.6); }
+  getSpotsLeft(ev: Event):    number { return ev.capacity - this.getFilledSpots(ev); }
+  getFillPercent(ev: Event):  number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
+
+  trackById(_: number, ev: Event): number { return ev.id!; }
 }

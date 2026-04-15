@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Event {
+createdBy: any;
   id?: number;
   title: string;
   description: string;
