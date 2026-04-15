@@ -33,5 +33,9 @@ export const routes: Routes = [
     path: 'community/:id', 
     loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent) 
   },
+  {
+    path: 'my-reservations',
+    loadComponent: () => import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

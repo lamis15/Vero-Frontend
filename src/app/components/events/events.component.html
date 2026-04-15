@@ -1,29 +1,505 @@
-<div class="page-header bg-forest">
-  <div class="page-header-content">
-    <div class="section-tag">Community Action</div>
-    <h1 class="page-h1">Act together,<br><em>change</em> more</h1>
+<div class="vero-events">
+
+  <!-- ── Falling Leaves ──────────────────────────────────────────────────── -->
+  <div class="leaves-canvas" aria-hidden="true">
+    <div class="leaf" *ngFor="let l of leaves" [style]="l.style">
+      <svg viewBox="0 0 24 32" fill="none">
+        <path d="M12 0C12 0 0 8 0 18C0 25.7 5.4 32 12 32C18.6 32 24 25.7 24 18C24 8 12 0 12 0Z"
+              [attr.fill]="l.color" opacity=".7"/>
+        <line x1="12" y1="4" x2="12" y2="30" stroke="rgba(30,107,69,.3)" stroke-width="1"/>
+        <line x1="12" y1="12" x2="6" y2="20" stroke="rgba(30,107,69,.25)" stroke-width=".8"/>
+        <line x1="12" y1="16" x2="18" y2="22" stroke="rgba(30,107,69,.25)" stroke-width=".8"/>
+      </svg>
+    </div>
   </div>
-</div>
-<section id="events">
-  <p class="section-sub">From local clean-ups to global climate marches — join events that make a real difference.</p>
-  <div class="events-grid">
-    <div class="event-card-main fade-in">
-      <div class="event-date-badge"><div class="event-date-d">18</div><div class="event-date-m">April</div></div>
-      <div class="event-tag-chip">🌍 Climate March</div>
-      <div class="event-name">Earth Day Global Walk for Climate Justice</div>
-      <div class="event-desc">Join 40,000+ people marching in 12 cities simultaneously. Your attendance is tracked and your CO₂ pledge goes on-chain. Together we send a signal that can't be ignored.</div>
-      <div class="event-meta">
-        <div class="event-meta-item">📍 <span>12 cities</span></div>
-        <div class="event-meta-item">👥 <span>38,240 joined</span></div>
-        <div class="event-meta-item">⏱️ <span>13 days away</span></div>
-        <button class="event-join-btn">Join Now</button>
+
+  <!-- ── Toast ───────────────────────────────────────────────────────────── -->
+  <div class="toast" *ngIf="toastMsg">
+    <div class="toast-check" [class.error]="toastIsError">{{ toastIsError ? '!' : '✓' }}</div>
+    <div class="toast-body">
+      <strong>{{ toastIsError ? 'Oops' : toastTitle }}</strong>
+      <p>{{ toastMsg }}</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ── TURTLE PARADE ─────────────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="turtle-stage" aria-hidden="true">
+    <div class="turtle-track">
+
+      <!-- Turtle 1 -->
+      <svg class="turtle-svg" style="top:18px;width:68px;height:50px;animation-duration:22s;animation-delay:0s"
+           viewBox="0 0 100 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body -->
+        <ellipse cx="50" cy="44" rx="28" ry="20" fill="#2d8f5c" opacity=".85"/>
+        <!-- Shell -->
+        <ellipse cx="50" cy="40" rx="22" ry="17" fill="#1e6b45"/>
+        <ellipse cx="50" cy="40" rx="18" ry="13" fill="#40916c"/>
+        <!-- Shell pattern -->
+        <path d="M50 28 L42 40 L50 52 L58 40 Z" fill="#2d8f5c" opacity=".5"/>
+        <path d="M38 33 L50 40 L62 33" stroke="#1e6b45" stroke-width="1.5" fill="none" opacity=".6"/>
+        <path d="M38 47 L50 40 L62 47" stroke="#1e6b45" stroke-width="1.5" fill="none" opacity=".6"/>
+        <!-- Head -->
+        <ellipse cx="74" cy="42" rx="10" ry="8" fill="#2d8f5c"/>
+        <ellipse cx="74" cy="42" rx="8" ry="6.5" fill="#40916c"/>
+        <circle cx="78" cy="39" r="2" fill="#1a2e22"/>
+        <circle cx="79" cy="38.5" r=".7" fill="white"/>
+        <!-- Smile -->
+        <path d="M71 44 Q74 46 77 44" stroke="#1e6b45" stroke-width="1" fill="none"/>
+        <!-- Tail -->
+        <path d="M22 45 Q14 42 12 46 Q14 50 22 48" fill="#2d8f5c"/>
+        <!-- Front legs -->
+        <g class="t-fl">
+          <ellipse cx="36" cy="60" rx="8" ry="4" fill="#2d8f5c" transform="rotate(-20 36 60)"/>
+        </g>
+        <g class="t-fr">
+          <ellipse cx="64" cy="60" rx="8" ry="4" fill="#2d8f5c" transform="rotate(20 64 60)"/>
+        </g>
+        <!-- Back legs -->
+        <g class="t-bl">
+          <ellipse cx="30" cy="58" rx="7" ry="3.5" fill="#40916c" transform="rotate(25 30 58)"/>
+        </g>
+        <g class="t-br">
+          <ellipse cx="70" cy="58" rx="7" ry="3.5" fill="#40916c" transform="rotate(-25 70 58)"/>
+        </g>
+      </svg>
+
+      <!-- Turtle 2 (smaller, different speed) -->
+      <svg class="turtle-svg" style="top:30px;width:48px;height:36px;animation-duration:28s;animation-delay:-8s"
+           viewBox="0 0 100 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="44" rx="28" ry="20" fill="#52b788" opacity=".8"/>
+        <ellipse cx="50" cy="40" rx="22" ry="17" fill="#2d8f5c"/>
+        <ellipse cx="50" cy="40" rx="18" ry="13" fill="#52b788"/>
+        <path d="M50 28 L42 40 L50 52 L58 40 Z" fill="#40916c" opacity=".5"/>
+        <path d="M38 33 L50 40 L62 33" stroke="#2d8f5c" stroke-width="1.5" fill="none" opacity=".6"/>
+        <path d="M38 47 L50 40 L62 47" stroke="#2d8f5c" stroke-width="1.5" fill="none" opacity=".6"/>
+        <ellipse cx="74" cy="42" rx="10" ry="8" fill="#52b788"/>
+        <ellipse cx="74" cy="42" rx="8" ry="6.5" fill="#74c69d"/>
+        <circle cx="78" cy="39" r="2" fill="#1a2e22"/>
+        <circle cx="79" cy="38.5" r=".7" fill="white"/>
+        <path d="M22 45 Q14 42 12 46 Q14 50 22 48" fill="#52b788"/>
+        <g class="t-fl"><ellipse cx="36" cy="60" rx="8" ry="4" fill="#52b788" transform="rotate(-20 36 60)"/></g>
+        <g class="t-fr"><ellipse cx="64" cy="60" rx="8" ry="4" fill="#52b788" transform="rotate(20 64 60)"/></g>
+        <g class="t-bl"><ellipse cx="30" cy="58" rx="7" ry="3.5" fill="#74c69d" transform="rotate(25 30 58)"/></g>
+        <g class="t-br"><ellipse cx="70" cy="58" rx="7" ry="3.5" fill="#74c69d" transform="rotate(-25 70 58)"/></g>
+      </svg>
+
+      <!-- Turtle 3 -->
+      <svg class="turtle-svg" style="top:8px;width:80px;height:60px;animation-duration:18s;animation-delay:-14s"
+           viewBox="0 0 100 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="44" rx="28" ry="20" fill="#1e6b45" opacity=".9"/>
+        <ellipse cx="50" cy="40" rx="22" ry="17" fill="#145232"/>
+        <ellipse cx="50" cy="40" rx="18" ry="13" fill="#1e6b45"/>
+        <path d="M50 28 L42 40 L50 52 L58 40 Z" fill="#145232" opacity=".5"/>
+        <path d="M38 33 L50 40 L62 33" stroke="#145232" stroke-width="1.5" fill="none" opacity=".6"/>
+        <path d="M38 47 L50 40 L62 47" stroke="#145232" stroke-width="1.5" fill="none" opacity=".6"/>
+        <ellipse cx="74" cy="42" rx="10" ry="8" fill="#1e6b45"/>
+        <ellipse cx="74" cy="42" rx="8" ry="6.5" fill="#2d8f5c"/>
+        <circle cx="78" cy="39" r="2" fill="#0a1410"/>
+        <circle cx="79" cy="38.5" r=".7" fill="white"/>
+        <path d="M22 45 Q14 42 12 46 Q14 50 22 48" fill="#1e6b45"/>
+        <g class="t-fl"><ellipse cx="36" cy="60" rx="8" ry="4" fill="#1e6b45" transform="rotate(-20 36 60)"/></g>
+        <g class="t-fr"><ellipse cx="64" cy="60" rx="8" ry="4" fill="#1e6b45" transform="rotate(20 64 60)"/></g>
+        <g class="t-bl"><ellipse cx="30" cy="58" rx="7" ry="3.5" fill="#2d8f5c" transform="rotate(25 30 58)"/></g>
+        <g class="t-br"><ellipse cx="70" cy="58" rx="7" ry="3.5" fill="#2d8f5c" transform="rotate(-25 70 58)"/></g>
+      </svg>
+
+      <!-- Turtle 4 (tiny baby) -->
+      <svg class="turtle-svg" style="top:38px;width:36px;height:27px;animation-duration:34s;animation-delay:-22s"
+           viewBox="0 0 100 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="44" rx="28" ry="20" fill="#74c69d" opacity=".75"/>
+        <ellipse cx="50" cy="40" rx="22" ry="17" fill="#52b788"/>
+        <ellipse cx="50" cy="40" rx="18" ry="13" fill="#74c69d"/>
+        <path d="M50 28 L42 40 L50 52 L58 40 Z" fill="#52b788" opacity=".5"/>
+        <ellipse cx="74" cy="42" rx="10" ry="8" fill="#74c69d"/>
+        <ellipse cx="74" cy="42" rx="8" ry="6.5" fill="#95d5b2"/>
+        <circle cx="78" cy="39" r="2" fill="#1a2e22"/>
+        <circle cx="79" cy="38.5" r=".7" fill="white"/>
+        <path d="M22 45 Q14 42 12 46 Q14 50 22 48" fill="#74c69d"/>
+        <g class="t-fl"><ellipse cx="36" cy="60" rx="8" ry="4" fill="#74c69d" transform="rotate(-20 36 60)"/></g>
+        <g class="t-fr"><ellipse cx="64" cy="60" rx="8" ry="4" fill="#74c69d" transform="rotate(20 64 60)"/></g>
+        <g class="t-bl"><ellipse cx="30" cy="58" rx="7" ry="3.5" fill="#95d5b2" transform="rotate(25 30 58)"/></g>
+        <g class="t-br"><ellipse cx="70" cy="58" rx="7" ry="3.5" fill="#95d5b2" transform="rotate(-25 70 58)"/></g>
+      </svg>
+
+    </div>
+  </div>
+
+  <!-- ── Page Content ─────────────────────────────────────────────────────── -->
+  <div class="page-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-eyebrow">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C8 0 1 5 1 10a7 7 0 0014 0C15 5 8 0 8 0z"/></svg>
+        Eco Events Platform
+      </div>
+      <h1 class="page-title">Discover Eco <span>Events</span></h1>
+      <p class="page-sub">Join environmental events. Make an impact. Leave the world greener.</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" [(ngModel)]="searchQuery" placeholder="Search events or locations…" />
+      </div>
+      <div class="filter-group">
+        <button class="filter-chip" [class.active]="activeFilter==='ALL'" (click)="activeFilter='ALL'">All</button>
+        <button class="filter-chip" *ngFor="let cat of categories" [class.active]="activeFilter===cat.key" (click)="activeFilter=cat.key">{{ cat.label }}</button>
       </div>
     </div>
-    <div class="events-list">
-      <div class="event-mini fade-in"><div class="event-mini-date"><div class="event-mini-date-d">22</div><div class="event-mini-date-m">Apr</div></div><div class="event-mini-info"><div class="event-mini-name">Beach Cleanup — Nice, FR</div><div class="event-mini-loc">📍 Promenade des Anglais · 47 spots left</div></div><button class="event-mini-join">Join</button></div>
-      <div class="event-mini fade-in" style="transition-delay:.1s"><div class="event-mini-date"><div class="event-mini-date-d">28</div><div class="event-mini-date-m">Apr</div></div><div class="event-mini-info"><div class="event-mini-name">Urban Garden Workshop</div><div class="event-mini-loc">📍 Online + Berlin · 120 attending</div></div><button class="event-mini-join">Join</button></div>
-      <div class="event-mini fade-in" style="transition-delay:.2s"><div class="event-mini-date"><div class="event-mini-date-d">05</div><div class="event-mini-date-m">May</div></div><div class="event-mini-info"><div class="event-mini-name">Circular Economy Summit</div><div class="event-mini-loc">📍 Amsterdam · 640 attending</div></div><button class="event-mini-join">Join</button></div>
-      <div class="event-mini fade-in" style="transition-delay:.3s"><div class="event-mini-date"><div class="event-mini-date-d">12</div><div class="event-mini-date-m">May</div></div><div class="event-mini-info"><div class="event-mini-name">Reforestation Day — Tunisia</div><div class="event-mini-loc">📍 Tunis Forest Reserve · 88 attending</div></div><button class="event-mini-join">Join</button></div>
+
+    <!-- Loading -->
+    <div class="skeleton-grid" *ngIf="loading">
+      <div class="skeleton-card" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!loading && filteredEvents.length === 0">
+      <div class="empty-icon">🌱</div>
+      <h2 class="empty-title">No events found</h2>
+      <p class="empty-sub">Check back soon for upcoming eco-events.</p>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="events-grid" *ngIf="!loading && filteredEvents.length > 0">
+      <article class="event-card" *ngFor="let ev of filteredEvents; trackBy: trackById">
+
+        <div class="card-img" (click)="openDetail(ev)">
+          <img [src]="getEventImage(ev)" [alt]="ev.title" loading="lazy">
+          <div class="card-img-overlay"></div>
+          <div class="card-category">{{ getCategoryLabel(ev) }}</div>
+          <div class="card-co2">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+            {{ getCo2(ev) }} kg CO₂
+          </div>
+          <div class="card-spots" [class.low]="getSpotsLeft(ev) < 10">{{ getSpotsLeft(ev) }} spots</div>
+          <div class="card-status-badge badge-cancelled" *ngIf="ev.status==='CANCELLED'">Cancelled</div>
+          <div class="card-status-badge badge-completed" *ngIf="ev.status==='COMPLETED'">Completed</div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">{{ ev.title }}</h3>
+          <p class="card-desc">{{ ev.description }}</p>
+
+          <div class="card-meta">
+            <div class="card-meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ ev.startDate | date:'MMM d, yyyy · HH:mm' }}
+            </div>
+            <div class="card-meta-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ ev.location }}
+            </div>
+          </div>
+
+          <div class="capacity-bar-wrap">
+            <div class="capacity-label">
+              <span>{{ getFilledSpots(ev) }}/{{ ev.capacity }}</span>
+              <span>{{ getSpotsLeft(ev) }} left</span>
+            </div>
+            <div class="capacity-bar">
+              <div class="capacity-fill" [style.width]="getFillPercent(ev) + '%'"></div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <ng-container *ngIf="isUser()">
+              <span class="btn-joined" *ngIf="hasJoined(ev.id!)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Registered
+              </span>
+              <button class="btn-reserve" *ngIf="!hasJoined(ev.id!)"
+                [disabled]="ev.status==='CANCELLED'||ev.status==='COMPLETED'"
+                (click)="openDetail(ev)">
+                Reserve Spot
+              </button>
+            </ng-container>
+            <ng-container *ngIf="canManage()">
+              <button class="btn-reserve" (click)="openDetail(ev)">View Details</button>
+            </ng-container>
+
+            <div class="card-icon-btns">
+              <button class="btn-icon danger" *ngIf="canManage()" (click)="askDelete(ev)" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+              <button class="btn-icon" *ngIf="canManage()" (click)="openEdit(ev)" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn-arrow" (click)="openDetail(ev)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+  </div><!-- /page-content -->
+
+  <!-- FAB -->
+  <button class="fab" *ngIf="canManage()" (click)="openCreate()" title="New Event">+</button>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ── DETAIL MODAL ───────────────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" *ngIf="showDetail" (click)="showDetail=false">
+    <div class="modal-detail" *ngIf="detailEvent" (click)="$event.stopPropagation()">
+
+      <div class="detail-img">
+        <img [src]="getEventImage(detailEvent)" [alt]="detailEvent.title">
+        <div class="detail-img-overlay"></div>
+        <div class="detail-cat-badge">{{ getCategoryLabel(detailEvent) }}</div>
+        <button class="detail-close" (click)="showDetail=false">✕</button>
+      </div>
+
+      <div class="detail-body">
+        <h2 class="detail-title">{{ detailEvent.title }}</h2>
+        <p class="detail-desc">{{ detailEvent.description }}</p>
+
+        <div class="detail-grid">
+          <div class="detail-cell">
+            <div class="detail-cell-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Date
+            </div>
+            <div class="detail-cell-value">{{ detailEvent.startDate | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Time
+            </div>
+            <div class="detail-cell-value">{{ detailEvent.startDate | date:'HH:mm' }}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Location
+            </div>
+            <div class="detail-cell-value">{{ detailEvent.location }}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Participants
+            </div>
+            <div class="detail-cell-value">{{ getFilledSpots(detailEvent) }}/{{ detailEvent.capacity }}</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">🌿 Eco Impact</div>
+            <div class="detail-cell-value">{{ getCo2(detailEvent) }} kg CO₂</div>
+          </div>
+          <div class="detail-cell">
+            <div class="detail-cell-label">Organizer</div>
+            <div class="detail-cell-value">{{ detailEvent.createdBy?.fullName || 'Vero Community' }}</div>
+          </div>
+        </div>
+
+        <ng-container *ngIf="isUser()">
+          <span class="btn-joined" style="width:100%;justify-content:center" *ngIf="hasJoined(detailEvent.id!)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Already Registered
+          </span>
+          <button class="btn-reserve-lg" *ngIf="!hasJoined(detailEvent.id!)"
+            [disabled]="detailEvent.status==='CANCELLED'||detailEvent.status==='COMPLETED'||joinLoading"
+            (click)="confirmJoin()">
+            <span *ngIf="!joinLoading">🌿 Reserve Your Spot</span>
+            <span *ngIf="joinLoading" class="spinner"></span>
+          </button>
+        </ng-container>
+      </div>
     </div>
   </div>
-</section>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ── CREATE / EDIT MODAL ────────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" *ngIf="showFormModal" (click)="showFormModal=false">
+    <div class="modal-form-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-form-header">
+        <div class="modal-form-icon">{{ editMode ? '✏️' : '🌲' }}</div>
+        <div class="modal-form-titles">
+          <div class="modal-form-title">{{ editMode ? 'Edit Event' : 'New Event' }}</div>
+          <div class="modal-form-sub" *ngIf="editMode">Update <span>{{ form.title }}</span></div>
+          <div class="modal-form-sub" *ngIf="!editMode">{{ ["What's your event?", "When & where?", "Add a photo"][formStep-1] }}</div>
+        </div>
+        <button class="modal-form-close" (click)="showFormModal=false">✕</button>
+      </div>
+
+      <!-- Steps indicator -->
+      <div class="steps-bar">
+        <div class="step-dot" [class.active]="formStep===1" [class.done]="formStep>1"><span>1</span></div>
+        <div class="step-line" [class.done]="formStep>1"></div>
+        <div class="step-dot" [class.active]="formStep===2" [class.done]="formStep>2"><span>2</span></div>
+        <div class="step-line" [class.done]="formStep>2"></div>
+        <div class="step-dot" [class.active]="formStep===3" [class.done]="formStep>3"><span>3</span></div>
+        <div class="step-line" [class.done]="formStep>3"></div>
+        <div class="step-dot" [class.active]="formStep===4"><span>4</span></div>
+      </div>
+
+      <!-- Step 1: Identity & Category -->
+      <div class="modal-form-body" *ngIf="formStep===1">
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              IDENTITY
+            </div>
+          </div>
+          <div class="form-section-fields">
+            <div class="fld">
+              <label>Event Name</label>
+              <input [(ngModel)]="form.title" placeholder="Give your event a catchy name…" />
+            </div>
+            <div class="fld">
+              <label>Description</label>
+              <textarea [(ngModel)]="form.description" rows="3" placeholder="What will participants experience?"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">🌿 CATEGORY</div>
+            <span class="form-section-val" *ngIf="form.category">{{ form.category }}</span>
+          </div>
+          <div class="form-section-fields">
+            <div class="category-grid">
+              <div class="cat-option" *ngFor="let cat of categories"
+                [class.selected]="form.category===cat.key"
+                (click)="form.category=cat.key">
+                <div class="cat-emoji">{{ cat.emoji }}</div>
+                <div class="cat-name">{{ cat.label }}</div>
+                <div class="cat-desc">{{ cat.desc }}</div>
+                <div class="cat-check">✓</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Schedule & Location -->
+      <div class="modal-form-body" *ngIf="formStep===2">
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              DATE & TIME
+            </div>
+          </div>
+          <div class="form-section-fields">
+            <div class="fld-row">
+              <div class="fld"><label>Start Date</label><input type="date" [(ngModel)]="formDate" /></div>
+              <div class="fld"><label>Start Time</label><input type="time" [(ngModel)]="formTime" /></div>
+            </div>
+            <div class="fld-row">
+              <div class="fld"><label>End Date</label><input type="date" [(ngModel)]="formEndDate" /></div>
+              <div class="fld"><label>End Time</label><input type="time" [(ngModel)]="formEndTime" /></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              LOCATION
+            </div>
+          </div>
+          <div class="form-section-fields">
+            <div class="fld"><input [(ngModel)]="form.location" placeholder="Where will it happen?" /></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">👥 CAPACITY</div>
+          </div>
+          <div class="form-section-fields">
+            <div class="capacity-slider-wrap">
+              <input type="range" min="5" max="500" step="5" [(ngModel)]="form.capacity" />
+              <span class="capacity-val">{{ form.capacity }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Image Upload -->
+      <div class="modal-form-body" *ngIf="formStep===3">
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">📸 EVENT PHOTO</div>
+            <span class="form-section-tap">Saved to /uploads</span>
+          </div>
+          <div class="form-section-fields">
+            <div class="img-upload-zone">
+              <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+              <ng-container *ngIf="!uploadPreview">
+                <div class="upload-icon">📷</div>
+                <div class="upload-label">Click to upload an image</div>
+                <div class="upload-sub">PNG, JPG, WEBP up to 10MB · Saved publicly to /uploads</div>
+              </ng-container>
+              <ng-container *ngIf="uploadPreview">
+                <img [src]="uploadPreview" class="img-preview" alt="Preview" />
+                <div class="upload-label" style="margin-top:8px;font-size:12px">✓ Image ready · click to change</div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Review -->
+      <div class="modal-form-body" *ngIf="formStep===4">
+        <div class="form-section">
+          <div class="form-section-header">
+            <div class="form-section-label">✅ REVIEW</div>
+          </div>
+          <div class="form-section-fields">
+            <div class="fld"><label>Title</label><input [value]="form.title" readonly /></div>
+            <div class="fld"><label>Location</label><input [value]="form.location" readonly /></div>
+            <div class="fld"><label>Start</label><input [value]="form.startDate" readonly /></div>
+            <div class="fld"><label>Capacity</label><input [value]="form.capacity" readonly /></div>
+            <div class="fld" *ngIf="uploadPreview">
+              <label>Image</label>
+              <img [src]="uploadPreview" style="width:100%;height:100px;object-fit:cover;border-radius:10px;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-form-footer">
+        <button class="btn-back" *ngIf="formStep>1" (click)="formStep=formStep-1">Back</button>
+        <button class="btn-continue" *ngIf="formStep<4" (click)="nextStep()">
+          Continue
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <button class="btn-save" *ngIf="formStep===4" (click)="submitForm()" [disabled]="saveLoading">
+          <span *ngIf="!saveLoading">💾 Save Event</span>
+          <span *ngIf="saveLoading" class="spinner"></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Delete Confirm Modal ────────────────────────────────────────────── -->
+  <div class="modal-backdrop" *ngIf="showConfirm" (click)="showConfirm=false">
+    <div class="modal-confirm" (click)="$event.stopPropagation()">
+      <div class="confirm-icon-wrap">⚠️</div>
+      <h3 class="confirm-title">Delete Event?</h3>
+      <p class="confirm-msg">Are you sure you want to delete <strong>"{{ confirmEventName }}"</strong>?<br>This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-cancel" (click)="showConfirm=false">Cancel</button>
+        <button class="btn-confirm-delete" (click)="doDelete()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

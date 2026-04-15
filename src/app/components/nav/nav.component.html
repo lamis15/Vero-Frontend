@@ -1,11 +1,16 @@
 <nav class="nav-transparent">
   <div class="nav-logo" routerLink="/">Ver<span>o</span></div>
   <div class="nav-links">
-    <a routerLink="/track" routerLinkActive="active-link">Track</a>
+    <a routerLink="/track"     routerLinkActive="active-link">Track</a>
     <a routerLink="/community" routerLinkActive="active-link">Community</a>
-    <a routerLink="/shop" routerLinkActive="active-link">Shop</a>
-    <a routerLink="/events" routerLinkActive="active-link">Events</a>
-    <a routerLink="/donate" routerLinkActive="active-link">Donate</a>
+    <a routerLink="/shop"      routerLinkActive="active-link">Shop</a>
+    <a routerLink="/events"    routerLinkActive="active-link">Events</a>
+    <a routerLink="/donate"    routerLinkActive="active-link">Donate</a>
+    @if (authService.isLoggedIn && !authService.isAdmin && !authService.isPartner) {
+      <a routerLink="/my-reservations" routerLinkActive="active-link" class="nav-reservations">
+        🎟️ Mes réservations
+      </a>
+    }
 
     @if (authService.isLoggedIn) {
       <div class="nav-notifications">
