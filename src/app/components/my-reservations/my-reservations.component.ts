@@ -72,10 +72,10 @@ export class MyReservationsComponent implements OnInit {
   toggleExpand(id: number): void { this.expandedId = this.expandedId === id ? null : id; }
 
   // ── QR Code ───────────────────────────────────────────────────────────────
-  getQrCodeUrl(r: Reservation): string {
-    const link = `https://votre-site.com/api/tickets/${r.id}/pdf`;
+getQrCodeUrl(r: Reservation): string {
+    const link = `http://192.168.1.140:8080/api/tickets/${r.id}/pdf`;
     return `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(link)}&color=1e6b45&bgcolor=f2efe8&margin=8`;
-  }
+}
 
   // ── PDF Download (simulation) ─────────────────────────────────────────────
   downloadPdf(r: Reservation, e: MouseEvent): void {
