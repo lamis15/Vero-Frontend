@@ -38,6 +38,7 @@ export interface PetitionStats {
   topPetition?: Petition;
 }
 
+
 @Injectable({ providedIn: 'root' })
 export class PetitionService {
 
@@ -127,7 +128,12 @@ export class PetitionService {
       `${this.apiUrl}/${id}/has-signed`, { headers: this.getHeaders() }
     ).pipe(catchError(this.handleError.bind(this)));
   }
-
+// Ajoute cette méthode dans la section Signatures
+getSignaturesMap(id: number): Observable<any[]> {
+  return this.http.get<any[]>(
+    `${this.apiUrl}/${id}/signatures/map`, { headers: this.getHeaders() }
+  ).pipe(catchError(this.handleError.bind(this)));
+}
   // ── Filtres ───────────────────────────────────────────────────────────────
 
   getByCategory(category: string): Observable<Petition[]> {
