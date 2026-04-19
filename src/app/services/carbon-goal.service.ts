@@ -6,7 +6,7 @@ import { CarbonGoal } from './carbon.models';
 
 @Injectable({ providedIn: 'root' })
 export class CarbonGoalService {
-  private readonly API = `${environment.apiUrl}/api/carbon/goals`;
+  private readonly API = `${environment.apiUrl}/api/eco/goals`;
 
   constructor(private http: HttpClient) {}
 
