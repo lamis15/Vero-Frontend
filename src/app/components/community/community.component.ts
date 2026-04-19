@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef, NgZone, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -12,12 +12,10 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './community.component.html',
-  styleUrl: './community.component.css'
+  styleUrl: './community.component.css',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('communityCanvas', { static: false }) communityCanvas!: ElementRef<HTMLCanvasElement>;
-  private dotGridRaf: number | null = null;
-  private dotMouseHandler: ((e: MouseEvent) => void) | null = null;
 
   posts: Post[] = [];
   currentUserEmail: string | null = null;
@@ -49,7 +47,6 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => this.ngZone.runOutsideAngular(() => this.initDotGrid()), 50);
 
     // ── Universal Scroll-Typewriter: any element with data-tw types in when visible ──
     const typewriteEl = (el: HTMLElement) => {
@@ -87,89 +84,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 600);
   }
 
-  ngOnDestroy(): void {
-    if (this.dotGridRaf)      cancelAnimationFrame(this.dotGridRaf);
-    if (this.dotMouseHandler) window.removeEventListener('mousemove', this.dotMouseHandler);
-  }
-
-  private initDotGrid(): void {
-    const canvas = this.communityCanvas?.nativeElement;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Community palette — navy/gold accent (different from tracker's green)
-    const SPACING   = 26;
-    const DOT_R     = 1.5;
-    const MAX_R     = 5;
-    const REPEL_R   = 120;
-    const DOT_COLOR = '200, 175, 120'; // warm gold/amber — shines on deep navy bg
-    const LERP      = 0.12;
-
-    let mouse = { x: -9999, y: -9999 };
-    let dots: { ox: number; oy: number; x: number; y: number }[] = [];
-
-    const buildGrid = () => {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
-      dots = [];
-      const cols = Math.ceil(canvas.width  / SPACING) + 2;
-      const rows = Math.ceil(document.documentElement.scrollHeight / SPACING) + 2;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          dots.push({ ox: c * SPACING, oy: r * SPACING, x: c * SPACING, y: r * SPACING });
-        }
-      }
-    };
-
-    buildGrid();
-    window.addEventListener('resize', buildGrid, { passive: true });
-
-    this.dotMouseHandler = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY + window.scrollY;
-    };
-    window.addEventListener('mousemove', this.dotMouseHandler, { passive: true });
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const scrollY = window.scrollY;
-      const viewTop = scrollY - SPACING;
-      const viewBot = scrollY + window.innerHeight + SPACING;
-
-      for (const d of dots) {
-        if (d.oy < viewTop || d.oy > viewBot) continue;
-
-        const dx = d.ox - mouse.x;
-        const dy = d.oy - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < REPEL_R && dist > 0) {
-          const force = (1 - dist / REPEL_R);
-          const push  = force * force * 44;
-          const angle = Math.atan2(dy, dx);
-          d.x = d.ox + Math.cos(angle) * push;
-          d.y = d.oy + Math.sin(angle) * push;
-        } else {
-          d.x += (d.ox - d.x) * LERP;
-          d.y += (d.oy - d.y) * LERP;
-        }
-
-        const curDist  = Math.sqrt((d.x - mouse.x) ** 2 + (d.y - mouse.y) ** 2);
-        const proximity = Math.max(0, 1 - curDist / REPEL_R);
-        const r     = DOT_R + (MAX_R - DOT_R) * proximity;
-        const alpha = 0.22 + 0.65 * proximity;
-
-        ctx.beginPath();
-        ctx.arc(d.x, d.y - scrollY, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${DOT_COLOR},${alpha})`;
-        ctx.fill();
-      }
-
-      this.dotGridRaf = requestAnimationFrame(draw);
-    };
-    this.dotGridRaf = requestAnimationFrame(draw);
-  }
+  ngOnDestroy(): void {}
 
   likePost(id?: number) {
     if (!this.isLoggedIn || !id) return;

@@ -1,27 +1,6 @@
-<div class="almanac-page">
+<div class="almanac-page" data-layout-v="3.0">
 
-  <!-- ══ INTERACTIVE DOT GRID (community theme) ══ -->
-  <canvas class="community-dot-canvas" #communityCanvas></canvas>
-
-  <!-- ══ MASTHEAD ══ -->
-  <div class="almanac-masthead">
-    <!-- hero image removed: dot grid shows through -->
-    <div class="masthead-content">
-      <span class="masthead-eyebrow">
-        <span class="eyebrow-line"></span>
-        <span data-tw="Ecological Intelligence Network"></span>
-      </span>
-      <h1 class="masthead-title"><span data-tw="The Vero Almanac" class="tw-title"></span></h1>
-      <p class="masthead-sub" data-tw="Voices from the frontier of climate action, shared transparently."></p>
-      <div class="masthead-meta">
-        <span>{{ posts.length || 0 }} dispatches</span>
-        <span class="meta-dot">·</span>
-        <span>Vol. I — 2026</span>
-      </div>
-    </div>
-    <!-- Scroll cue -->
-    <div class="masthead-scroll-cue" data-tw="scroll ↓"></div>
-  </div>
+  <!-- Masthead removed in favor of feed hero -->
 
   <!-- ══ MAIN BODY ══ -->
   <div class="almanac-body">
@@ -58,8 +37,28 @@
     <!-- Feed Column -->
     <main class="almanac-feed">
 
+      <!-- ── Hero Card ── -->
+      <div class="community-hero-card">
+        <div class="hero-left">
+          <h1>Welcome to the Community</h1>
+          <p>Join thousands of members taking climate action. Share your journey, ask questions, and discover new ways to lighten your footprint.</p>
+          <div>
+            <button class="hero-cta-btn" onclick="document.getElementById('composer').scrollIntoView({behavior: 'smooth'})">Start Posting</button>
+            <button class="hero-ghost-btn" routerLink="/about">Learn More</button>
+          </div>
+        </div>
+        <div class="hero-lottie-glow"></div>
+        <dotlottie-player src="assets/images/floating-message-animation.lottie" 
+                          background="transparent" 
+                          speed="1" 
+                          style="width: 100%; height: 100%;" 
+                          loop 
+                          autoplay 
+                          class="hero-img"></dotlottie-player>
+      </div>
+
       <!-- Composer -->
-      <div class="composer-block">
+      <div class="composer-block" id="composer">
         @if (isLoggedIn) {
           <div class="composer-inner">
             <div class="composer-avatar">
