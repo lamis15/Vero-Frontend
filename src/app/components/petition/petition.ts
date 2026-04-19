@@ -224,20 +224,22 @@ loadMyPetitions(forceReload = false) {
     this.deadlineDate = '';
   }
 
-  quickSign(petition: Petition, event: Event) {
-    event.stopPropagation();
-    if (!petition.id) return;
-    this.petitionService.sign(petition.id).subscribe({
-      next: () => {
-        petition.currentSignatures = (petition.currentSignatures || 0) + 1;
-      },
-      error: (err: any) => {
-        const msg = err.message || 'Error';
-        alert(msg.includes('RuntimeException')
-          ? msg.split('RuntimeException:').pop()?.trim() : msg);
-      }
-    });
-  }
+quickSign(petition: Petition, event: Event) {
+  event.stopPropagation();
+  if (!petition.id) return;
+  this.petitionService.sign(petition.id).subscribe({
+    next: () => {
+      petition.currentSignatures = (petition.currentSignatures || 0) + 1;
+    },
+   error: (err: any) => {
+  const msg = err?.error?.message 
+            || err?.error 
+            || err?.message 
+            || 'Une erreur est survenue';
+  alert(msg);
+}
+  });
+}
 
 
   editPetition(p: Petition) {

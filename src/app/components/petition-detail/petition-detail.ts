@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PetitionService, Petition } from '../../services/petition.service';
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './petition-detail.html',
   styleUrl: './petition-detail.css'
 })
-export class PetitionDetail {  // ← nom exact de la classe
+export class PetitionDetail implements OnInit {
 
   @Input() petition!: Petition;
   @Output() close = new EventEmitter<void>();
@@ -23,7 +23,7 @@ export class PetitionDetail {  // ← nom exact de la classe
   hasSigned = false;
   signError = '';
   signSuccess = false;
-  
+
   mapLoading = false;
   mapPoints: any[] = [];
 
@@ -31,7 +31,8 @@ export class PetitionDetail {  // ← nom exact de la classe
 
   constructor(
     private petitionService: PetitionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef  // ← AJOUTÉ
   ) {}
 
   ngOnInit() {
@@ -40,7 +41,56 @@ export class PetitionDetail {  // ← nom exact de la classe
         next: (val: boolean) => this.hasSigned = val,
         error: () => this.hasSigned = false
       });
+      this.loadMap();
     }
+  }
+
+  loadMap() {
+    if (!this.petition?.id) return;
+    this.mapLoading = true;
+    this.petitionService.getSignaturesMap(this.petition.id).subscribe({
+      next: (points: any[]) => {
+        this.mapPoints = points;
+        this.mapLoading = false;
+        if (points.length > 0) {
+          this.cdr.detectChanges(); // ← force Angular à render le div
+          setTimeout(() => this.renderMap(), 100);
+        }
+      },
+      error: () => { this.mapLoading = false; }
+    });
+  }
+
+  renderMap() {
+    const L = (window as any)['L'];
+    if (!L) { console.error('Leaflet not loaded'); return; }
+
+    const container = document.getElementById('signatures-map') as any;
+    if (!container) { console.error('Container not found'); return; }
+
+    if (container._leaflet_id) {
+      container._leaflet_id = undefined;
+      container.innerHTML = '';
+    }
+
+    const map = L.map('signatures-map').setView([36.8, 10.1], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    this.mapPoints.forEach((p: any) => {
+      if (p.latitude && p.longitude) {
+        L.circleMarker([p.latitude, p.longitude], {
+          radius: 8 + Math.min(p.count * 2, 20),
+          color: '#6aaa6a',
+          fillColor: '#6aaa6a',
+          fillOpacity: 0.6,
+          weight: 2
+        })
+        .bindPopup(`<b>${p.city}</b><br>${p.count} signature${p.count > 1 ? 's' : ''}`)
+        .addTo(map);
+      }
+    });
   }
 
   get progress(): number {
@@ -73,10 +123,13 @@ export class PetitionDetail {  // ← nom exact de la classe
         this.petition.currentSignatures =
           (this.petition.currentSignatures || 0) + 1;
         this.signed.emit();
+        this.loadMap();
       },
       error: (err: any) => {
         this.signing = false;
-        this.signError = err.message || 'Error signing petition';
+        this.signError = err?.error?.message
+          || err?.message
+          || 'Error signing petition';
       }
     });
   }
