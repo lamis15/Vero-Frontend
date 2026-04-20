@@ -207,7 +207,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   // ── Roles ─────────────────────────────────────────────────────────────────
   isAdmin():   boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
-  isUser():    boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
+  isUser(): boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
   // ── Detail ────────────────────────────────────────────────────────────────

@@ -22,20 +22,35 @@ export const routes: Routes = [
     loadComponent: () => import('./components/donate/donate.component').then(m => m.DonateComponent)
   },
   {
+    path: 'donate/success',
+    loadComponent: () => import('./components/donate/donate-success.component').then(m => m.DonateSuccessComponent)
+  },
+  {
+    path: 'donate/cancel',
+    redirectTo: '/donate'
+  },
+  {
     path: 'login',
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent)
   },
-  { 
-    path: 'community', 
-    loadComponent: () => import('./components/community/community.component').then(m => m.CommunityComponent) 
+  {
+    path: 'community',
+    loadComponent: () => import('./components/community/community.component').then(m => m.CommunityComponent)
   },
-  { 
-    path: 'community/:id', 
-    loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent) 
+  {
+    path: 'community/:id',
+    loadComponent: () => import('./components/community/thread/thread.component').then(m => m.ThreadComponent)
   },
   {
     path: 'my-reservations',
     loadComponent: () => import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
   },
+ {
+  path: 'petitions',
+  loadComponent: () => import('./components/petition/petition')
+    .then(m => m.PetitionComponent)
+},
   { path: '**', redirectTo: '' }
+
+
 ];

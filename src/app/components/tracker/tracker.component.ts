@@ -1,19 +1,20 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef, NgZone, ElementRef, QueryList, ViewChildren, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs/operators';
+import { DashboardService } from '../../services/dashboard.service';
 import { CarbonActivityService } from '../../services/carbon-activity.service';
 import { CarbonGoalService } from '../../services/carbon-goal.service';
-import { CarbonTipService } from '../../services/carbon-tip.service';
 import { CarbonAIService } from '../../services/carbon-ai.service';
 import { AuthService } from '../../services/auth.service';
+import { EcoDashboardDTO, DailyCarbon } from '../../services/dashboard.models';
 import {
   CarbonActivity, CarbonGoal, ActivityType,
   ACTIVITY_ICONS, ACTIVITY_LABELS, ACTIVITY_COLORS
 } from '../../services/carbon.models';
-import { EcosystemScene } from './scene-manager';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 @Component({
   selector: 'app-tracker',
@@ -23,60 +24,41 @@ import { EcosystemScene } from './scene-manager';
   styleUrl: './tracker.component.css'
 })
 export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('ecoCanvas',    { static: false }) ecoCanvas!:    ElementRef<HTMLDivElement>;
-  @ViewChild('dotCanvas',    { static: false }) dotCanvas!:    ElementRef<HTMLCanvasElement>;
-  @ViewChild('typedHeadline',{ static: false }) typedHeadline!:ElementRef<HTMLSpanElement>;
-  @ViewChild('typedAiDesc',  { static: false }) typedAiDesc!:  ElementRef<HTMLSpanElement>;
-  private ecoScene!: EcosystemScene;
-  private dotGridRaf: number | null = null;
-  private dotMouseHandler: ((e: MouseEvent) => void) | null = null;
-  private twRaf: number | null = null;  // typewriter RAF
+  @ViewChild('trendCanvas', { static: false }) trendCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('islandCanvas', { static: false }) islandCanvas!: ElementRef<HTMLCanvasElement>;
 
-  // Cycling placeholder prompts for the AI bar
-  typedPlaceholder = '';
-  private phraseCycle = [
-    'Drove 40 km to work today...',
-    'Had a steak dinner last night...',
-    'Flew London to Paris...',
-    'Turned on the AC for 3 hours...',
-    'Ordered online delivery x2...',
-    'Describe an activity — AI will calculate its impact...'
-  ];
-  private phraseIndex = 0;
-  private phraseRaf: ReturnType<typeof setTimeout> | null = null;
-  
-  ecoHealth = 0;
-  ecoLabel = '';
-  ecoLoading = true;
-
-  // ─── Data ───
-  carbonByType: Record<string, number> = {};
-  totalCarbon = 0;
+  // ─── Single source of truth ───
+  dashboard: EcoDashboardDTO | null = null;
   activities: CarbonActivity[] = [];
-  activeGoals: CarbonGoal[] = [];
-  tips: string[] = [];
+  state: 'loading' | 'ready' | 'error' = 'loading';
 
-  // ─── UI State ───
-  loading = false;
-  loadError = '';
+  // ─── Computed from dashboard ───
+  breakdownRows: { type: string; label: string; letter: string; value: number; pct: number; color: string }[] = [];
 
-  // ─── Computed ───
-  categoryRows: { type: ActivityType; icon: string; label: string; value: number; pct: number; color: string }[] = [];
-  ringOffset = 816.81;
-  displayCarbon = 0;   // animated counter value
-  heroReady = false;   // controls CSS class for hero entrance
-
-  // ─── Forms ───
-  showAddForm = false;
-  showGoalForm = false;
-  submitting = false;
-  newActivity: Partial<CarbonActivity> = {
-    activityType: 'TRANSPORT',
-    description: '',
-    carbonKg: 0,
-    source: 'MANUAL'
+  // ─── Animated Values ───
+  displayMetrics = {
+    score: 0,
+    carbon: 0,
+    water: 0,
+    energy: 0,
+    waste: 0
   };
+  private animFrameId = 0;
+  private chartAnimId = 0;
 
+  // ─── Three.js ───
+  private threeRenderer: THREE.WebGLRenderer | null = null;
+  private threeScene: THREE.Scene | null = null;
+  private threeCamera: THREE.PerspectiveCamera | null = null;
+  private islandModel: THREE.Group | null = null;
+  private threeAnimId = 0;
+  private resizeHandler: (() => void) | null = null;
+  private islandBaseY = 0;
+
+  // ─── Goals ───
+  activeGoals: CarbonGoal[] = [];
+  showGoalForm = false;
   newGoal: Partial<CarbonGoal> = {
     activityType: 'TRANSPORT',
     targetCarbonKg: 0,
@@ -84,24 +66,51 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
   };
 
+  // ─── Forms ───
+  showAddForm = false;
+  submitting = false;
+  newActivity: Partial<CarbonActivity> = {
+    activityType: 'TRANSPORT',
+    description: '',
+    carbonKg: 0,
+    waterLiters: 0,
+    energyKwh: 0,
+    wasteKg: 0,
+    landM2: 0,
+    source: 'MANUAL'
+  };
+
+  // ─── AI ───
   aiText = '';
   aiLoading = false;
   aiResult: CarbonActivity | null = null;
+
+  // ─── Scan ───
+  scanLoading = false;
+  scanPreviewUrl: string | ArrayBuffer | null = null;
 
   // ─── Editing ───
   editingActivityId: number | null = null;
   editActivityData: Partial<CarbonActivity> = {};
 
   // ─── Helpers ───
-  activityTypes: ActivityType[] = ['TRANSPORT', 'FOOD', 'ENERGY', 'SHOPPING'];
-  icons = ACTIVITY_ICONS;
-  labels = ACTIVITY_LABELS;
-  colors = ACTIVITY_COLORS;
+  activityTypes: ActivityType[] = ['TRANSPORT', 'FOOD', 'ENERGY', 'SHOPPING', 'WASTE'];
+  icons: Record<string, string> = ACTIVITY_ICONS;
+  labels: Record<string, string> = ACTIVITY_LABELS;
+  colors: Record<string, string> = ACTIVITY_COLORS;
+
+  readonly categoryColors: Record<string, string> = {
+    TRANSPORT: '#00E5FF',
+    FOOD: '#14b8a6',
+    ENERGY: '#34d399',
+    SHOPPING: '#06b6d4',
+    WASTE: '#0284c7'
+  };
 
   constructor(
+    private dashboardService: DashboardService,
     private activityService: CarbonActivityService,
     private goalService: CarbonGoalService,
-    private tipService: CarbonTipService,
     private aiService: CarbonAIService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
@@ -111,464 +120,416 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn) {
-      this.loadData();
+      this.loadDashboard();
     } else {
       this.router.navigate(['/login']);
     }
   }
 
   ngAfterViewInit(): void {
-    if (this.ecoCanvas) {
-      this.ngZone.runOutsideAngular(() => {
-        this.ecoScene = new EcosystemScene(this.ecoCanvas.nativeElement);
-      });
-    }
-
-    // Trigger hero entrance animation slightly after paint
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        this.ngZone.run(() => {
-          this.heroReady = true;
-          this.cdr.markForCheck();
-        });
-      }, 80);
-    });
-
-    // Intersection Observer for scroll-reveal on body cards
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-          }
-        });
-      },
-      { threshold: 0.08 }
-    );
-    // Observe after data renders — slight delay
-    setTimeout(() => {
-      document.querySelectorAll('.vt-observe').forEach(el => observer.observe(el));
-    }, 500);
-
-    // ── Universal Scroll-Typewriter: any element with data-tw types in when visible ──
-    const typewriteEl = (el: HTMLElement) => {
-      const text = el.getAttribute('data-tw') || '';
-      if (!text || el.classList.contains('tw-done')) return;
-      el.classList.add('tw-done');
-      el.textContent = '';
-
-      // Calculate speed: shorter texts type faster
-      const charSpeed = text.length > 20 ? 30 : 45;
-      let i = 0;
-      const tick = () => {
-        if (i <= text.length) {
-          el.textContent = text.substring(0, i);
-          i++;
-          setTimeout(tick, charSpeed);
-        }
-      };
-      tick();
-    };
-
-    const twObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            typewriteEl(entry.target as HTMLElement);
-            twObserver.unobserve(entry.target); // only once
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    // Observe all [data-tw] elements — deferred to wait for data render
-    setTimeout(() => {
-      document.querySelectorAll('[data-tw]').forEach(el => twObserver.observe(el));
-    }, 600);
-
-    // Init Stitch-style interactive dot grid — deferred to ensure ViewChild is painted
-    setTimeout(() => this.ngZone.runOutsideAngular(() => this.initDotGrid()), 50);
-
-    // Typewriter: headline on load
-    setTimeout(() => this.typeHeadline(), 200);
-
-    // Typewriter: cycling placeholder for AI bar
-    this.cyclePlaceholder();
+    // Delay slightly so the canvas element is in the DOM
+    setTimeout(() => this.initThreeScene(), 200);
   }
 
   ngOnDestroy(): void {
-    if (this.ecoScene)        this.ecoScene.dispose();
-    if (this.dotGridRaf)      cancelAnimationFrame(this.dotGridRaf);
-    if (this.dotMouseHandler) window.removeEventListener('mousemove', this.dotMouseHandler);
-    if (this.twRaf)           cancelAnimationFrame(this.twRaf);
-    if (this.phraseRaf)       clearTimeout(this.phraseRaf);
-  }
-
-  // ── Typewriter: Main Headline ─────────────────────────────────────
-  private typeHeadline(): void {
-    const el = this.typedHeadline?.nativeElement;
-    if (!el) return;
-
-    // HTML with the italic <em> tag preserved
-    const segments = [
-      { text: 'Your ', em: false },
-      { text: 'Carbon', em: true },
-      { text: ' Footprint', em: false }
-    ];
-
-    let segIdx = 0;
-    let charIdx = 0;
-    el.innerHTML = '';
-
-    const tick = () => {
-      if (segIdx >= segments.length) return; // done
-      const seg = segments[segIdx];
-      if (charIdx < seg.text.length) {
-        // Append next character in appropriate element
-        let span = el.querySelector(`[data-seg="${segIdx}"]`) as HTMLElement | null;
-        if (!span) {
-          span = document.createElement(seg.em ? 'em' : 'span');
-          span.setAttribute('data-seg', String(segIdx));
-          el.appendChild(span);
+    // Clean up Three.js
+    if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
+    if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);
+    if (this.threeRenderer) {
+      this.threeRenderer.dispose();
+      this.threeRenderer = null;
+    }
+    if (this.threeScene) {
+      this.threeScene.traverse((obj: any) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach((m: any) => m.dispose());
+          else obj.material.dispose();
         }
-        span.textContent += seg.text[charIdx];
-        charIdx++;
-      } else {
-        segIdx++;
-        charIdx = 0;
-      }
-      setTimeout(tick, segIdx === 1 && charIdx === 0 ? 80 : 55); // slight pause before 'Carbon'
-    };
-    tick();
+      });
+      this.threeScene = null;
+    }
   }
 
-  // ── Typewriter: Cycling AI placeholder ────────────────────────────
-  private cyclePlaceholder(): void {
-    const phrase = this.phraseCycle[this.phraseIndex];
-    let i = 0;
+  // ─── Three.js Scene ───
 
-    const typeChar = () => {
-      if (i <= phrase.length) {
-        this.ngZone.run(() => { this.typedPlaceholder = phrase.substring(0, i); });
-        i++;
-        this.phraseRaf = setTimeout(typeChar, 45);
-      } else {
-        // Pause then erase
-        this.phraseRaf = setTimeout(() => this.erasePhrase(phrase.length), 1800);
+  private initThreeScene(): void {
+    const canvas = this.islandCanvas?.nativeElement;
+    if (!canvas) return;
+
+    const wrap = canvas.parentElement;
+    if (!wrap) return;
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight || 380;
+
+    // Scene
+    this.threeScene = new THREE.Scene();
+
+    // Camera — balanced view
+    this.threeCamera = new THREE.PerspectiveCamera(35, W / H, 0.1, 1000);
+    this.threeCamera.position.set(0, 5, 12);
+    this.threeCamera.lookAt(0, 0, 0);
+
+    // Renderer — optimized: no shadows, no tone mapping
+    this.threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.threeRenderer.setSize(W, H);
+    this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+    // Lights — simplified: no shadow casting
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+    this.threeScene.add(ambient);
+
+    const dir = new THREE.DirectionalLight(0xffe4c4, 1.5);
+    dir.position.set(5, 8, 4);
+    this.threeScene.add(dir);
+
+    const rimLight = new THREE.DirectionalLight(0x00E5FF, 0.3);
+    rimLight.position.set(-3, 2, -4);
+    this.threeScene.add(rimLight);
+
+    // Load GLB
+    const loader = new GLTFLoader();
+    loader.load('assets/images/low_poly_island.glb', (gltf) => {
+      this.islandModel = gltf.scene;
+
+      // Center and normalize scale so the model fits within ~3 units
+      const box = new THREE.Box3().setFromObject(this.islandModel);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const targetSize = 10; // fit within 10 world units
+      const scaleFactor = targetSize / maxDim;
+      this.islandModel.scale.setScalar(scaleFactor);
+
+      // Re-center after scaling
+      const scaledBox = new THREE.Box3().setFromObject(this.islandModel);
+      const center = scaledBox.getCenter(new THREE.Vector3());
+      this.islandModel.position.sub(center);
+      this.islandBaseY = this.islandModel.position.y;
+
+      // Enable rendering on all meshes (no shadows needed)
+      this.islandModel.traverse((child: any) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+        }
+      });
+
+      this.threeScene!.add(this.islandModel);
+    },
+    undefined,
+    (err) => console.warn('GLB load error:', err)
+    );
+
+    // Resize handler
+    this.resizeHandler = () => {
+      if (!wrap || !this.threeCamera || !this.threeRenderer) return;
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight || 380;
+      this.threeCamera.aspect = w / h;
+      this.threeCamera.updateProjectionMatrix();
+      this.threeRenderer.setSize(w, h);
+    };
+    window.addEventListener('resize', this.resizeHandler);
+
+    // Animation loop
+    const clock = new THREE.Clock();
+    const animate = () => {
+      this.threeAnimId = requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      if (this.islandModel) {
+        this.islandModel.rotation.y += 0.002;
+        this.islandModel.position.y = this.islandBaseY + Math.sin(elapsed * 0.5) * 0.15;
+      }
+
+      if (this.threeRenderer && this.threeScene && this.threeCamera) {
+        this.threeRenderer.render(this.threeScene, this.threeCamera);
       }
     };
-    typeChar();
+    animate();
   }
 
-  private erasePhrase(len: number): void {
-    let i = len;
-    const erase = () => {
-      if (i >= 0) {
-        this.ngZone.run(() => {
-          this.typedPlaceholder = this.phraseCycle[this.phraseIndex].substring(0, i);
-        });
-        i--;
-        this.phraseRaf = setTimeout(erase, 20);
-      } else {
-        // Next phrase
-        this.phraseIndex = (this.phraseIndex + 1) % this.phraseCycle.length;
-        this.phraseRaf = setTimeout(() => this.cyclePlaceholder(), 300);
+  // ─── Data Loading ───
+
+  loadDashboard(): void {
+    this.state = 'loading';
+    this.dashboardService.getDashboard().subscribe({
+      next: (data) => {
+        this.dashboard = data;
+        this.computeBreakdown();
+        this.state = 'ready';
+        this.cdr.markForCheck();
+        // Load detail data not in dashboard DTO
+        this.loadActivities();
+        this.loadGoals();
+        // Trigger animations
+        setTimeout(() => {
+          this.animateValues();
+          this.renderTrendChart();
+        }, 50);
+      },
+      error: () => {
+        this.state = 'error';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private loadActivities(): void {
+    this.activityService.getAll().subscribe({
+      next: (acts) => {
+        this.activities = acts ?? [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private loadGoals(): void {
+    this.goalService.getAll().subscribe({
+      next: (goals) => {
+        this.activeGoals = (goals ?? []).map(g => ({
+          ...g,
+          progressPct: Math.min(g.progressPct || 0, 100)
+        }));
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private computeBreakdown(): void {
+    if (!this.dashboard?.carbonByType) { this.breakdownRows = []; return; }
+    const entries = Object.entries(this.dashboard.carbonByType);
+    const total = entries.reduce((s, [, v]) => s + (v || 0), 0) || 1;
+
+    this.breakdownRows = entries
+      .map(([type, value]) => ({
+        type,
+        label: ACTIVITY_LABELS[type as ActivityType] || type,
+        letter: ACTIVITY_ICONS[type as ActivityType] || '?',
+        value: value || 0,
+        pct: Math.round(((value || 0) / total) * 100),
+        color: this.categoryColors[type] || '#666'
+      }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  /** Generate a 20-element boolean array for the dot matrix visualization */
+  getDotGrid(pct: number): boolean[] {
+    const total = 20;
+    const filled = Math.round((pct / 100) * total);
+    return Array.from({ length: total }, (_, i) => i < filled);
+  }
+
+  // ─── Trend Chart (Pure Canvas) ───
+
+  
+  // ─── Animation Engines ───
+  
+  private MathPow = Math.pow;
+
+  private easeOutQuart(t: number): number {
+    return 1 - this.MathPow(1 - t, 4);
+  }
+
+  private animateValues(): void {
+    if (!this.dashboard) return;
+    
+    this.displayMetrics = { score: 0, carbon: 0, water: 0, energy: 0, waste: 0 };
+    if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+
+    const targets = {
+      score: this.dashboard.ecoScore || 0,
+      carbon: this.dashboard.totalCarbonKg || 0,
+      water: this.dashboard.totalWaterLiters || 0,
+      energy: this.dashboard.totalEnergyKwh || 0,
+      waste: this.dashboard.totalWasteKg || 0
+    };
+
+    const duration = 1500;
+    const start = performance.now();
+
+    const animate = (timestamp: number) => {
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this.easeOutQuart(progress);
+
+      this.ngZone.run(() => {
+        this.displayMetrics = {
+          score: targets.score * eased,
+          carbon: targets.carbon * eased,
+          water: targets.water * eased,
+          energy: targets.energy * eased,
+          waste: targets.waste * eased
+        };
+        this.cdr.markForCheck();
+      });
+
+      if (progress < 1) {
+        this.animFrameId = requestAnimationFrame(animate);
       }
     };
-    erase();
+    
+    this.animFrameId = requestAnimationFrame(animate);
   }
 
-  // ── Typewriter: AI result description ─────────────────────────────
-  private typeAiResult(text: string): void {
-    const el = this.typedAiDesc?.nativeElement;
-    if (!el) return;
-    el.textContent = '';
-    let i = 0;
-    const tick = () => {
-      if (i <= text.length) {
-        el.textContent = text.substring(0, i);
-        i++;
-        setTimeout(tick, 18); // fast — feels like real-time AI output
-      }
-    };
-    tick();
-  }
+  private renderTrendChart(): void {
+    const canvas = this.trendCanvas?.nativeElement;
+    if (!canvas || !this.dashboard?.weeklyTrend?.length) return;
 
-  private initDotGrid(): void {
-    const canvas = this.dotCanvas?.nativeElement;
-    if (!canvas) { console.warn('[DotGrid] canvas not found'); return; }
+    if (this.chartAnimId) cancelAnimationFrame(this.chartAnimId);
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // ── Config — tune these to adjust the look ──────────────────
-    const SPACING   = 26;          // px between each dot
-    const DOT_R     = 1.5;         // resting dot radius
-    const MAX_R     = 5;           // radius at cursor center
-    const REPEL_R   = 120;         // cursor influence radius in px
-    const DOT_COLOR = '140, 190, 160'; // light refreshing mint/sage for dark bg
-    const LERP      = 0.12;        // spring-back speed (lower = slower)
-    // ────────────────────────────────────────────────────────────
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
 
-    let mouse = { x: -9999, y: -9999 };
-    let dots: { ox: number; oy: number; x: number; y: number }[] = [];
+    const W = rect.width;
+    const H = rect.height;
+    const data = this.dashboard.weeklyTrend;
+    const values = data.map(d => d.carbonKg || 0);
+    const maxVal = Math.max(...values, 1);
 
-    const buildGrid = () => {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight; // Must match viewport to prevent fixed element squishing
-      dots = [];
-      const cols = Math.ceil(canvas.width  / SPACING) + 2;
-      const rows = Math.ceil(document.documentElement.scrollHeight / SPACING) + 2;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          dots.push({ ox: c * SPACING, oy: r * SPACING, x: c * SPACING, y: r * SPACING });
-        }
+    const padTop = 20;
+    const padBot = 28;
+    const padLeft = 16;
+    const padRight = 16;
+    const chartW = W - padLeft - padRight;
+    const chartH = H - padTop - padBot;
+
+    const points = values.map((v, i) => ({
+      x: padLeft + (i / (values.length - 1)) * chartW,
+      y: padTop + chartH - (v / maxVal) * chartH
+    }));
+
+    const duration = 1800; // 1.8s drawing
+    const start = performance.now();
+
+    const draw = (timestamp: number) => {
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this.easeOutQuart(progress);
+      
+      ctx.clearRect(0, 0, W, H);
+      
+      const currentSegments = Math.max(1, Math.floor(eased * points.length));
+      
+      // Draw organic trailing line
+      ctx.beginPath();
+      for (let i = 0; i < currentSegments; i++) {
+        const p = points[i];
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
       }
-    };
+      
+      // If we are between points, interpolate
+      if (currentSegments < points.length && currentSegments > 0) {
+        const prev = points[currentSegments - 1];
+        const next = points[currentSegments];
+        const segDist = 1 / (points.length - 1);
+        const startRawProgress = (currentSegments - 1) * segDist;
+        const localProgress = (eased - startRawProgress) / segDist;
+        
+        ctx.lineTo(
+          prev.x + (next.x - prev.x) * localProgress,
+          prev.y + (next.y - prev.y) * localProgress
+        );
+      }
 
-    buildGrid();
-    window.addEventListener('resize', buildGrid, { passive: true });
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
 
-    this.dotMouseHandler = (e: MouseEvent) => {
-      // Account for scroll position since canvas is fixed
-      mouse.x = e.clientX;
-      mouse.y = e.clientY + window.scrollY;
-    };
-    window.addEventListener('mousemove', this.dotMouseHandler!, { passive: true });
-
-    const draw = () => {
-      // Clear the fixed viewport canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const scrollY = window.scrollY;
-      const viewTop = scrollY;
-      const viewBot = scrollY + window.innerHeight + SPACING;
-
-      for (const d of dots) {
-        // Skip dots not in the visible viewport (perf optimisation)
-        if (d.oy < viewTop - SPACING || d.oy > viewBot) continue;
-
-        const dx   = d.ox - mouse.x;
-        const dy   = d.oy - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < REPEL_R && dist > 0) {
-          const force = (1 - dist / REPEL_R);       // 0→1
-          const push  = force * force * 44;          // squared for sharp bubble
-          const angle = Math.atan2(dy, dx);
-          d.x = d.ox + Math.cos(angle) * push;
-          d.y = d.oy + Math.sin(angle) * push;
-        } else {
-          d.x += (d.ox - d.x) * LERP;
-          d.y += (d.oy - d.y) * LERP;
-        }
-
-        const curDist = Math.sqrt((d.x - mouse.x) ** 2 + (d.y - mouse.y) ** 2);
-        const proximity = Math.max(0, 1 - curDist / REPEL_R);
-
-        const r     = DOT_R + (MAX_R - DOT_R) * proximity;
-        const alpha = 0.28 + 0.65 * proximity;  // 0.28 base → 0.93 at cursor
-
+      // Glowing dots revealing
+      for (let i = 0; i < currentSegments; i++) {
+        const p = points[i];
+        
+        // Scale dot based on how long it's been alive
+        const dotAge = (eased - (i / points.length)) * 5;
+        const dotScale = Math.min(Math.max(dotAge, 0), 1);
+        
         ctx.beginPath();
-        ctx.arc(d.x, d.y - scrollY, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${DOT_COLOR},${alpha})`;
+        ctx.arc(p.x, p.y, 8 * dotScale, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 * dotScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#00E5FF';
         ctx.fill();
       }
 
-      this.dotGridRaf = requestAnimationFrame(draw);
-    };
-
-    this.dotGridRaf = requestAnimationFrame(draw);
-  }
-
-  loadData(): void {
-    this.loading = true;
-    this.loadError = '';
-
-    const year = new Date().getFullYear();
-    const startDate = `${year}-01-01`;
-    const endDate   = `${year}-12-31`;
-
-    // 1. Instantly load the fast database queries
-    forkJoin({
-      activities: this.activityService.getAll().pipe(catchError(() => of([] as CarbonActivity[]))),
-      total:      this.activityService.getTotal(startDate, endDate).pipe(catchError(() => of(0))),
-      byType:     this.activityService.getCarbonByType().pipe(catchError(() => of({} as Record<string, number>))),
-      goals:      this.goalService.getAll().pipe(catchError(() => of([] as CarbonGoal[])))
-    }).pipe(
-      finalize(() => {
-        this.loading = false;
-        this.cdr.markForCheck();
-      })
-    ).subscribe({
-      next: ({ activities, total, byType, goals }) => {
-        this.ngZone.run(() => {
-          this.activities   = activities ?? [];
-          this.totalCarbon  = typeof total === 'number' && isFinite(total)
-            ? Math.round(total * 100) / 100 : 0;
-          this.carbonByType = byType ?? {};
-          // Display all goals belonging to the user, ensure progress is capped at 100% visually
-          this.activeGoals  = (goals ?? []).map(g => ({
-            ...g,
-            progressPct: Math.min(g.progressPct || 0, 100)
-          }));
-          this.computeCategories();
-          this.computeRing();
-          this.computeEcoHealth();
-          this.cdr.markForCheck();
-        });
-      },
-      error: () => {
-        this.ngZone.run(() => {
-          this.loadError = 'Failed to load data. Please try refreshing.';
-          this.cdr.markForCheck();
-        });
-      }
-    });
-
-    // 2. Load the slow AI personalized tips asynchronously in the background
-    this.tipService.getRecommended().pipe(catchError(() => of([] as string[]))).subscribe(tips => {
-      this.ngZone.run(() => {
-        this.tips = tips ?? [];
-        this.cdr.markForCheck();
+      // X-axis labels
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '10px "DM Mono", monospace';
+      ctx.textAlign = 'center';
+      data.forEach((d, i) => {
+        const dayIdx = new Date(d.date).getDay();
+        const label = dayNames[(dayIdx + 6) % 7];
+        ctx.fillText(label, points[i].x, H - 8);
       });
-    });
-  }
 
-  computeCategories(): void {
-    const vals  = Object.values(this.carbonByType).filter(v => typeof v === 'number' && isFinite(v));
-    const maxVal = vals.length > 0 ? Math.max(...vals) : 1;
-    this.categoryRows = this.activityTypes.map(type => ({
-      type,
-      icon:  ACTIVITY_ICONS[type],
-      label: ACTIVITY_LABELS[type],
-      value: this.carbonByType[type] ?? 0,
-      pct:   maxVal > 0 ? ((this.carbonByType[type] ?? 0) / maxVal) * 100 : 0,
-      color: ACTIVITY_COLORS[type]
-    }));
-  }
-
-  computeRing(): void {
-    const CIRC = 816.81;
-    const pct  = Math.min((this.totalCarbon || 0) / 10000, 1);
-    this.ringOffset = CIRC * (1 - pct);
-
-    // Animated counter: count up from 0 to totalCarbon
-    const target   = this.totalCarbon;
-    const duration = 1800;
-    const start    = performance.now();
-    const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
-
-    const tick = (now: number) => {
-      const elapsed  = Math.min(now - start, duration);
-      const progress = easeOutQuart(elapsed / duration);
-      this.ngZone.run(() => {
-        this.displayCarbon = Math.round(progress * target * 10) / 10;
-        this.cdr.markForCheck();
-      });
-      if (elapsed < duration) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
-
-  // ─── Eco Health ───
-  computeEcoHealth(): void {
-    if (this.activeGoals.length === 0) {
-      const ratio = Math.min(this.totalCarbon / 5000, 1);
-      this.ecoHealth = Math.round((1 - ratio) * 100);
-    } else {
-      let totalScore = 0;
-      let counted = 0;
-      for (const goal of this.activeGoals) {
-        const pct = goal.progressPct || 0;
-        totalScore += Math.max(0, 100 - pct);
-        counted++;
+      if (progress < 1) {
+        this.chartAnimId = requestAnimationFrame(draw);
       }
-      this.ecoHealth = counted > 0 ? Math.round(totalScore / counted) : 70;
-    }
-
-    if (this.ecoHealth >= 80)      this.ecoLabel = 'Thriving';
-    else if (this.ecoHealth >= 60) this.ecoLabel = 'Stable';
-    else if (this.ecoHealth >= 35) this.ecoLabel = 'Stressed';
-    else                           this.ecoLabel = 'Declining';
-
-    if (this.ecoScene) {
-      this.ecoScene.setHealth(this.ecoHealth);
-    }
-  }
-
-  // ─── CRUD ───
-  submitGoal(): void {
-    if (!this.newGoal.targetCarbonKg || !this.newGoal.startDate || !this.newGoal.endDate) return;
-    this.submitting = true;
+    };
     
-    const payload: Partial<CarbonGoal> = { ...this.newGoal };
+    this.chartAnimId = requestAnimationFrame(draw);
+  }
+  // ─── EcoScore helpers ───
 
-    this.goalService.create(payload)
-      .pipe(finalize(() => { this.submitting = false; this.cdr.markForCheck(); }))
-      .subscribe({
-        next: (created) => {
-          this.activeGoals.push({ ...created, progressPct: 0 });
-          this.showGoalForm = false;
-          // Reset form
-          this.newGoal = { 
-            activityType: 'TRANSPORT', 
-            targetCarbonKg: 0,
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
-          };
-        },
-        error: (err) => console.error('Goal submission failed', err)
-      });
+  get scoreColor(): string {
+    const s = this.dashboard?.ecoScore ?? 0;
+    if (s >= 80) return '#00E5FF';
+    if (s >= 60) return '#14b8a6';
+    if (s >= 40) return '#34d399';
+    return '#f43f5e';
   }
 
-  deleteGoal(id: number): void {
-    this.activeGoals = this.activeGoals.filter(g => g.id !== id);
-    this.goalService.delete(id).subscribe({
-      error: () => this.loadData() // Revert on failure
-    });
+  // ─── Formatting ───
+
+  formatVal(val: number | undefined | null): string {
+    if (!val || !isFinite(val)) return '0';
+    if (val >= 10000) return (val / 1000).toFixed(0) + 'k';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+    if (val >= 100) return val.toFixed(0);
+    return val.toFixed(1);
   }
+
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  // ─── Activity CRUD ───
 
   submitActivity(): void {
-    if (!this.newActivity.description?.trim() || !this.newActivity.carbonKg) return;
+    if (!this.newActivity.description?.trim()) return;
     this.submitting = true;
 
     const payload: Partial<CarbonActivity> = {
       ...this.newActivity,
+      carbonKg: this.newActivity.carbonKg || 0,
+      waterLiters: this.newActivity.waterLiters || 0,
+      energyKwh: this.newActivity.energyKwh || 0,
+      wasteKg: this.newActivity.wasteKg || 0,
+      landM2: this.newActivity.landM2 || 0,
       date: new Date().toISOString().split('T')[0]
     };
 
-    // ── Optimistic update: show item instantly before server confirms ──
-    const optimistic: CarbonActivity = {
-      activityType: (payload.activityType ?? 'TRANSPORT') as ActivityType,
-      description:  payload.description ?? '',
-      carbonKg:     payload.carbonKg ?? 0,
-      date:         payload.date ?? '',
-      source:       'MANUAL'
-    };
-    this.activities    = [optimistic, ...this.activities];
-    this.totalCarbon   = Math.round((this.totalCarbon + optimistic.carbonKg) * 100) / 100;
-    this.carbonByType  = {
-      ...this.carbonByType,
-      [optimistic.activityType]: (this.carbonByType[optimistic.activityType] ?? 0) + optimistic.carbonKg
-    };
-    this.computeCategories();
-    this.cdr.markForCheck();
-
-    // Close & reset form immediately
-    this.showAddForm = false;
-    this.newActivity  = { activityType: 'TRANSPORT', description: '', carbonKg: 0, source: 'MANUAL' };
-
-    // Then persist and reconcile with server truth
-    this.activityService.create(payload).subscribe({
+    this.activityService.create(payload).pipe(
+      finalize(() => { this.submitting = false; this.cdr.markForCheck(); })
+    ).subscribe({
       next: () => {
-        this.submitting = false;
-        this.loadData();
-      },
-      error: () => {
-        // Roll back optimistic update on server failure
-        this.submitting = false;
-        this.loadData();
+        this.showAddForm = false;
+        this.newActivity = { activityType: 'TRANSPORT', description: '', carbonKg: 0, waterLiters: 0, energyKwh: 0, wasteKg: 0, landM2: 0, source: 'MANUAL' };
+        this.loadDashboard();
       }
     });
   }
@@ -587,53 +548,133 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.editingActivityId || !this.editActivityData.description?.trim()) return;
     this.submitting = true;
 
-    this.activityService.update(this.editingActivityId, this.editActivityData).subscribe({
+    this.activityService.update(this.editingActivityId, this.editActivityData).pipe(
+      finalize(() => { this.submitting = false; this.cdr.markForCheck(); })
+    ).subscribe({
       next: () => {
-        this.submitting = false;
         this.editingActivityId = null;
-        this.loadData();
-      },
-      error: () => {
-        this.submitting = false;
-        this.loadData();
+        this.loadDashboard();
       }
     });
   }
 
   deleteActivity(id: number): void {
-    // Optimistic removal
-    this.activities   = this.activities.filter(a => a.id !== id);
+    this.activities = this.activities.filter(a => a.id !== id);
     this.cdr.markForCheck();
     this.activityService.delete(id).subscribe({
-      next:  () => this.loadData(),
-      error: () => this.loadData() // restore on failure
+      next: () => this.loadDashboard(),
+      error: () => this.loadDashboard()
     });
   }
 
-  // ─── AI ───
+  // ─── AI Analysis ───
+
   analyzeWithAI(): void {
     if (!this.aiText.trim()) return;
     this.aiLoading = true;
-    this.aiResult  = null;
+    this.aiResult = null;
     this.aiService.analyze(this.aiText).subscribe({
       next: result => {
-        this.aiResult  = result;
+        this.aiResult = result;
         this.aiLoading = false;
-        this.aiText    = '';
-        this.loadData();
-        // Typewrite the AI result description after a brief render cycle
-        setTimeout(() => this.typeAiResult(result.description ?? ''), 80);
+        this.aiText = '';
+        this.loadDashboard();
       },
       error: () => {
         this.aiLoading = false;
-        this.aiResult  = null;
+        this.aiResult = null;
       }
     });
   }
 
-  formatKg(kg: number): string {
-    if (!kg || !isFinite(kg)) return '0 kg';
-    if (kg >= 1000) return (kg / 1000).toFixed(1) + 't';
-    return kg.toFixed(1) + ' kg';
+  // ─── Vero Lens ───
+
+  triggerFileSelect(): void {
+    this.fileInput?.nativeElement?.click();
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.scanLoading = true;
+    this.cdr.markForCheck();
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.ngZone.run(() => {
+        this.scanPreviewUrl = e.target?.result as string;
+        this.cdr.markForCheck();
+      });
+    };
+    reader.readAsDataURL(file);
+
+    this.activityService.scanReceipt(file).pipe(
+      finalize(() => {
+        this.scanLoading = false;
+        setTimeout(() => { this.scanPreviewUrl = null; this.cdr.markForCheck(); }, 4000);
+      })
+    ).subscribe({
+      next: (result) => {
+        this.aiResult = result;
+        this.loadDashboard();
+      },
+      error: (err) => {
+        console.error('Scan failed', err);
+        this.scanPreviewUrl = null;
+        this.cdr.markForCheck();
+      }
+    });
+
+    if (this.fileInput) this.fileInput.nativeElement.value = '';
+  }
+
+  // ─── Export ───
+
+  downloadReport(): void {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    this.dashboardService.downloadReport(month).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eco-report-${month}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+  }
+
+  // ─── Goal CRUD ───
+
+  submitGoal(): void {
+    if (!this.newGoal.targetCarbonKg || !this.newGoal.startDate || !this.newGoal.endDate) return;
+    this.submitting = true;
+
+    this.goalService.create(this.newGoal).pipe(
+      finalize(() => { this.submitting = false; this.cdr.markForCheck(); })
+    ).subscribe({
+      next: (created) => {
+        this.activeGoals.push({ ...created, progressPct: 0 });
+        this.showGoalForm = false;
+        this.newGoal = {
+          activityType: 'TRANSPORT',
+          targetCarbonKg: 0,
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+        };
+        this.loadDashboard();
+      }
+    });
+  }
+
+  deleteGoal(id: number): void {
+    this.activeGoals = this.activeGoals.filter(g => g.id !== id);
+    this.cdr.markForCheck();
+    this.goalService.delete(id).subscribe({
+      next: () => this.loadDashboard(),
+      error: () => this.loadDashboard()
+    });
   }
 }
