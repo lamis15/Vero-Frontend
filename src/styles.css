@@ -15,6 +15,14 @@
   --white: #ffffff;
   
   --nav-h: 72px;
+
+
+  --navy:  #0a1628;
+  --navy2: #0f1f35;
+  --navy3: #162840;
+  --teal:  #3b9ab2;
+  --teal2: #1e708a;
+  --teal3: #0d4a5e;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

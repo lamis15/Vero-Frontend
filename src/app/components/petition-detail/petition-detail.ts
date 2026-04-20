@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PetitionService, Petition } from '../../services/petition.service';
@@ -9,7 +9,9 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './petition-detail.html',
-  styleUrl: './petition-detail.css'
+  styleUrl: './petition-detail.css',
+   encapsulation: ViewEncapsulation.None  // ← AJOUTE
+
 })
 export class PetitionDetail implements OnInit {
 

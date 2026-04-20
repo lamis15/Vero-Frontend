@@ -1,17 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PetitionService, Petition, PetitionStats } from '../../services/petition.service';
 import { AuthService } from '../../services/auth.service';
 import { forkJoin } from 'rxjs';
 import { PetitionDetail } from '../petition-detail/petition-detail';
-
 @Component({
   selector: 'app-petition',
   standalone: true,
   imports: [CommonModule, FormsModule, PetitionDetail], // ← PetitionDetail
   templateUrl: './petition.html',
-  styleUrl: './petition.css'
+  styleUrl: './petition.css',
+encapsulation: ViewEncapsulation.None,
 })
 export class PetitionComponent implements OnInit {
 
