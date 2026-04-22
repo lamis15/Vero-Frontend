@@ -62,7 +62,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "allowedHosts": ["localhost"]
+            "allowedHosts": ["localhost"],
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {

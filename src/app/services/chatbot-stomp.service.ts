@@ -89,7 +89,7 @@ export class ChatbotStompService {
         onWebSocketError: () =>
           this.ngZone.run(() =>
             this.userOnError?.(
-              `Cannot open WebSocket to ${url}. Is Spring Boot on 8088? With ng serve, use the dev proxy (restart npm start).`
+              `Cannot open WebSocket (${url}). Start Spring on 9090, use ng serve with proxy (angular.json proxyConfig), or set environment.apiUrl to the backend.`
             )
           )
       });

@@ -81,8 +81,9 @@ export class MessagerieService implements OnDestroy {
     if (!token) return;
 
     this.adminSubscribed = false;
+    const wsUrl = this.wsBaseUrl ? `${this.wsBaseUrl.replace(/\/$/, '')}/ws` : `${typeof window !== 'undefined' ? window.location.origin : ''}/ws`;
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(`${this.wsBaseUrl}/ws`),
+      webSocketFactory: () => new SockJS(wsUrl),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },
