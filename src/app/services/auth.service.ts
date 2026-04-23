@@ -140,11 +140,41 @@ export class AuthService {
 
   /* ===================== PASSKEY ===================== */
 
-  passkeyRegisterOptions(email: string) {
-    return this.http.post<PasskeyRegisterOptionsResponse>(
-      `${this.API}/passkey/register/options`,
-      { email }
-    );
+  getCurrentUser(): Observable<any> {
+    return this.http.get(`${this.API}/me`);
+  }
+
+  // ─── Login ──────────────────────────────────────────────────────────────────
+  login(email: string, password: string): Observable<{ token: string }> {
+    return this.http
+      .post<{ token: string }>(`${this.API}/login`, { email, password })
+      .pipe(
+        tap(res => {
+          console.log('🔐 Login successful for:', email);
+          console.log('📦 Clearing old user data...');
+          // Clear all user-specific data before logging in
+          this.clearUserData();
+          console.log('✅ Old data cleared');
+          // Set the new token
+          localStorage.setItem(this.tokenKey, res.token);
+          console.log('🎫 New token stored');
+          this.loggedIn$.next(true);
+          
+          // Verify token was stored correctly
+          const storedToken = localStorage.getItem(this.tokenKey);
+          if (storedToken) {
+            try {
+              const payload = JSON.parse(atob(storedToken.split('.')[1]));
+              console.log('👤 Logged in as:', payload.sub);
+            } catch (e) {
+              console.error('❌ Error decoding token:', e);
+            }
+          }
+          
+          // JWT has no role → fetch it from /api/users
+          this.fetchAndStoreRole(res.token, email);
+        })
+      );
   }
 
   passkeyRegisterVerify(email: string, credentialId: string, challenge: string) {
@@ -221,19 +251,40 @@ export class AuthService {
     this.role$.next(this.readRole());
   }
 
-  logout(): void {
-    localStorage.clear();
+  // ─── Logout ─────────────────────────────────────────────────────────────────
+  logout(): Observable<any> {
+    return this.http.post<any>(`${this.API}/logout`, {}).pipe(
+      tap(() => {
+        this.clearUserData();
+        this.loggedIn$.next(false);
+        this.role$.next(null);
+      })
+    );
+  }
+
+  logoutLocal(): void {
+    this.clearUserData();
     this.loggedIn$.next(false);
     this.role$.next(null);
+  }
+
+  private clearUserData(): void {
+    console.log('🧹 Clearing user data from localStorage...');
+    // Clear all user-specific data from localStorage
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.roleKey);
+    localStorage.removeItem('vero_cart');
+    console.log('✨ User data cleared:', {
+      token: localStorage.getItem(this.tokenKey),
+      role: localStorage.getItem(this.roleKey),
+      cart: localStorage.getItem('vero_cart')
+    });
+    // Add any other user-specific keys here if needed
   }
 
   /* ===================== UTIL ===================== */
 
   private hasToken(): boolean {
     return !!localStorage.getItem(this.tokenKey);
-  }
-
-  private readRole(): string | null {
-    return localStorage.getItem(this.roleKey);
   }
 }

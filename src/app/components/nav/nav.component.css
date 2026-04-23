@@ -406,89 +406,101 @@ nav.nav-transparent .nav-cta:hover {
   border-color: rgba(44, 91, 44, 0.3) !important;
 }
 
-/* ══ TOAST NOTIFICATIONS ══ */
-.toast-container {
-  position: fixed;
-  top: max(80px, calc(var(--nav-h, 72px) + 20px));
-  right: 24px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: none;
-  /* Let clicks pass through container */
+/* ── Profile Dropdown ─────────────────────────────────────────── */
+.nav-profile {
+  position: relative;
+  cursor: pointer;
 }
 
-.toast-notification {
-  pointer-events: auto;
-  /* Enable clicks on the toast itself */
-  background: rgba(14, 23, 29, 0.85);
-  /* Deep sleek dark */
-  backdrop-filter: blur(24px) saturate(130%);
-  -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* Subtle bright edge */
-  border-radius: 12px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: max-content;
-  max-width: 380px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transform: translateX(120%) scale(0.95);
-  opacity: 0;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  /* Smoother sleek ease out */
-}
-
-.toast-notification.show {
-  transform: translateX(0) scale(1);
-  opacity: 1;
-}
-
-.toast-icon {
+.profile-avatar {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(59, 154, 178, 0.2), rgba(44, 91, 44, 0.3));
-  /* Premium gradient */
-  color: var(--fern, #3b9ab2);
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  border: 1px solid rgba(59, 154, 178, 0.2);
+  color: #fff;
+  transition: background 0.2s, border-color 0.2s;
+}
+.nav-profile:hover .profile-avatar,
+.nav-profile .profile-avatar:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.7);
 }
 
-.toast-content {
-  flex: 1;
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.625rem);
+  right: 0;
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  min-width: 180px;
+  padding: 0.375rem;
+  z-index: 1000;
+  animation: dropIn 0.15s ease;
 }
 
-.toast-message {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #e2e8f0;
-  /* Soft light text */
-  margin: 0;
-  line-height: 1.5;
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
   font-weight: 500;
-}
-
-.toast-close {
+  color: #1a1c19;
+  text-decoration: none;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  width: 100%;
   cursor: pointer;
-  padding: 4px;
+  transition: background 0.15s;
+}
+.profile-item:hover { background: #f4f4ef; }
+.profile-item svg { flex-shrink: 0; color: #555; }
+
+.profile-divider {
+  height: 1px;
+  background: #e8e8e0;
+  margin: 0.25rem 0.5rem;
+}
+
+.profile-item--logout {
+  color: #c0392b;
+}
+.profile-item--logout svg { color: #c0392b; }
+.profile-item--logout:hover { background: #fce8e8; }
+
+/* ── Cart Icon ────────────────────────────────────────────────── */
+.nav-cart { position: relative; }
+
+.btn-cart {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease, transform 0.2s ease;
-  margin-left: 8px;
+  border-radius: 50%;
+  transition: background 0.15s;
 }
+.btn-cart:hover { background: rgba(255,255,255,0.15); }
 
-.toast-close:hover {
-  color: #fff;
-  transform: scale(1.1);
+/* ── Dark page nav backdrop ───────────────────────────────────── */
+nav.nav-transparent.nav-dark-bg {
+  background: rgba(14, 28, 38, 0.75);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }

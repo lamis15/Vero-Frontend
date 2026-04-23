@@ -1,0 +1,258 @@
+<div class="formation-detail-container">
+
+  @if (loading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement des détails...</p>
+    </div>
+  }
+
+  @if (error && !loading) {
+    <div class="error">
+      <p>{{ error }}</p>
+      <button class="btn-back" (click)="goBack()">← Retour aux formations</button>
+    </div>
+  }
+
+  @if (formation && !loading) {
+    <div class="formation-content">
+
+      <!-- Back button -->
+      <div class="header-section">
+        <button class="btn-back" (click)="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Retour aux formations
+        </button>
+      </div>
+
+      <!-- Formation Header -->
+      <div class="formation-header">
+        <div class="header-content">
+          <h1>{{ formation.title }}</h1>
+          <div class="header-badges">
+            @if (formation.pinned) {
+              <span class="pin-indicator">📌 Épinglée</span>
+            }
+            <span class="status-badge" [class]="formation.status.toLowerCase()">
+              {{ getStatusLabel(formation.status) }}
+            </span>
+          </div>
+        </div>
+        <p class="description">{{ formation.description }}</p>
+      </div>
+
+      <!-- Info Cards -->
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="icon">⏱️</div>
+          <div class="info">
+            <span class="label">Durée totale</span>
+            <span class="value">{{ formation.duration }} heures</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="icon">👥</div>
+          <div class="info">
+            <span class="label">Capacité</span>
+            <span class="value">{{ formation.maxCapacity }} places</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="icon">📝</div>
+          <div class="info">
+            <span class="label">Inscrits</span>
+            <span class="value">{{ formation.participantIds?.length || 0 }} / {{ formation.maxCapacity }}</span>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="icon">✅</div>
+          <div class="info">
+            <span class="label">Places disponibles</span>
+            <span class="value" [class.text-danger]="getAvailableSpots() === 0">{{ getAvailableSpots() }}</span>
+          </div>
+        </div>
+        @if (formation.price && formation.price > 0) {
+          <div class="info-card">
+            <div class="icon">💶</div>
+            <div class="info">
+              <span class="label">Prix d'inscription</span>
+              <span class="value">€{{ formation.price.toFixed(2) }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="info-card">
+            <div class="icon">🎁</div>
+            <div class="info">
+              <span class="label">Prix d'inscription</span>
+              <span class="value">Gratuit</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Registration Button or Enrolled Badge -->
+      <div class="registration-section">
+        @if (isUserEnrolled()) {
+          <!-- Enrolled Badge with Animation -->
+          <div class="enrolled-badge">
+            <span class="sparkle sparkle-1">✨</span>
+            <span class="sparkle sparkle-2">⭐</span>
+            <span class="sparkle sparkle-3">💫</span>
+            <div class="enrolled-content">
+              <svg class="check-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span class="enrolled-text">Votre place est assurée.<br>À vous de briller !</span>
+            </div>
+          </div>
+        } @else {
+          <button class="btn-register" (click)="register()" [disabled]="getAvailableSpots() === 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+            @if (getAvailableSpots() === 0) {
+              Formation complète
+            } @else if (formation.price && formation.price > 0) {
+              S'inscrire — €{{ formation.price.toFixed(2) }}
+            } @else {
+              S'inscrire gratuitement
+            }
+          </button>
+        }
+
+        <!-- Quiz / Certificate buttons -->
+        @if (canTakeQuiz()) {
+          <button class="btn-quiz" (click)="goToQuiz()">
+            📝 Passer le quiz
+          </button>
+        }
+        @if (hasCertificate()) {
+          <button class="btn-certificate" (click)="downloadCertificate()">
+            🏆 Télécharger mon certificat
+          </button>
+        }
+      </div>
+
+      <!-- Resources Section -->
+      @if (resources.length > 0) {
+        <div class="resources-section">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Ressources ({{ resources.length }})
+          </h2>
+          <div class="resources-list">
+            @for (res of resources; track res.id) {
+              <div class="resource-item">
+                <span class="resource-icon">{{ getFileIcon(res.fileType) }}</span>
+                <div class="resource-info">
+                  <span class="resource-name">{{ res.originalFileName }}</span>
+                  <span class="resource-size">{{ formatFileSize(res.fileSize) }}</span>
+                </div>
+                <button class="btn-download" (click)="downloadResource(res.id, res.originalFileName)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Télécharger
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Sessions Section -->
+      <div class="sessions-section">
+        <h2>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Sessions programmées ({{ sessions.length }})
+        </h2>
+
+        @if (sessions.length === 0) {
+          <div class="no-sessions">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>Aucune session programmée pour le moment</p>
+          </div>
+        }
+
+        <div class="sessions-grid">
+          @for (session of sessions; track session.id; let i = $index) {
+            <div class="session-card">
+              <div class="session-number">Session {{ i + 1 }}</div>
+              <div class="session-header">
+                <h3>{{ session.title }}</h3>
+                <span class="session-status" [class]="session.status.toLowerCase()">
+                  {{ getStatusLabel(session.status) }}
+                </span>
+              </div>
+              <div class="session-details">
+                <div class="detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <div class="detail-content">
+                    <span class="detail-label">Date</span>
+                    <span class="detail-value">{{ formatDate(session.startDate) }}</span>
+                  </div>
+                </div>
+                <div class="detail-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <div class="detail-content">
+                    <span class="detail-label">Horaires</span>
+                    <span class="detail-value">{{ formatTime(session.startDate) }} - {{ formatTime(session.endDate) }}</span>
+                  </div>
+                </div>
+                @if (session.meetLink) {
+                  <div class="detail-row">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    <div class="detail-content">
+                      <span class="detail-label">Lien de réunion</span>
+                      <a [href]="session.meetLink" target="_blank" class="meet-link">
+                        Rejoindre la session
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                          <polyline points="15 3 21 3 21 9"></polyline>
+                          <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

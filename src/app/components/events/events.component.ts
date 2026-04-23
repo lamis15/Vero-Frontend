@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -19,27 +19,27 @@ interface Turtle { x: number; y: number; speed: number; size: number; delay: num
 })
 export class EventsComponent implements OnInit, OnDestroy {
 
-  // ── Data ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   events: Event[]  = [];
   loading          = true;
   loadError        = false;
   joinedEventIds   = new Set<number>();
 
-  // ── Toast ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   toastMsg     = '';
   toastTitle   = '';
   toastIsError = false;
 
-  // ── Search / Filter ────────────────────────────────────────────────────────
+  // â”€â”€ Search / Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   searchQuery  = '';
   activeFilter = 'ALL';
 
-  // ── Detail Modal ───────────────────────────────────────────────────────────
+  // â”€â”€ Detail Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showDetail  = false;
   detailEvent: Event | null = null;
   joinLoading = false;
 
-  // ── Form Modal ─────────────────────────────────────────────────────────────
+  // â”€â”€ Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showFormModal   = false;
   editMode        = false;
   selectedId?:    number;
@@ -52,39 +52,39 @@ export class EventsComponent implements OnInit, OnDestroy {
   formEndDate     = '';
   formEndTime     = '';
 
-  // ── Image Upload ───────────────────────────────────────────────────────────
+  // â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   uploadedImageUrl  = '';
   uploadedImageFile: File | null = null;
   uploadPreview     = '';
   uploadLoading     = false;
 
-  // ── Delete Confirm ─────────────────────────────────────────────────────────
+  // â”€â”€ Delete Confirm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showConfirm      = false;
   confirmEventName = '';
   confirmDeleteId?: number;
 
-  // ── Animations ────────────────────────────────────────────────────────────
+  // â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   leaves:  Leaf[]   = [];
   turtles: Turtle[] = [];
 
-  // ── Flip Card ─────────────────────────────────────────────────────────────
+  // â”€â”€ Flip Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   flippedId: number | null = null;
 
-  // ── Pagination ────────────────────────────────────────────────────────────
+  // â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   pageSize    = 3;
   currentPage = 0;
 
-  // ── Ratings par event ─────────────────────────────────────────────────────
+  // â”€â”€ Ratings par event â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   eventRatings:   { [eventId: number]: RatingResponse[] } = {};
   latestRatingIds: { [eventId: number]: number | null }   = {};
   private ratingSubs: { [eventId: number]: Subscription } = {};
 
-  // ── Categories ────────────────────────────────────────────────────────────
+  // â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   categories = [
-    { key: 'Cleanup',      label: 'Cleanup',      emoji: '🧹', desc: 'Clean beaches, parks & streets' },
-    { key: 'Planting',     label: 'Planting',     emoji: '🌱', desc: 'Plant trees & restore habitats' },
-    { key: 'Workshop',     label: 'Workshop',     emoji: '🎨', desc: 'Learn & share eco-skills'        },
-    { key: 'Conservation', label: 'Conservation', emoji: '🦋', desc: 'Protect biodiversity'            },
+    { key: 'Cleanup',      label: 'Cleanup',      emoji: 'ðŸ§¹', desc: 'Clean beaches, parks & streets' },
+    { key: 'Planting',     label: 'Planting',     emoji: 'ðŸŒ±', desc: 'Plant trees & restore habitats' },
+    { key: 'Workshop',     label: 'Workshop',     emoji: 'ðŸŽ¨', desc: 'Learn & share eco-skills'        },
+    { key: 'Conservation', label: 'Conservation', emoji: 'ðŸ¦‹', desc: 'Protect biodiversity'            },
   ];
 
   private roleSub!: Subscription;
@@ -111,7 +111,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     Object.values(this.ratingSubs).forEach(s => s.unsubscribe());
   }
 
-  // ── Leaves ────────────────────────────────────────────────────────────────
+  // â”€â”€ Leaves â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   generateLeaves(): void {
     const colors = ['#74c69d','#52b788','#40916c','#95d5b2','#b7e4c7','#d8f3dc'];
     this.leaves = Array.from({ length: 14 }, () => {
@@ -124,7 +124,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Turtles ───────────────────────────────────────────────────────────────
+  // â”€â”€ Turtles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   generateTurtles(): void {
     this.turtles = Array.from({ length: 4 }, (_, i) => ({
       x: -120 - i * 220,
@@ -136,7 +136,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     }));
   }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   load(): void {
     this.loading = true; this.loadError = false;
     this.api.getAll().subscribe({
@@ -156,7 +156,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Filters ───────────────────────────────────────────────────────────────
+  // â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   get filteredEvents(): Event[] {
     return this.events.filter(ev => {
       const matchFilter = this.activeFilter === 'ALL' || this.getCategoryLabel(ev) === this.activeFilter;
@@ -204,13 +204,13 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  // ── Roles ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Roles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   isAdmin():   boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
   isUser(): boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
-  // ── Detail ────────────────────────────────────────────────────────────────
+  // â”€â”€ Detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openDetail(ev: Event): void {
     this.detailEvent = ev;
     this.joinLoading = false;
@@ -227,13 +227,13 @@ export class EventsComponent implements OnInit, OnDestroy {
         this.joinedEventIds.add(id);
         this.joinLoading = false;
         this.showDetail  = false;
-        this.showToast('Reservation confirmed! 🎉', 'A confirmation email with your QR ticket has been sent.');
+        this.showToast('Reservation confirmed! ðŸŽ‰', 'A confirmation email with your QR ticket has been sent.');
         this.cdr.markForCheck();
       },
       error: err => {
         this.joinLoading = false;
         const msg = err.error?.message || '';
-        if (err.status === 409 || msg.toLowerCase().includes('déjà') || msg.toLowerCase().includes('already')) {
+        if (err.status === 409 || msg.toLowerCase().includes('dÃ©jÃ ') || msg.toLowerCase().includes('already')) {
           this.joinedEventIds.add(id);
           this.showDetail = false;
           this.showToast('Already registered!', "You're already signed up for this event.");
@@ -247,7 +247,7 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   hasJoined(id: number): boolean { return this.joinedEventIds.has(id); }
 
-  // ── Flip Card ─────────────────────────────────────────────────────────────
+  // â”€â”€ Flip Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   flipCard(eventId: number): void {
     if (this.flippedId === eventId) {
       this.flippedId = null;
@@ -305,7 +305,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     return Math.round(this.getEventAvg(eventId));
   }
 
-  // ── Image Upload ──────────────────────────────────────────────────────────
+  // â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   onImageSelected(event: any): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -330,7 +330,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   resetForm(): any {
     return { title: '', description: '', location: '', capacity: 50, startDate: '', endDate: '', status: 'UPCOMING', category: 'Cleanup', imageUrl: '' };
   }
@@ -388,20 +388,20 @@ export class EventsComponent implements OnInit, OnDestroy {
           this.events = [result, ...this.events];
         }
         this.showToast(
-          this.editMode ? 'Event updated! ✏️' : 'Event created! 🌿',
+          this.editMode ? 'Event updated! âœï¸' : 'Event created! ðŸŒ¿',
           this.editMode ? 'Changes saved successfully.' : 'Your event is now live.'
         );
         this.cdr.markForCheck();
       },
       error: err => {
         this.saveLoading = false;
-        this.showToast('', err.error?.message || 'Vérifiez vos permissions.', true);
+        this.showToast('', err.error?.message || 'VÃ©rifiez vos permissions.', true);
         this.cdr.markForCheck();
       }
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   askDelete(ev: Event): void {
     this.confirmEventName = ev.title;
     this.confirmDeleteId  = ev.id;
@@ -417,7 +417,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
 
     this.api.delete(id).subscribe({
-      next:  () => this.showToast('Event deleted 🗑️', 'The event has been removed.'),
+      next:  () => this.showToast('Event deleted ðŸ—‘ï¸', 'The event has been removed.'),
       error: err => {
         this.events = backup;
         this.showToast('', err.error?.message || 'Erreur serveur.', true);
@@ -426,13 +426,13 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showToast(title: string, msg: string, isError = false): void {
     this.toastTitle = title; this.toastMsg = msg; this.toastIsError = isError;
     setTimeout(() => { this.toastMsg = ''; this.toastTitle = ''; this.cdr.markForCheck(); }, 4500);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getCategoryLabel(ev: Event): string {
     const t = (ev.title + ' ' + (ev.description || '')).toLowerCase();
     if (t.includes('plant') || t.includes('tree') || t.includes('forest')) return 'Planting';

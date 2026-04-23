@@ -80,7 +80,7 @@ import { EventRatingService, RatingResponse } from '../../services/Event rating.
   </div>
 
   <div class="empty-reviews" *ngIf="ratings.length === 0 && !canRate">
-    <p>👉 You can’t leave a review since you canceled your reservation !</p>
+    <p>👉 You can't leave a review since you canceled your reservation !</p>
   </div>
 
 </div>

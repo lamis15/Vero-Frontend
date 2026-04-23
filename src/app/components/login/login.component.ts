@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-login',
@@ -21,64 +22,11 @@ export class LoginComponent implements OnInit {
   registerImage = '';
   forgotPasswordEmail = '';
 
-  errFullName = '';
-  errEmail = '';
-  errPassword = '';
-  errImage = '';
-  errForgotEmail = '';
-
-  mode: 'login' | 'register' | 'forgot-password' = 'login';
-  loginError = '';
-  passkeyInfo = '';
-  loginLoading = false;
-  registrationSuccess = false;
-  forgotPasswordSuccess = false;
-  socialBusy = false;
-  passkeySupported = false;
-
-  private returnUrl = '/track';
-
   constructor(
-    private authService: AuthService,
+    private authService: AuthService, 
     private router: Router,
-    private route: ActivatedRoute
-  ) { }
-
-  ngOnInit(): void {
-    const r = this.route.snapshot.queryParamMap.get('returnUrl');
-    if (r && r.startsWith('/') && !r.startsWith('//')) {
-      this.returnUrl = r;
-    }
-
-    this.passkeySupported = typeof window !== 'undefined' && 'PublicKeyCredential' in window;
-    if (!this.passkeySupported) {
-      this.passkeyInfo = 'Passkey sign-in is only available on compatible devices and browsers.';
-    }
-
-    const queryParams = new URLSearchParams(window.location.search);
-    const social = queryParams.get('social');
-    const socialError = queryParams.get('socialError');
-    const reason = queryParams.get('reason');
-
-    if (social === 'success' && this.authService.applySocialSession(queryParams)) {
-      window.history.replaceState({}, document.title, '/login');
-      if (this.authService.currentUserRole === 'ADMIN') {
-        void this.router.navigateByUrl('/admin');
-      } else {
-        this.goAfterAuth();
-      }
-      return;
-    }
-
-    if (socialError) {
-      this.loginError = reason ? `Social sign-in failed: ${reason}` : 'Social sign-in failed. Check your provider keys on the backend, then try again.';
-      window.history.replaceState({}, document.title, '/login');
-    }
-  }
-
-  private goAfterAuth(): void {
-    void this.router.navigateByUrl(this.returnUrl);
-  }
+    private cartService: CartService
+  ) {}
 
   goBack(): void {
     window.history.back();
@@ -133,11 +81,23 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginEmail, this.loginPassword).subscribe({
       next: (res) => {
         this.loginLoading = false;
-        if (res?.user?.role === 'ADMIN') {
-          this.router.navigateByUrl('/admin');
-        } else {
-          this.goAfterAuth();
-        }
+        // Reinitialize cart for the new user
+        this.cartService.reinitializeCart();
+        
+        // Check if user is admin and redirect accordingly
+        this.authService.getCurrentUser().subscribe({
+          next: (user) => {
+            if (user.role === 'ADMIN') {
+              this.router.navigate(['/admin']);
+            } else {
+              this.router.navigate(['/track']);
+            }
+          },
+          error: () => {
+            // If we can't get user info, just go to track
+            this.router.navigate(['/track']);
+          }
+        });
       },
       error: (err) => {
         this.loginLoading = false;

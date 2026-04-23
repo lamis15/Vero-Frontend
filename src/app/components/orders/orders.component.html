@@ -1,0 +1,100 @@
+<div class="page-header bg-parchment">
+  <div class="page-header-content">
+    <div class="section-tag">My Orders</div>
+    <h1 class="page-h1">Order <em>History</em></h1>
+  </div>
+</div>
+
+<section class="orders-section">
+  <div class="orders-container">
+    @if (successMessage) {
+      <div class="success-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>{{ successMessage }}</span>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="loading-state">
+        <p>Loading your orders...</p>
+      </div>
+    }
+
+    @if (error) {
+      <div class="error-state">
+        <p>{{ error }}</p>
+        <button (click)="loadOrders()">Retry</button>
+      </div>
+    }
+
+    @if (!loading && !error) {
+      @if (orders.length === 0) {
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <h3>No orders yet</h3>
+          <p>Start shopping to see your orders here</p>
+          <a routerLink="/shop" class="btn-shop">Browse Products</a>
+        </div>
+      } @else {
+        <div class="orders-list">
+          @for (order of orders; track order.id) {
+            <div class="order-card">
+              <div class="order-header">
+                <div class="order-info">
+                  <h3 class="order-number">Order #{{ order.id }}</h3>
+                  <span class="order-date">{{ order.createdAt | date:'medium' }}</span>
+                </div>
+                <span class="order-status" [ngClass]="getStatusClass(order.status)">
+                  {{ getStatusLabel(order.status) }}
+                </span>
+              </div>
+
+              <div class="order-body">
+                <div class="order-products">
+                  @for (product of order.produits; track product.id) {
+                    <div class="product-item">
+                      <span class="product-name">{{ product.name }}</span>
+                      <span class="product-price">€{{ product.price.toFixed(2) }}</span>
+                    </div>
+                  }
+                </div>
+
+                @if (order.deliveryAddress) {
+                  <div class="order-address">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span>{{ order.deliveryAddress }}</span>
+                  </div>
+                }
+
+                @if (order.notes) {
+                  <div class="order-notes">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span>{{ order.notes }}</span>
+                  </div>
+                }
+              </div>
+
+              <div class="order-footer">
+                <span class="order-total-label">Total</span>
+                <span class="order-total-amount">€{{ order.totalAmount.toFixed(2) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</section>

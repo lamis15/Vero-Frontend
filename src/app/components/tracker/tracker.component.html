@@ -190,9 +190,7 @@
       <!-- ═══ CARD GRID ═══ -->
       <div class="eco-grid">
 
-        <!-- ──────────────────────────────
-             ANALYTICS CARD (large, 2/3)
-             ────────────────────────────── -->
+        <!-- ANALYTICS CARD (large, 2/3) -->
         <div class="eco-card eco-card-lg eco-anim-stagger-1">
           <!-- EcoScore badge -->
           <div class="eco-score" [style.--sc]="scoreColor">
@@ -220,7 +218,7 @@
               <div class="eco-dot-col">
                 <div class="eco-dot-title">{{ row.label }}</div>
                 <div class="eco-dot-matrix">
-                  @for (filled of row.dotGrid; track $index) {
+                  @for (filled of getDotGrid(row.pct); track $index) {
                     <div class="eco-dot" [class.filled]="filled" [style.--dc]="row.color"></div>
                   }
                 </div>
@@ -261,9 +259,7 @@
           </div>
         </div>
 
-        <!-- ──────────────────────────────
-             SCAN CARD (right, 1/3)
-             ────────────────────────────── -->
+        <!-- SCAN CARD (right, 1/3) -->
         <div class="eco-card eco-card-scan eco-anim-stagger-2">
           <div class="eco-scan-glow"></div>
           <div class="eco-scan-visual">
@@ -284,71 +280,7 @@
           </button>
         </div>
 
-        <!-- ──────────────────────────────
-             AI TIPS CARD
-             ────────────────────────────── -->
-        <div class="eco-card eco-card-tips eco-anim-stagger-3">
-
-          <!-- Left: header panel -->
-          <div class="eco-tips-header">
-            <div class="eco-tips-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
-                <path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-              </svg>
-            </div>
-            <div class="eco-tips-title-group">
-              <h3>AI Eco Tips</h3>
-              <span class="eco-tips-badge">Personalised</span>
-            </div>
-            <div class="eco-tips-nav" *ngIf="!tipsLoading && aiTips.length > 1">
-              <button class="eco-tips-nav-btn" (click)="prevTip()" title="Previous">‹</button>
-              <span class="eco-tips-counter">{{ activeTipIndex + 1 }}/{{ aiTips.length }}</span>
-              <button class="eco-tips-nav-btn" (click)="nextTip()" title="Next">›</button>
-            </div>
-            <button class="eco-tips-refresh" (click)="loadDashboard()" title="Refresh tips">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                <path d="M23 4v6h-6M1 20v-6h6"/>
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-              </svg>
-              Refresh
-            </button>
-          </div>
-
-          <!-- Right: tip content -->
-          @if (tipsLoading) {
-            <div class="eco-tips-body">
-              <div class="eco-tips-skeleton">
-                <div class="eco-sk-line full"></div>
-                <div class="eco-sk-line full"></div>
-                <div class="eco-sk-line half"></div>
-              </div>
-            </div>
-          }
-
-          @if (!tipsLoading && aiTips.length === 0) {
-            <div class="eco-tips-body eco-tips-empty">
-              <span class="eco-tips-empty-icon">🌿</span>
-              <p>Log some activities and we'll generate personalised tips for you.</p>
-            </div>
-          }
-
-          @if (!tipsLoading && aiTips.length > 0) {
-            <div class="eco-tips-body">
-              <div class="eco-tip-glow"></div>
-              <p class="eco-tip-text">{{ aiTips[activeTipIndex] }}</p>
-              <div class="eco-tips-dots">
-                @for (tip of aiTips; track $index) {
-                  <span class="eco-tips-dot" [class.active]="$index === activeTipIndex" (click)="activeTipIndex = $index"></span>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-
-        <!-- ──────────────────────────────
-             GOALS CARD (bottom-left)
-             ────────────────────────────── -->
+        <!-- GOALS CARD (bottom-left) -->
         <div class="eco-card eco-card-goals eco-anim-stagger-3">
           <div class="eco-card-head-inline">
             <h3>Impact Goals</h3>
@@ -407,7 +339,7 @@
             </div>
           }
 
-          <!-- Nearby bins styled section -->
+          <!-- Goals stat -->
           @if (dashboard.totalGoals > 0) {
             <div class="eco-goals-stat">
               <span class="eco-gs-achieved">{{ dashboard.achievedGoals }}</span>
@@ -416,13 +348,11 @@
           }
         </div>
 
-        <!-- ──────────────────────────────
-             HISTORY CARD (bottom-right)
-             ────────────────────────────── -->
+        <!-- HISTORY CARD (bottom-right) -->
         <div class="eco-card eco-card-history eco-anim-stagger-4">
           <div class="eco-history-bg"></div>
           <div class="eco-history-content">
-            <h3>History <span>& Trends</span></h3>
+            <h3>History <span>&amp; Trends</span></h3>
 
             <!-- Trend chart -->
             <canvas #trendCanvas class="eco-trend-canvas"></canvas>
@@ -432,7 +362,7 @@
               @if (activities.length === 0) {
                 <div class="eco-empty light">No activities recorded yet</div>
               }
-              @for (a of recentActivities; track a.id; let i = $index) {
+              @for (a of activities.slice(0, 10); track a.id; let i = $index) {
                 <div class="eco-log-row eco-anim-slide-up" [style.animation-delay]="(i * 50) + 'ms'" [class.editing]="editingActivityId === a.id">
                   @if (editingActivityId === a.id) {
                     <div class="eco-edit-inline">
