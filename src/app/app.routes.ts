@@ -45,11 +45,16 @@ export const routes: Routes = [
     path: 'my-reservations',
     loadComponent: () => import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
   },
+  
  {
   path: 'petitions',
   loadComponent: () => import('./components/petition/petition')
     .then(m => m.PetitionComponent)
 },
+ {
+    path: 'anomaly',
+    loadComponent: () => import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
+  },
   { path: '**', redirectTo: '' }
 
 

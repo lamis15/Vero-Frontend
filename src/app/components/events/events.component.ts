@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
@@ -90,6 +91,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   private roleSub!: Subscription;
 
   constructor(
+    private http: HttpClient,
     private api:           EventApiService,
     private auth:          AuthService,
     private cdr:           ChangeDetectorRef,
@@ -100,6 +102,10 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.generateLeaves();
     this.generateTurtles();
     this.load();
+    this.http.get(`${this.ML_API}/health`).subscribe({
+  next:  () => { this.mlAvailable = true;  this.cdr.markForCheck(); },
+  error: () => { this.mlAvailable = false; this.cdr.markForCheck(); }
+});
     if (this.auth.isLoggedIn && !this.auth.isAdmin && !this.auth.isPartner) {
       this.loadMyReservations();
     }
@@ -341,6 +347,8 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.formDate = this.formTime = this.formEndDate = this.formEndTime = '';
     this.uploadPreview = ''; this.uploadedImageFile = null;
     this.formStep = 1; this.showFormModal = true;
+    // dans openCreate() et openEdit() ajouter :
+this.predResult = null; this.predicting = false; this.predStep = 0; this.predAnimScore = 0;
   }
 
   openEdit(ev: Event): void {
@@ -351,18 +359,25 @@ export class EventsComponent implements OnInit, OnDestroy {
     if (ev.startDate) { this.formDate = ev.startDate.substring(0,10); this.formTime = ev.startDate.substring(11,16); }
     if (ev.endDate)   { this.formEndDate = ev.endDate.substring(0,10); this.formEndTime = ev.endDate.substring(11,16); }
     this.formStep = 1; this.showFormModal = true;
+    // dans openCreate() et openEdit() ajouter :
+this.predResult = null; this.predicting = false; this.predStep = 0; this.predAnimScore = 0;
   }
 
   nextStep(): void {
-    if (this.formStep === 1 && !this.form.title?.trim()) {
-      this.showToast('', 'Le titre est obligatoire.', true); return;
-    }
-    if (this.formStep === 2) {
-      this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`;
-      this.form.endDate   = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`;
-    }
-    this.formStep++;
+  if (this.formStep === 1 && !this.form.title?.trim()) {
+    this.showToast('', 'Le titre est obligatoire.', true); return;
   }
+  if (this.formStep === 2) {
+    this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`;
+    this.form.endDate   = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`;
+  }
+  this.formStep++;
+  if (this.formStep === 5) {
+    this.predResult = null;
+    this.predicting = false;
+    this.predStep   = 0;
+  }
+}
 
   async submitForm(): Promise<void> {
     this.saveLoading = true;
@@ -459,4 +474,96 @@ export class EventsComponent implements OnInit, OnDestroy {
   getFillPercent(ev: Event): number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
 
   trackById(_: number, ev: Event): number { return ev.id!; }
+  // ── ML Predictor (step 5) ─────────────────────────────────
+mlAvailable       = false;
+predicting        = false;
+predStep          = 0;
+predResult: any   = null;
+predAnimScore     = 0;
+predActiveTab: 'signals' | 'shap' | 'recs' = 'signals';
+
+private readonly ML_API = 'http://localhost:5000';
+
+predSteps = [
+  { icon: '🌤️', label: 'Fetching weather signals...' },
+  { icon: '📈', label: 'Querying Google Trends...' },
+  { icon: '📅', label: 'Checking calendar conflicts...' },
+  { icon: '🏙️', label: 'Scanning competing events...' },
+  { icon: '🧠', label: 'Running Gradient Boosting model...' },
+  { icon: '🔬', label: 'Computing SHAP explanations...' },
+];
+async runPrediction(): Promise<void> {
+  this.predicting = true;
+  this.predStep   = 0;
+  this.predResult = null;
+  this.cdr.markForCheck();
+
+  const today    = new Date();
+  const eventDay = new Date(this.formDate);
+  const daysUntil = Math.max(1, Math.ceil((eventDay.getTime() - today.getTime()) / 86400000));
+
+  for (let i = 0; i < this.predSteps.length; i++) {
+    await new Promise(r => setTimeout(r, 550 + Math.random() * 300));
+    this.predStep = i + 1;
+    this.cdr.markForCheck();
+  }
+
+  const payload = {
+    date:      this.formDate,
+    time:      this.formTime || '09:00',
+    category:  this.form.category || 'Cleanup',
+    city:      (this.form.location || 'Tunis').split(',')[0].trim(),
+    audience:  'General public',
+    capacity:  this.form.capacity,
+    duration:  2,
+    isOutdoor: 1,
+    daysUntil
+  };
+
+  this.http.post<any>(`${this.ML_API}/predict`, payload).subscribe({
+    next: res => {
+      this.predResult  = res;
+      this.predicting  = false;
+      this.animPredScore(res.score);
+      this.cdr.markForCheck();
+    },
+    error: () => {
+      this.predicting  = false;
+      this.predResult  = { error: true };
+      this.cdr.markForCheck();
+    }
+  });
+}
+
+private animPredScore(target: number): void {
+  this.predAnimScore = 0;
+  const inc = target / 60;
+  const iv  = setInterval(() => {
+    this.predAnimScore = Math.min(this.predAnimScore + inc, target);
+    this.cdr.markForCheck();
+    if (this.predAnimScore >= target) { this.predAnimScore = target; clearInterval(iv); }
+  }, 16);
+}
+
+predScoreColor(s: number): string {
+  return s >= 75 ? '#1e6b45' : s >= 55 ? '#c47d0e' : '#c0392b';
+}
+predScoreDash(s: number): string {
+  const c = 2 * Math.PI * 54;
+  return `${(s / 100) * c} ${c - (s / 100) * c}`;
+}
+predSigBg(st: string):    string { return st==='good'?'rgba(30,107,69,.08)':st==='warning'?'rgba(196,125,14,.08)':'rgba(192,57,43,.08)'; }
+predSigColor(st: string): string { return st==='good'?'#1e6b45':st==='warning'?'#c47d0e':'#c0392b'; }
+predShapColor(v: number): string { return v > 0 ? '#1e6b45' : '#c0392b'; }
+predShapWidth(v: number): number { return Math.min(100, Math.abs(v) * 80); }
+predPrioColor(p: string): string { return p==='high'?'#c0392b':p==='medium'?'#c47d0e':'#1e6b45'; }
+
+skipPrediction(): void {
+  this.predResult  = null;
+  this.predicting  = false;
+  this.predStep    = 0;
+  this.predAnimScore = 0;
+  this.formStep    = 4;
+  this.cdr.markForCheck();
+}
 }
