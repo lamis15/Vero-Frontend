@@ -295,3 +295,83 @@ nav.nav-transparent .nav-cta:hover {
   background: rgba(44, 91, 44, 0.16) !important;
   border-color: rgba(44, 91, 44, 0.3) !important;
 }
+
+/* ══ TOAST NOTIFICATIONS ══ */
+.toast-container {
+  position: fixed;
+  top: max(80px, calc(var(--nav-h, 72px) + 20px));
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none; /* Let clicks pass through container */
+}
+
+.toast-notification {
+  pointer-events: auto; /* Enable clicks on the toast itself */
+  background: rgba(14, 23, 29, 0.85); /* Deep sleek dark */
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle bright edge */
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: max-content;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+  transform: translateX(120%) scale(0.95);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); /* Smoother sleek ease out */
+}
+
+.toast-notification.show {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(59, 154, 178, 0.2), rgba(44, 91, 44, 0.3)); /* Premium gradient */
+  color: var(--fern, #3b9ab2);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  border: 1px solid rgba(59, 154, 178, 0.2);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #e2e8f0; /* Soft light text */
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.toast-close:hover {
+  color: #fff;
+  transform: scale(1.1);
+}

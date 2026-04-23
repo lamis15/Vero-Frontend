@@ -20,6 +20,7 @@ export class AuthService {
   private readonly USERS = `${environment.apiUrl}/api/users`;
   private tokenKey = 'vero_jwt_token';
   private roleKey  = 'vero_user_role';
+  private userIdKey = 'vero_user_id';
 
   private loggedIn$ = new BehaviorSubject<boolean>(this.hasToken());
   /** Reactive stream of the current user role (null = unknown / guest) */
@@ -63,6 +64,11 @@ export class AuthService {
     );
   }
 
+  get currentUserId(): number | null {
+    const idStr = localStorage.getItem(this.userIdKey);
+    return idStr ? parseInt(idStr, 10) : null;
+  }
+
   get isAdmin():         boolean { return this.currentUserRole === 'ADMIN'; }
   get isPartner():       boolean { return this.currentUserRole === 'PARTNER'; }
   get canManageEvents(): boolean { return this.isAdmin || this.isPartner; }
@@ -89,6 +95,7 @@ export class AuthService {
         const me = users.find(u => u.email === email);
         if (me?.role) {
           localStorage.setItem(this.roleKey, me.role);
+          localStorage.setItem(this.userIdKey, me.id.toString());
           this.role$.next(me.role);        // ← notify components immediately
         }
       },
@@ -107,10 +114,11 @@ export class AuthService {
   restoreSession(): void {
     const token = this.getToken();
     const email = this.currentUserEmail;
-    const cached = localStorage.getItem(this.roleKey);
+    const cachedRole = localStorage.getItem(this.roleKey);
+    const cachedId = localStorage.getItem(this.userIdKey);
 
-    if (cached) {
-      this.role$.next(cached);   // push cached role to the stream
+    if (cachedRole && cachedId) {
+      this.role$.next(cachedRole);   // push cached role to the stream
       return;
     }
 
@@ -123,6 +131,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.userIdKey);
     this.role$.next(null);
     this.loggedIn$.next(false);
   }

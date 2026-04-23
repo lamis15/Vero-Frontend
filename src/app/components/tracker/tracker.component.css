@@ -203,7 +203,7 @@
 .eco-grid {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   gap: 16px;
 }
 
@@ -380,6 +380,115 @@
   transform: translateY(-1px);
 }
 .eco-scan-trigger:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── AI Tips Card ── */
+.eco-card-tips {
+  grid-row: 3; grid-column: 1 / -1;
+  display: flex; flex-direction: row; gap: 24px; align-items: flex-start;
+  position: relative; overflow: hidden;
+}
+.eco-tips-header {
+  display: flex; flex-direction: column; gap: 8px;
+  flex-shrink: 0; width: 200px;
+  border-right: 1px solid rgba(0, 229, 255, 0.06);
+  padding-right: 24px;
+}
+.eco-tips-icon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.12);
+  display: flex; align-items: center; justify-content: center;
+  color: #00E5FF;
+}
+.eco-tips-title-group {
+  display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;
+}
+.eco-tips-title-group h3 {
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+  color: rgba(255,255,255,0.88); margin: 0;
+}
+.eco-tips-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 600;
+  color: #00E5FF; text-transform: uppercase; letter-spacing: 0.08em;
+  background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 100px; padding: 2px 7px; width: fit-content;
+}
+.eco-tips-nav {
+  display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 4px;
+}
+.eco-tips-nav-btn {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(0, 229, 255, 0.1);
+  color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; line-height: 1;
+}
+.eco-tips-nav-btn:hover { color: #00E5FF; border-color: rgba(0, 229, 255, 0.3); }
+.eco-tips-counter {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: rgba(255,255,255,0.3); min-width: 28px; text-align: center;
+}
+
+/* Skeleton */
+.eco-tips-skeleton { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; flex: 1; }
+.eco-sk-line {
+  height: 12px; border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.eco-sk-line.full { width: 100%; }
+.eco-sk-line.half { width: 55%; }
+
+/* Empty state */
+.eco-tips-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; text-align: center; padding: 16px 0;
+}
+.eco-tips-empty-icon { font-size: 28px; }
+.eco-tips-empty p {
+  font-family: 'DM Sans', sans-serif; font-size: 12px;
+  color: rgba(255,255,255,0.3); line-height: 1.5; margin: 0; max-width: 180px;
+}
+
+/* Tip body */
+.eco-tips-body {
+  flex: 1; position: relative; min-width: 0;
+  background: rgba(0, 229, 255, 0.03);
+  border: 1px solid rgba(0, 229, 255, 0.06);
+  border-radius: 14px; padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.eco-tip-glow {
+  position: absolute; top: -20px; left: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(0, 229, 255, 0.06);
+  filter: blur(20px); pointer-events: none;
+}
+.eco-tip-text {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; line-height: 1.65;
+  color: rgba(255,255,255,0.75); margin: 0; flex: 1;
+  position: relative; z-index: 1;
+}
+.eco-tips-dots {
+  display: flex; gap: 5px; align-items: center; flex-wrap: wrap;
+}
+.eco-tips-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.12); cursor: pointer;
+  transition: all 0.2s;
+}
+.eco-tips-dot.active { background: #00E5FF; width: 12px; border-radius: 3px; }
+
+/* Refresh button */
+.eco-tips-refresh {
+  display: flex; align-items: center; gap: 5px; align-self: flex-start;
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+  color: rgba(255,255,255,0.3); background: none; border: none; cursor: pointer;
+  padding: 0; transition: color 0.2s;
+}
+.eco-tips-refresh:hover { color: #00E5FF; }
+.eco-tips-refresh svg { flex-shrink: 0; }
 
 /* ── Goals Card ── */
 .eco-card-goals {

@@ -17,7 +17,7 @@ export class LoginComponent {
   loginError = '';
   loginLoading = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router) { }
 
   goBack(): void {
     window.history.back();
@@ -30,7 +30,7 @@ export class LoginComponent {
     this.authService.login(this.loginEmail, this.loginPassword).subscribe({
       next: () => {
         this.loginLoading = false;
-        this.router.navigate(['/track']);
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.loginLoading = false;

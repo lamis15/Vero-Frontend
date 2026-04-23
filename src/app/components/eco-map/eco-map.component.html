@@ -1,0 +1,207 @@
+<div class="eco-map-page">
+
+  <!-- ═══ LEFT PANEL — Discovery Sidebar ═══ -->
+  <aside class="sidebar">
+
+    <!-- Hero Banner -->
+    <div class="hero">
+      <svg class="hero-svg" viewBox="0 0 400 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Sky — deep jade gradient -->
+        <defs>
+          <linearGradient id="heroSky" x1="0" y1="0" x2="400" y2="130" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#1c434a" />
+            <stop offset="100%" stop-color="#057569" />
+          </linearGradient>
+        </defs>
+        <rect width="400" height="130" rx="0" fill="url(#heroSky)" />
+        <!-- Moon -->
+        <circle cx="340" cy="30" r="22" fill="#bbd7c8" opacity="0.35" />
+        <circle cx="340" cy="30" r="16" fill="#bbd7c8" opacity="0.55" />
+        <!-- Clouds -->
+        <ellipse cx="80" cy="24" rx="28" ry="10" fill="white" opacity="0.12" />
+        <ellipse cx="68" cy="20" rx="16" ry="8" fill="white" opacity="0.08" />
+        <ellipse cx="240" cy="16" rx="22" ry="8" fill="white" opacity="0.1" />
+        <!-- Mountains -->
+        <polygon points="0,130 60,50 120,130" fill="#6dab8c" opacity="0.5" />
+        <polygon points="80,130 160,35 240,130" fill="#057569" opacity="0.6" />
+        <polygon points="200,130 290,45 380,130" fill="#6dab8c" opacity="0.5" />
+        <!-- Ground -->
+        <ellipse cx="200" cy="140" rx="260" ry="35" fill="#6dab8c" opacity="0.5" />
+        <ellipse cx="100" cy="145" rx="180" ry="30" fill="#057569" opacity="0.6" />
+        <!-- Trees -->
+        <rect x="70" y="80" width="6" height="25" rx="2" fill="#1b2121" opacity="0.4" />
+        <circle cx="73" cy="72" r="16" fill="#6dab8c" />
+        <circle cx="65" cy="76" r="12" fill="#057569" />
+        <rect x="290" y="85" width="5" height="20" rx="2" fill="#1b2121" opacity="0.4" />
+        <circle cx="292" cy="78" r="13" fill="#6dab8c" />
+        <rect x="170" y="82" width="5" height="22" rx="2" fill="#1b2121" opacity="0.4" />
+        <circle cx="172" cy="74" r="14" fill="#057569" />
+        <!-- Buildings -->
+        <rect x="320" y="75" width="14" height="35" rx="2" fill="#bbd7c8" opacity="0.2" />
+        <rect x="338" y="65" width="12" height="45" rx="2" fill="#6dab8c" opacity="0.25" />
+        <rect x="354" y="80" width="16" height="30" rx="2" fill="#bbd7c8" opacity="0.2" />
+        <rect x="324" y="82" width="3" height="3" rx="0.5" fill="#bbd7c8" opacity="0.35" />
+        <rect x="328" y="82" width="3" height="3" rx="0.5" fill="#bbd7c8" opacity="0.35" />
+        <rect x="342" y="73" width="3" height="3" rx="0.5" fill="#bbd7c8" opacity="0.35" />
+        <!-- Stars -->
+        <circle cx="130" cy="45" r="2" fill="#bbd7c8" opacity="0.4" />
+        <circle cx="250" cy="30" r="1.5" fill="#bbd7c8" opacity="0.3" />
+      </svg>
+      <div class="hero-content">
+        <h1>Explore Your Green City <span>🌿</span></h1>
+        <p>Discover eco-friendly spots near you</p>
+      </div>
+    </div>
+
+    <!-- User + AQI row -->
+    <div class="user-row">
+      <div class="user-info">
+        <div class="avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#6dab8c" stroke-width="1.5" width="18" height="18">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <div>
+          <span class="greeting">Welcome back 👋</span>
+          <span class="username">Eco Explorer</span>
+        </div>
+      </div>
+      <div class="aqi-badge" [style.--aqi-clr]="getAqiColor()">
+        <span class="aqi-dot"></span>
+        AQI: {{ aqi.aqi }} — {{ aqi.aqiLabel }} {{ getAqiEmoji() }}
+      </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filters">
+      @for (f of filters; track f.key) {
+      <button class="pill" [class.active]="f.active" [style.--pill-clr]="f.color" (click)="toggleFilter(f.key)">
+        <span>{{ f.emoji }}</span> {{ f.label }}
+      </button>
+      }
+    </div>
+
+    <!-- Spot Cards -->
+    <div class="spot-list">
+      <h3 class="list-title">
+        Nearby Spots
+        @if (!loading) { <span class="count">({{ visibleSpots.length }})</span> }
+      </h3>
+
+      @if (loading) {
+      <div class="empty-state">
+        <div class="spinner"></div>
+        <p>Discovering spots...</p>
+      </div>
+      } @else if (visibleSpots.length === 0) {
+      <div class="empty-state"><span class="big-emoji">🔍</span>
+        <p>No spots match your filters</p>
+      </div>
+      } @else {
+      @for (spot of visibleSpots; track spot.id; let i = $index) {
+      <div class="spot-card" [class.active]="selectedSpot?.id === spot.id" [style.animation-delay]="(i * 50) + 'ms'"
+        (click)="selectSpot(spot)">
+        <div class="spot-icon" [style.background]="spot.pinColor + '15'" [style.color]="spot.pinColor">
+          {{ spot.emoji }}
+        </div>
+        <div class="spot-body">
+          <h4>{{ spot.name }}</h4>
+          <div class="spot-meta">
+            <span class="cat-badge" [style.background]="spot.pinColor + '15'" [style.color]="spot.pinColor">{{
+              spot.category }}</span>
+            <span class="dist">📍 {{ spot.distance }}</span>
+          </div>
+        </div>
+        <button class="btn-ci" [class.done]="isCheckedIn(spot.id)" [disabled]="isCheckedIn(spot.id)"
+          (click)="checkIn(spot, $event)">
+          {{ isCheckedIn(spot.id) ? '✓' : 'Check In' }}
+        </button>
+      </div>
+      }
+      }
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat">🏆 <span>{{ userPoints }} pts</span></div>
+      <div class="stat">📍 <span>{{ checkInCount }} check-ins</span></div>
+      <div class="stat">🌱 <span>{{ badgesEarned }} badges</span></div>
+    </div>
+  </aside>
+
+  <!-- ═══ RIGHT PANEL — Real Leaflet Map ═══ -->
+  <main class="map-panel">
+    <div #mapContainer class="leaflet-host"></div>
+
+    <!-- FAB: Add Pin -->
+    <button class="fab" (click)="toggleAddPin()" title="Suggest a new eco spot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="22" height="22">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      @if (communityPinCount > 0) {
+      <span class="fab-count">{{ communityPinCount }}</span>
+      }
+    </button>
+
+    <!-- Popup Card -->
+    @if (selectedSpot) {
+    <div class="popup-card">
+      <button class="popup-x" (click)="closePopup()">✕</button>
+      <div class="popup-icon" [style.background]="selectedSpot.pinColor + '12'">
+        <span>{{ selectedSpot.emoji }}</span>
+      </div>
+      <div class="popup-info">
+        <div class="popup-row1">
+          <h3>{{ selectedSpot.name }}</h3>
+          <span class="popup-cat" [style.background]="selectedSpot.pinColor + '15'"
+            [style.color]="selectedSpot.pinColor">
+            {{ selectedSpot.category }}
+          </span>
+        </div>
+        <p class="popup-dist">
+          📍 {{ selectedSpot.distance }} from you
+          <span [class.open]="selectedSpot.isOpen">
+            {{ selectedSpot.isOpen ? '· Open Now 🟢' : '· Closed 🔴' }}
+          </span>
+        </p>
+        <p class="popup-desc">{{ selectedSpot.description }}</p>
+        <div class="popup-btns">
+          <button class="btn-dir" (click)="getDirections(selectedSpot)">Get Directions →</button>
+          <button class="btn-ci-lg" [class.done]="isCheckedIn(selectedSpot.id)"
+            [disabled]="isCheckedIn(selectedSpot.id)" (click)="checkIn(selectedSpot)">
+            {{ isCheckedIn(selectedSpot.id) ? 'Checked In ✓' : 'Check In' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Add Pin Modal -->
+    @if (showAddPin) {
+    <div class="modal-bg" (click)="toggleAddPin()"></div>
+    <div class="modal-card">
+      <h3>📍 Suggest a New Eco Spot</h3>
+      <p>Pin will be placed at current map center</p>
+      <input type="text" [(ngModel)]="newPinName" placeholder="Spot name" />
+      <textarea [(ngModel)]="newPinDesc" placeholder="Description (optional)"></textarea>
+      <select [(ngModel)]="newPinType">
+        @for (f of filters; track f.key) {
+        <option [value]="f.key">{{ f.emoji }} {{ f.label }}</option>
+        }
+      </select>
+      <button class="btn-submit" (click)="submitNewPin()" [disabled]="!newPinName.trim()">
+        Submit for Verification
+      </button>
+    </div>
+    }
+  </main>
+</div>
+
+<!-- Toasts -->
+<div class="toast-rack">
+  @for (t of toasts; track t.id) {
+  <div class="toast" [class.show]="t.visible">{{ t.message }}</div>
+  }
+</div>

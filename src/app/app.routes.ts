@@ -9,6 +9,10 @@ export const routes: Routes = [
     path: 'track', 
     loadComponent: () => import('./components/tracker/tracker.component').then(m => m.TrackerComponent) 
   },
+  {
+    path: 'map',
+    loadComponent: () => import('./components/eco-map/eco-map.component').then(m => m.EcoMapComponent)
+  },
   { 
     path: 'shop', 
     loadComponent: () => import('./components/shop/shop.component').then(m => m.ShopComponent) 

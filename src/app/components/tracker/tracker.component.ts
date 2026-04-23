@@ -7,6 +7,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { CarbonActivityService } from '../../services/carbon-activity.service';
 import { CarbonGoalService } from '../../services/carbon-goal.service';
 import { CarbonAIService } from '../../services/carbon-ai.service';
+import { CarbonTipService } from '../../services/carbon-tip.service';
 import { AuthService } from '../../services/auth.service';
 import { EcoDashboardDTO, DailyCarbon } from '../../services/dashboard.models';
 import {
@@ -85,6 +86,11 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   aiLoading = false;
   aiResult: CarbonActivity | null = null;
 
+  // ─── AI Tips ───
+  aiTips: string[] = [];
+  tipsLoading = false;
+  activeTipIndex = 0;
+
   // ─── Scan ───
   scanLoading = false;
   scanPreviewUrl: string | ArrayBuffer | null = null;
@@ -112,6 +118,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     private activityService: CarbonActivityService,
     private goalService: CarbonGoalService,
     private aiService: CarbonAIService,
+    private tipService: CarbonTipService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
@@ -262,6 +269,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load detail data not in dashboard DTO
         this.loadActivities();
         this.loadGoals();
+        this.loadTips();
         // Trigger animations
         setTimeout(() => {
           this.animateValues();
@@ -282,6 +290,37 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  private loadTips(): void {
+    this.tipsLoading = true;
+    this.cdr.markForCheck();
+    this.tipService.getRecommended().subscribe({
+      next: (tips) => {
+        this.aiTips = tips ?? [];
+        this.activeTipIndex = 0;
+        this.tipsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.tipsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  nextTip(): void {
+    if (this.aiTips.length > 0) {
+      this.activeTipIndex = (this.activeTipIndex + 1) % this.aiTips.length;
+      this.cdr.markForCheck();
+    }
+  }
+
+  prevTip(): void {
+    if (this.aiTips.length > 0) {
+      this.activeTipIndex = (this.activeTipIndex - 1 + this.aiTips.length) % this.aiTips.length;
+      this.cdr.markForCheck();
+    }
   }
 
   private loadGoals(): void {

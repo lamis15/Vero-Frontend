@@ -1,0 +1,1066 @@
+/* ═══════════════════════════════════════════════════
+   VERO ECO MAP — Jade Aurora Edition
+   Palette: #1b2121 · #1c434a · #057569 · #6dab8c · #bbd7c8
+   ═══════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:host {
+  --twilight: #1b2121;
+  --deep-jade: #1c434a;
+  --mystic-jade: #057569;
+  --frosted-mint: #6dab8c;
+  --cloud-mint: #bbd7c8;
+
+  --primary: var(--mystic-jade);
+  --primary-light: rgba(109, 171, 140, 0.18);
+  --primary-glow: rgba(5, 117, 105, 0.35);
+  --secondary: var(--deep-jade);
+  --accent: var(--frosted-mint);
+  --bg: transparent;
+  --surface: rgba(255, 255, 255, 0.08);
+  --txt: #ffffff;
+  --muted: rgba(255, 255, 255, 0.6);
+  --border: rgba(255, 255, 255, 0.12);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -5px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.2);
+  --r: 16px;
+  --r-lg: 24px;
+  --pill: 9999px;
+  --nav-h: 72px;
+}
+
+/* ── Page ── */
+.eco-map-page {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  background: linear-gradient(135deg,
+      #1c434a 0%,
+      #057569 40%,
+      #6dab8c 75%,
+      #bbd7c8 100%);
+  font-family: 'Poppins', 'Inter', sans-serif;
+  color: var(--txt);
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════════════════ */
+.sidebar {
+  width: 380px;
+  min-width: 380px;
+  height: 100%;
+  background: linear-gradient(180deg,
+      #1c434a 0%,
+      #057569 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideLeft 0.5s ease both;
+  z-index: 10;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.hero-svg {
+  width: 100%;
+  display: block;
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px;
+  background: linear-gradient(transparent, rgba(28, 67, 74, 0.88) 40%);
+}
+
+.hero-content h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hero-content h1 span {
+  font-size: 18px;
+}
+
+.hero-content p {
+  font-size: 12px;
+  color: var(--cloud-mint);
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+/* User row */
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(109, 171, 140, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.greeting {
+  display: block;
+  font-size: 10px;
+  color: var(--cloud-mint);
+  font-weight: 500;
+}
+
+.username {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.aqi-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #ffffff;
+}
+
+.aqi-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aqi-clr, #6dab8c);
+  animation: aqiPulse 2s ease-in-out infinite;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 10px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border-radius: var(--pill);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pill:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.pill.active {
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 117, 105, 0.35);
+}
+
+.pill span {
+  font-size: 13px;
+}
+
+/* Spot List */
+.spot-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(109, 171, 140, 0.3) transparent;
+}
+
+.spot-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spot-list::-webkit-scrollbar-thumb {
+  background: rgba(109, 171, 140, 0.3);
+  border-radius: 10px;
+}
+
+.list-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px 2px;
+  color: #ffffff;
+}
+
+.count {
+  font-weight: 500;
+  color: var(--cloud-mint);
+  font-size: 12px;
+}
+
+.spot-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.25s;
+  animation: fadeUp 0.4s ease both;
+  border-left: 3px solid transparent;
+}
+
+.spot-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-left-color: var(--frosted-mint);
+}
+
+.spot-card.active {
+  border-color: var(--frosted-mint);
+  border-left-color: var(--frosted-mint);
+  box-shadow: 0 0 20px rgba(109, 171, 140, 0.3);
+}
+
+.spot-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.spot-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spot-body h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.spot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cat-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dist {
+  font-size: 10px;
+  color: var(--cloud-mint);
+  font-weight: 500;
+}
+
+.btn-ci {
+  padding: 5px 12px;
+  border-radius: var(--pill);
+  border: 1.5px solid var(--frosted-mint);
+  background: transparent;
+  color: var(--frosted-mint);
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-ci:hover:not(:disabled) {
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border-color: transparent;
+  color: white;
+}
+
+.btn-ci.done {
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border-color: transparent;
+  color: white;
+}
+
+.btn-ci:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--cloud-mint);
+  font-size: 13px;
+}
+
+.big-emoji {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 10px;
+  border: 3px solid rgba(109, 171, 140, 0.2);
+  border-top-color: var(--frosted-mint);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Stats */
+.stats-row {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  background: rgba(27, 33, 33, 0.3);
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.stat span {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════
+   MAP PANEL
+   ════════════════════════════════════════════════ */
+.map-panel {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  animation: fadeIn 0.6s ease 0.2s both;
+}
+
+.leaflet-host {
+  width: 100%;
+  height: 100%;
+}
+
+/*
+  Jade Aurora tile tint:
+  Streets → light jade
+  Land    → soft greenish
+  No pure white, no dark navy
+  Feels like a foggy mint city map.
+*/
+:host ::ng-deep .leaflet-tile-pane {
+  filter:
+    sepia(60%) hue-rotate(140deg) saturate(0.9) brightness(1.05);
+}
+
+:host ::ng-deep .leaflet-container {
+  background: #bbd7c8;
+}
+
+/* ── Custom Leaflet Pin (DivIcon) ── */
+/* ── Eco Pin — jade glow, aurora feel ── */
+
+/* Fix: Leaflet sets fixed dimensions on .leaflet-marker-icon which clips
+   the rotated teardrop pin. Force overflow visible so pins render. */
+:host ::ng-deep .leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+:host ::ng-deep .leaflet-marker-icon {
+  overflow: visible !important;
+}
+
+:host ::ng-deep .eco-pin-icon {
+  background: none !important;
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
+  /* NO animation or transform here — Leaflet uses inline transform:translate3d()
+     to position markers. CSS animations/transforms would override it. */
+  transition: opacity 0.35s ease;
+  cursor: pointer;
+}
+
+:host ::ng-deep .eco-pin-icon .pin-body {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Float animation lives here — combined with rotation so both work */
+  animation: pinFloat 3s ease-in-out infinite;
+  /* Jade aurora shadow: depth + soft jade glow + white border ring */
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.14),
+    0 4px 12px rgba(5, 117, 105, 0.4),
+    0 0 0 2px white;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+:host ::ng-deep .eco-pin-icon .pin-emoji {
+  transform: rotate(45deg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+:host ::ng-deep .eco-pin-icon .pin-tail {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid currentColor;
+  margin-top: -2px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.12));
+}
+
+/* Hover: lift + jade glow ring — applied to .pin-body, not the wrapper */
+:host ::ng-deep .eco-pin-icon:hover {
+  z-index: 9999 !important;
+}
+
+:host ::ng-deep .eco-pin-icon:hover .pin-body {
+  transform: rotate(-45deg) scale(1.18) translateY(-3px);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.18),
+    0 0 0 3px white,
+    0 0 0 5px rgba(109, 171, 140, 0.3);
+}
+
+/* ── User location marker ── */
+/* ── User Location Pin — jade eco glow ── */
+:host ::ng-deep .user-marker-icon {
+  background: none !important;
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+:host ::ng-deep .user-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #057569;
+  border: 3px solid white;
+  box-shadow:
+    0 2px 8px rgba(5, 117, 105, 0.4),
+    0 0 0 4px rgba(5, 117, 105, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  position: relative;
+}
+
+:host ::ng-deep .user-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  color: #1c434a;
+  background: white;
+  padding: 1px 6px;
+  border-radius: 99px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+:host ::ng-deep .user-ripple {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(109, 171, 140, 0.3);
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: ripple 2.5s ease-out infinite;
+  pointer-events: none;
+}
+
+:host ::ng-deep .user-ripple.u2 {
+  animation-delay: 0.7s;
+}
+
+:host ::ng-deep .user-ripple.u3 {
+  animation-delay: 1.4s;
+}
+
+/* ── Leaflet overrides ── */
+:host ::ng-deep .leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(5, 117, 105, 0.2) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .leaflet-control-zoom a {
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  font-size: 16px !important;
+  color: #1c434a !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(5, 117, 105, 0.1) !important;
+}
+
+:host ::ng-deep .leaflet-control-zoom a:hover {
+  background: var(--cloud-mint) !important;
+  color: #057569 !important;
+}
+
+/* ── FAB ── */
+.fab {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border: none;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(5, 117, 105, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 28px rgba(5, 117, 105, 0.55);
+}
+
+.fab-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--frosted-mint);
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* ════════════════════════════════════════════════
+   POPUP CARD
+   ════════════════════════════════════════════════ */
+.popup-card {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: #ffffff;
+  border-radius: var(--r-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(5, 117, 105, 0.1);
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  max-width: 460px;
+  width: calc(100% - 40px);
+  animation: slideUp 0.35s ease both;
+}
+
+.popup-x {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  color: #bbd7c8;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.popup-x:hover {
+  color: #1c434a;
+}
+
+.popup-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.popup-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.popup-row1 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.popup-row1 h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+  color: #057569;
+}
+
+.popup-cat {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.popup-dist {
+  font-size: 11px;
+  color: #1c434a;
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+
+.popup-dist .open {
+  color: #057569;
+}
+
+.popup-desc {
+  font-size: 11px;
+  color: #1c434a;
+  line-height: 1.45;
+  margin: 0 0 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.75;
+}
+
+.popup-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-dir {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: var(--pill);
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  color: white;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-dir:hover {
+  opacity: 0.9;
+}
+
+.btn-ci-lg {
+  padding: 8px 14px;
+  border-radius: var(--pill);
+  border: 1px solid #057569;
+  background: transparent;
+  color: #057569;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-ci-lg:hover:not(:disabled) {
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border-color: transparent;
+  color: white;
+}
+
+.btn-ci-lg.done {
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  border-color: transparent;
+  color: white;
+}
+
+/* ════════════════════════════════════════════════
+   ADD PIN MODAL
+   ════════════════════════════════════════════════ */
+.modal-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(27, 33, 33, 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1002;
+  background: linear-gradient(180deg, #1c434a 0%, #057569 100%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  padding: 22px;
+  width: 300px;
+  animation: slideUp 0.3s ease both;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-card h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 2px;
+  color: #ffffff;
+}
+
+.modal-card p {
+  font-size: 11px;
+  color: var(--cloud-mint);
+  margin: 0 0 14px;
+}
+
+.modal-card input,
+.modal-card textarea,
+.modal-card select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #ffffff;
+  outline: none;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.modal-card input::placeholder,
+.modal-card textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-card select option {
+  background: #1c434a;
+  color: #ffffff;
+}
+
+.modal-card input:focus,
+.modal-card textarea:focus {
+  border-color: var(--frosted-mint);
+}
+
+.modal-card textarea {
+  min-height: 50px;
+  resize: vertical;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--pill);
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  color: white;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 14px rgba(5, 117, 105, 0.35);
+}
+
+.btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════
+   TOASTS
+   ════════════════════════════════════════════════ */
+.toast-rack {
+  position: fixed;
+  top: calc(var(--nav-h) + 14px);
+  right: 18px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toast {
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #057569, #6dab8c);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(5, 117, 105, 0.35);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  backdrop-filter: blur(10px);
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* ════════════════════════════════════════════════
+   KEYFRAMES
+   ════════════════════════════════════════════════ */
+@keyframes slideLeft {
+  from {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 18px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes pinFloat {
+
+  0%,
+  100% {
+    transform: rotate(-45deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(-45deg) translateY(-5px);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translateX(-50%) scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes aqiPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .eco-map-page {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    max-height: 45vh;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .hero {
+    display: none;
+  }
+
+  .map-panel {
+    flex: 1;
+    height: 55vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    max-height: 40vh;
+  }
+
+  .popup-card {
+    flex-direction: column;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    transform: none;
+    max-width: none;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(18px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
