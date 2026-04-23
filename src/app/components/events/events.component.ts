@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
+import { EventRatingService, RatingResponse } from '../../services/Event rating.service';
 
 interface Leaf { style: string; color: string; }
 interface Turtle { x: number; y: number; speed: number; size: number; delay: number; flipped: boolean; }
@@ -18,30 +19,30 @@ interface Turtle { x: number; y: number; speed: number; size: number; delay: num
 })
 export class EventsComponent implements OnInit, OnDestroy {
 
-  // ── Data ─────────────────────────────────────────────────────────────────
-  events: Event[]        = [];
-  loading                = true;
-  loadError              = false;
-  joinedEventIds         = new Set<number>();
+  // â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  events: Event[]  = [];
+  loading          = true;
+  loadError        = false;
+  joinedEventIds   = new Set<number>();
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
-  toastMsg    = '';
-  toastTitle  = '';
+  // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  toastMsg     = '';
+  toastTitle   = '';
   toastIsError = false;
 
-  // ── Search / Filter ───────────────────────────────────────────────────────
+  // â”€â”€ Search / Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   searchQuery  = '';
   activeFilter = 'ALL';
 
-  // ── Detail Modal ──────────────────────────────────────────────────────────
+  // â”€â”€ Detail Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showDetail  = false;
   detailEvent: Event | null = null;
   joinLoading = false;
 
-  // ── Form Modal ────────────────────────────────────────────────────────────
+  // â”€â”€ Form Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showFormModal   = false;
   editMode        = false;
-  selectedId?: number;
+  selectedId?:    number;
   formStep        = 1;
   expandedSection = 'identity';
   saveLoading     = false;
@@ -51,36 +52,49 @@ export class EventsComponent implements OnInit, OnDestroy {
   formEndDate     = '';
   formEndTime     = '';
 
-  // ── Image Upload ──────────────────────────────────────────────────────────
+  // â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   uploadedImageUrl  = '';
   uploadedImageFile: File | null = null;
   uploadPreview     = '';
   uploadLoading     = false;
 
-  // ── Delete Confirm ────────────────────────────────────────────────────────
+  // â”€â”€ Delete Confirm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showConfirm      = false;
   confirmEventName = '';
   confirmDeleteId?: number;
 
-  // ── Animations ────────────────────────────────────────────────────────────
+  // â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   leaves:  Leaf[]   = [];
   turtles: Turtle[] = [];
 
-  // ── Categories ───────────────────────────────────────────────────────────
+  // â”€â”€ Flip Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  flippedId: number | null = null;
+
+  // â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  pageSize    = 3;
+  currentPage = 0;
+
+  // â”€â”€ Ratings par event â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  eventRatings:   { [eventId: number]: RatingResponse[] } = {};
+  latestRatingIds: { [eventId: number]: number | null }   = {};
+  private ratingSubs: { [eventId: number]: Subscription } = {};
+
+  // â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   categories = [
-    { key: 'Cleanup',      label: 'Cleanup',      emoji: '🧹', desc: 'Clean beaches, parks & streets' },
-    { key: 'Planting',     label: 'Planting',     emoji: '🌱', desc: 'Plant trees & restore habitats' },
-    { key: 'Workshop',     label: 'Workshop',     emoji: '🎨', desc: 'Learn & share eco-skills'        },
-    { key: 'Conservation', label: 'Conservation', emoji: '🦋', desc: 'Protect biodiversity'            },
+    { key: 'Cleanup',      label: 'Cleanup',      emoji: 'ðŸ§¹', desc: 'Clean beaches, parks & streets' },
+    { key: 'Planting',     label: 'Planting',     emoji: 'ðŸŒ±', desc: 'Plant trees & restore habitats' },
+    { key: 'Workshop',     label: 'Workshop',     emoji: 'ðŸŽ¨', desc: 'Learn & share eco-skills'        },
+    { key: 'Conservation', label: 'Conservation', emoji: 'ðŸ¦‹', desc: 'Protect biodiversity'            },
   ];
 
   private roleSub!: Subscription;
 
   constructor(
-    private api: EventApiService,
-    private auth: AuthService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private api:           EventApiService,
+    private auth:          AuthService,
+    private cdr:           ChangeDetectorRef,
+    private ratingService: EventRatingService
+  ) {}
 
   ngOnInit(): void {
     this.generateLeaves();
@@ -92,14 +106,17 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.roleSub = this.auth.roleStream$.subscribe(() => this.cdr.markForCheck());
   }
 
-  ngOnDestroy(): void { this.roleSub?.unsubscribe(); }
+  ngOnDestroy(): void {
+    this.roleSub?.unsubscribe();
+    Object.values(this.ratingSubs).forEach(s => s.unsubscribe());
+  }
 
-  // ── Leaves ───────────────────────────────────────────────────────────────
+  // â”€â”€ Leaves â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   generateLeaves(): void {
     const colors = ['#74c69d','#52b788','#40916c','#95d5b2','#b7e4c7','#d8f3dc'];
     this.leaves = Array.from({ length: 14 }, () => {
       const left     = Math.random() * 100;
-      const duration = 8 + Math.random() * 12;
+      const duration = 8  + Math.random() * 12;
       const delay    = Math.random() * 15;
       const size     = 12 + Math.random() * 12;
       const color    = colors[Math.floor(Math.random() * colors.length)];
@@ -107,19 +124,19 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Turtles ──────────────────────────────────────────────────────────────
+  // â”€â”€ Turtles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   generateTurtles(): void {
     this.turtles = Array.from({ length: 4 }, (_, i) => ({
       x: -120 - i * 220,
       y: 18 + Math.random() * 24,
       speed: 0.3 + Math.random() * 0.3,
-      size: 52 + Math.random() * 28,
+      size: 52  + Math.random() * 28,
       delay: i * 4,
       flipped: false
     }));
   }
 
-  // ── Load ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   load(): void {
     this.loading = true; this.loadError = false;
     this.api.getAll().subscribe({
@@ -139,7 +156,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Filters ──────────────────────────────────────────────────────────────
+  // â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   get filteredEvents(): Event[] {
     return this.events.filter(ev => {
       const matchFilter = this.activeFilter === 'ALL' || this.getCategoryLabel(ev) === this.activeFilter;
@@ -150,13 +167,50 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Roles ─────────────────────────────────────────────────────────────────
+  resetPage(): void { this.currentPage = 0; this.cdr.markForCheck(); }
+
+  get pagedEvents(): Event[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredEvents.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredEvents.length / this.pageSize);
+  }
+
+  get pagesArray(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i);
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.flippedId = null;
+      this.cdr.markForCheck();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.flippedId = null;
+      this.cdr.markForCheck();
+    }
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = page;
+    this.flippedId = null;
+    this.cdr.markForCheck();
+  }
+
+  // â”€â”€ Roles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   isAdmin():   boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
   isUser(): boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
-  // ── Detail ────────────────────────────────────────────────────────────────
+  // â”€â”€ Detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   openDetail(ev: Event): void {
     this.detailEvent = ev;
     this.joinLoading = false;
@@ -171,15 +225,15 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.api.reserve(id).subscribe({
       next: () => {
         this.joinedEventIds.add(id);
-        this.joinLoading  = false;
-        this.showDetail   = false;
-        this.showToast('Reservation confirmed! 🎉', 'A confirmation email with your QR ticket has been sent.');
+        this.joinLoading = false;
+        this.showDetail  = false;
+        this.showToast('Reservation confirmed! ðŸŽ‰', 'A confirmation email with your QR ticket has been sent.');
         this.cdr.markForCheck();
       },
       error: err => {
         this.joinLoading = false;
         const msg = err.error?.message || '';
-        if (err.status === 409 || msg.toLowerCase().includes('déjà') || msg.toLowerCase().includes('already')) {
+        if (err.status === 409 || msg.toLowerCase().includes('dÃ©jÃ ') || msg.toLowerCase().includes('already')) {
           this.joinedEventIds.add(id);
           this.showDetail = false;
           this.showToast('Already registered!', "You're already signed up for this event.");
@@ -193,7 +247,65 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   hasJoined(id: number): boolean { return this.joinedEventIds.has(id); }
 
-  // ── Image Upload ──────────────────────────────────────────────────────────
+  // â”€â”€ Flip Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  flipCard(eventId: number): void {
+    if (this.flippedId === eventId) {
+      this.flippedId = null;
+    } else {
+      this.flippedId = eventId;
+      if (!this.eventRatings[eventId]) {
+        this.loadRatingsForEvent(eventId);
+      }
+    }
+    this.cdr.markForCheck();
+  }
+
+  private loadRatingsForEvent(eventId: number): void {
+    this.ratingService.getRatings(eventId).subscribe({
+      next: (ratings: RatingResponse[]) => {
+        this.eventRatings[eventId] = ratings;
+        this.cdr.markForCheck();
+      }
+    });
+
+    if (!this.ratingSubs[eventId]) {
+      this.ratingSubs[eventId] = this.ratingService
+        .subscribeToRatings(eventId)
+        .subscribe((newRating: RatingResponse) => {
+          if (!this.eventRatings[eventId]) {
+            this.eventRatings[eventId] = [];
+          }
+          const idx = this.eventRatings[eventId].findIndex(r => r.id === newRating.id);
+          if (idx >= 0) {
+            this.eventRatings[eventId][idx] = newRating;
+          } else {
+            this.eventRatings[eventId] = [newRating, ...this.eventRatings[eventId]];
+          }
+          this.latestRatingIds[eventId] = newRating.id;
+          setTimeout(() => {
+            this.latestRatingIds[eventId] = null;
+            this.cdr.markForCheck();
+          }, 1000);
+          this.cdr.markForCheck();
+        });
+    }
+  }
+
+  getEventRatings(eventId: number): RatingResponse[] {
+    return this.eventRatings[eventId] || [];
+  }
+
+  getEventAvg(eventId: number): number {
+    const ratings = this.getEventRatings(eventId);
+    if (ratings.length === 0) return 0;
+    return ratings[0].averageStars;
+  }
+
+  getEventAvgRounded(eventId: number): number {
+    return Math.round(this.getEventAvg(eventId));
+  }
+
+  // â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   onImageSelected(event: any): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -207,11 +319,10 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   uploadImage(): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!this.uploadedImageFile) { resolve(''); return; }
       const formData = new FormData();
       formData.append('file', this.uploadedImageFile);
-      // POST to your Spring Boot /uploads endpoint
       fetch('/api/uploads', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => resolve(data.url || ''))
@@ -219,7 +330,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Form ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   resetForm(): any {
     return { title: '', description: '', location: '', capacity: 50, startDate: '', endDate: '', status: 'UPCOMING', category: 'Cleanup', imageUrl: '' };
   }
@@ -255,13 +366,10 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   async submitForm(): Promise<void> {
     this.saveLoading = true;
-
-    // Upload image first if a new file was selected
     if (this.uploadedImageFile) {
       const url = await this.uploadImage();
       if (url) this.form.imageUrl = url;
     }
-
     const payload = { ...this.form };
     delete payload.category;
 
@@ -280,20 +388,20 @@ export class EventsComponent implements OnInit, OnDestroy {
           this.events = [result, ...this.events];
         }
         this.showToast(
-          this.editMode ? 'Event updated! ✏️' : 'Event created! 🌿',
+          this.editMode ? 'Event updated! âœï¸' : 'Event created! ðŸŒ¿',
           this.editMode ? 'Changes saved successfully.' : 'Your event is now live.'
         );
         this.cdr.markForCheck();
       },
       error: err => {
         this.saveLoading = false;
-        this.showToast('', err.error?.message || 'Vérifiez vos permissions.', true);
+        this.showToast('', err.error?.message || 'VÃ©rifiez vos permissions.', true);
         this.cdr.markForCheck();
       }
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   askDelete(ev: Event): void {
     this.confirmEventName = ev.title;
     this.confirmDeleteId  = ev.id;
@@ -302,14 +410,14 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   doDelete(): void {
     if (!this.confirmDeleteId) return;
-    const id = this.confirmDeleteId;
+    const id     = this.confirmDeleteId;
     const backup = [...this.events];
-    this.events = this.events.filter(e => e.id !== id);
+    this.events  = this.events.filter(e => e.id !== id);
     this.showConfirm = false;
     this.cdr.markForCheck();
 
     this.api.delete(id).subscribe({
-      next:  () => this.showToast('Event deleted 🗑️', 'The event has been removed.'),
+      next:  () => this.showToast('Event deleted ðŸ—‘ï¸', 'The event has been removed.'),
       error: err => {
         this.events = backup;
         this.showToast('', err.error?.message || 'Erreur serveur.', true);
@@ -318,13 +426,13 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   showToast(title: string, msg: string, isError = false): void {
     this.toastTitle = title; this.toastMsg = msg; this.toastIsError = isError;
     setTimeout(() => { this.toastMsg = ''; this.toastTitle = ''; this.cdr.markForCheck(); }, 4500);
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   getCategoryLabel(ev: Event): string {
     const t = (ev.title + ' ' + (ev.description || '')).toLowerCase();
     if (t.includes('plant') || t.includes('tree') || t.includes('forest')) return 'Planting';
@@ -345,10 +453,10 @@ export class EventsComponent implements OnInit, OnDestroy {
     return images[cat] || images['Cleanup'];
   }
 
-  getCo2(ev: Event):          number { return Math.floor(ev.capacity * 3.2); }
-  getFilledSpots(ev: Event):  number { return Math.floor(ev.capacity * 0.6); }
-  getSpotsLeft(ev: Event):    number { return ev.capacity - this.getFilledSpots(ev); }
-  getFillPercent(ev: Event):  number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
+  getCo2(ev: Event):         number { return Math.floor(ev.capacity * 3.2); }
+  getFilledSpots(ev: Event): number { return Math.floor(ev.capacity * 0.6); }
+  getSpotsLeft(ev: Event):   number { return ev.capacity - this.getFilledSpots(ev); }
+  getFillPercent(ev: Event): number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
 
   trackById(_: number, ev: Event): number { return ev.id!; }
 }

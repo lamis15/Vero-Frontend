@@ -49,7 +49,7 @@ export class FormationService {
   }
 
   update(formation: Formation): Observable<Formation> {
-    return this.http.put<Formation>(this.API, formation);
+    return this.http.put<Formation>(`${this.API}/${formation.id}`, formation);
   }
 
   delete(id: number): Observable<void> {
@@ -107,9 +107,20 @@ export class FormationService {
     return `${this.API}/${formationId}/resources/${resourceId}/download`;
   }
 
+  downloadResource(formationId: number, resourceId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.API}/${formationId}/resources/${resourceId}/download`,
+      { responseType: 'blob' }
+    );
+  }
+
   // Quiz
   getQuiz(formationId: number): Observable<QuizResponse> {
     return this.http.get<QuizResponse>(`${this.API}/${formationId}/quiz`);
+  }
+
+  getQuizPreview(formationId: number): Observable<QuizResponse> {
+    return this.http.get<QuizResponse>(`${this.API}/${formationId}/quiz/preview`);
   }
 
   submitQuiz(formationId: number, answers: AnswerDto[]): Observable<QuizResult> {
@@ -122,5 +133,13 @@ export class FormationService {
 
   createQuiz(formationId: number, quizRequest: any): Observable<any> {
     return this.http.post<any>(`${this.API}/${formationId}/quiz`, quizRequest);
+  }
+
+  generateQuizFromResources(formationId: number, numQuestions: number = 10): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.API}/${formationId}/quiz/generate`,
+      null,
+      { params: { numQuestions: numQuestions.toString() } }
+    );
   }
 }

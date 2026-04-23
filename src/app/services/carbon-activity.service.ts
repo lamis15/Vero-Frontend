@@ -6,7 +6,7 @@ import { CarbonActivity } from './carbon.models';
 
 @Injectable({ providedIn: 'root' })
 export class CarbonActivityService {
-  private readonly API = `${environment.apiUrl}/api/carbon/activities`;
+  private readonly API = `${environment.apiUrl}/api/eco/activities`;
 
   constructor(private http: HttpClient) {}
 
@@ -41,10 +41,21 @@ export class CarbonActivityService {
 
   getTotal(start: string, end: string): Observable<number> {
     const params = new HttpParams().set('start', start).set('end', end);
-    return this.http.get<number>(`${this.API}/total`, { params });
+    return this.http.get<number>(`${this.API}/total/carbon`, { params });
+  }
+
+  getAllImpactTotals(start: string, end: string): Observable<Record<string, number>> {
+    const params = new HttpParams().set('start', start).set('end', end);
+    return this.http.get<Record<string, number>>(`${this.API}/total/all`, { params });
   }
 
   getCarbonByType(): Observable<Record<string, number>> {
     return this.http.get<Record<string, number>>(`${this.API}/by-type`);
+  }
+
+  scanReceipt(file: File): Observable<CarbonActivity> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post<CarbonActivity>(`${environment.apiUrl}/api/eco/scan`, formData);
   }
 }

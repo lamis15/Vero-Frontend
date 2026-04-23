@@ -21,6 +21,8 @@ export class QuizComponent implements OnInit {
   submitting = false;
   result: QuizResult | null = null;
   error: string | null = null;
+  isPreviewMode = false; // admin preview — bypasses COMPLETED restriction
+  fromAdmin = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -33,13 +35,21 @@ export class QuizComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       this.formationId = +params['id'];
+    });
+    this.route.queryParams.subscribe(qp => {
+      this.isPreviewMode = qp['preview'] === 'true';
+      this.fromAdmin = qp['from'] === 'admin';
       this.loadQuiz();
     });
   }
 
   loadQuiz(): void {
     this.loading = true;
-    this.formationService.getQuiz(this.formationId).subscribe({
+    const obs = this.isPreviewMode
+      ? this.formationService.getQuizPreview(this.formationId)
+      : this.formationService.getQuiz(this.formationId);
+
+    obs.subscribe({
       next: (quiz) => {
         this.quiz = quiz;
         this.loading = false;
@@ -48,13 +58,13 @@ export class QuizComponent implements OnInit {
         this.loading = false;
         if (err.status === 403) {
           this.error = "Accès refusé : vous n'êtes pas participant de cette formation.";
-          setTimeout(() => this.router.navigate(['/formations', this.formationId]), 2000);
+          setTimeout(() => this.goBack(), 2000);
         } else if (err.status === 409) {
           this.error = "La formation n'est pas encore terminée.";
         } else if (err.status === 404) {
           this.error = "Aucun quiz disponible pour cette formation.";
         } else {
-          this.error = "Erreur lors du chargement du quiz.";
+          this.error = err?.error?.message || "Erreur lors du chargement du quiz.";
         }
       }
     });
@@ -90,7 +100,8 @@ export class QuizComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error submitting quiz:', err);
-        this.notificationService.show('Erreur lors de la soumission du quiz', 'error');
+        const msg = err?.error?.message || 'Erreur lors de la soumission du quiz';
+        this.notificationService.show(msg, 'error');
         this.submitting = false;
       }
     });
@@ -114,6 +125,10 @@ export class QuizComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/formations', this.formationId]);
+    if (this.fromAdmin) {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/formations', this.formationId]);
+    }
   }
 }

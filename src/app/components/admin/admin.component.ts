@@ -18,7 +18,7 @@ import { forkJoin } from 'rxjs';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './admin.component.html',
-  styleUrl: './admin.component.css'
+  styleUrls: ['./admin.component.css']
 })
 export class AdminComponent implements OnInit {
   currentUser: any = null;
@@ -150,6 +150,10 @@ export class AdminComponent implements OnInit {
     price: 0,
     status: 'PLANNED' as FormationStatus
   };
+  
+  // Participants details
+  allUsers: any[] = [];
+  expandedFormationId: number | null = null;
 
   // Sessions
   sessions: Session[] = [];
@@ -161,6 +165,7 @@ export class AdminComponent implements OnInit {
     startDate: '',
     endDate: '',
     status: 'SCHEDULED' as SessionStatus,
+    type: 'ONLINE' as 'ONLINE' | 'IN_PERSON',
     meetLink: '',
     trainerId: 0,
     formationId: 0
@@ -180,6 +185,15 @@ export class AdminComponent implements OnInit {
 
   // Quiz
   showQuizModal = false;
+  generatingQuiz = false;
+
+  // Quiz Preview Modal (admin)
+  showQuizPreviewModal = false;
+  quizPreview: any = null;
+  quizPreviewAnswers: Map<number, number> = new Map();
+  quizPreviewSubmitting = false;
+  quizPreviewResult: any = null;
+  quizPreviewLoading = false;
   quizForm: {
     title: string;
     passingScore: number;
@@ -193,7 +207,7 @@ export class AdminComponent implements OnInit {
     private userService: UserService,
     private formationService: FormationService,
     private sessionService: SessionService,
-    private router: Router,
+    public router: Router,
     private notificationService: NotificationService
   ) {}
 
@@ -218,6 +232,7 @@ export class AdminComponent implements OnInit {
     this.loadProducts();
     this.loadOrders();
     this.loadFormations();
+    this.loadAllUsers();
     this.loading = false;
   }
 
@@ -572,13 +587,14 @@ export class AdminComponent implements OnInit {
     } else {
       this.formationService.create(formationData).subscribe({
         next: () => {
-          this.notificationService.success('Formation created successfully!');
+          this.notificationService.success('Formation créée avec succès !');
           this.loadFormations();
           this.closeFormationModal();
         },
         error: (err) => {
           console.error('Error creating formation:', err);
-          this.notificationService.error('Error creating formation. Please try again.');
+          const msg = err?.error?.message || err?.message || `Erreur ${err?.status}`;
+          this.notificationService.error(`Erreur lors de la création : ${msg}`);
         }
       });
     }
@@ -616,6 +632,7 @@ export class AdminComponent implements OnInit {
   viewFormationSessions(formation: Formation) {
     this.selectedFormationForSessions = formation;
     this.loadSessionsForFormation(formation.id!);
+    this.loadResources(formation.id!);
   }
 
   closeSessionsView() {
@@ -648,9 +665,10 @@ export class AdminComponent implements OnInit {
       this.editingSession = session;
       this.sessionForm = {
         title: session.title,
-        startDate: session.startDate.substring(0, 16), // Format for datetime-local
+        startDate: session.startDate.substring(0, 16),
         endDate: session.endDate.substring(0, 16),
         status: session.status,
+        type: (session as any).type || 'ONLINE',
         meetLink: session.meetLink || '',
         trainerId: session.trainerId,
         formationId: this.selectedFormationForSessions.id!
@@ -662,6 +680,7 @@ export class AdminComponent implements OnInit {
         startDate: '',
         endDate: '',
         status: 'SCHEDULED' as SessionStatus,
+        type: 'ONLINE',
         meetLink: '',
         trainerId: this.currentUser?.id || 0,
         formationId: this.selectedFormationForSessions.id!
@@ -704,6 +723,7 @@ export class AdminComponent implements OnInit {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       status: this.sessionForm.status,
+      type: this.sessionForm.type,
       meetLink: this.sessionForm.meetLink,
       trainerId: this.sessionForm.trainerId
     };
@@ -794,6 +814,76 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  // Load all users for participant details
+  loadAllUsers(): void {
+    this.userService.getAll().subscribe({
+      next: (users) => {
+        this.allUsers = users;
+      },
+      error: (err) => {
+        console.error('Error loading users:', err);
+      }
+    });
+  }
+
+  get trainers(): any[] {
+    return this.allUsers.filter(u => u.role === 'TRAINER');
+  }
+
+  getTrainerName(trainerId: number): string {
+    const trainer = this.allUsers.find(u => u.id === trainerId);
+    return trainer ? trainer.fullName : '—';
+  }
+
+  // Toggle participants panel
+  toggleParticipantsPanel(formationId: number): void {
+    if (this.expandedFormationId === formationId) {
+      this.expandedFormationId = null;
+    } else {
+      this.expandedFormationId = formationId;
+    }
+  }
+
+  // Get participant details
+  getParticipantDetails(participantIds: number[]): any[] {
+    if (!participantIds || participantIds.length === 0) {
+      return [];
+    }
+    return participantIds
+      .map(id => this.allUsers.find(user => user.id === id))
+      .filter(user => user !== undefined);
+  }
+
+  // Format date short (for sessions table)
+  formatDateShort(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  // Format time only
+  formatTimeOnly(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  // Get session status class for modern design
+  getSessionStatusClassModern(status: SessionStatus): string {
+    const statusMap: Record<string, string> = {
+      'SCHEDULED': 'status-upcoming',
+      'IN_PROGRESS': 'status-in-progress',
+      'COMPLETED': 'status-completed',
+      'CANCELLED': 'status-cancelled'
+    };
+    return statusMap[status] || 'status-upcoming';
+  }
+
   // AI Description Generation
   generateDescription(): void {
     if (!this.formationForm.title || this.formationForm.title.trim() === '') {
@@ -882,10 +972,109 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  downloadResource(formationId: number, resourceId: number, fileName: string): void {
+    this.formationService.downloadResource(formationId, resourceId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error downloading resource:', err);
+        this.notificationService.error('Erreur lors du téléchargement');
+      }
+    });
+  }
+
   // Quiz
   openQuizModal(): void {
     this.quizForm = { title: '', passingScore: 80, questions: [] };
     this.showQuizModal = true;
+  }
+
+  generateQuizFromResources(): void {
+    if (!this.selectedFormationForSessions) return;
+    if (this.formationResources.length === 0) {
+      this.notificationService.warning('Uploadez d\'abord des ressources pour cette formation.');
+      return;
+    }
+    this.generatingQuiz = true;
+    this.formationService.generateQuizFromResources(this.selectedFormationForSessions.id!, 10).subscribe({
+      next: () => {
+        this.notificationService.success('Quiz QCM généré !');
+        this.generatingQuiz = false;
+        this.router.navigate(['/formations', this.selectedFormationForSessions!.id, 'quiz'], {
+          queryParams: { preview: 'true', from: 'admin' }
+        });
+      },
+      error: (err) => {
+        console.error('Error generating quiz:', err);
+        const msg = err?.error?.message || err?.error || err?.message || 'Erreur lors de la génération';
+        this.notificationService.error(msg);
+        this.generatingQuiz = false;
+      }
+    });
+  }
+
+  openQuizPreview(formationId: number): void {
+    this.quizPreviewLoading = true;
+    this.quizPreviewAnswers = new Map();
+    this.quizPreviewResult = null;
+    this.showQuizPreviewModal = true;
+    this.formationService.getQuizPreview(formationId).subscribe({
+      next: (quiz) => {
+        this.quizPreview = quiz;
+        this.quizPreviewLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading quiz preview:', err);
+        this.notificationService.error('Erreur lors du chargement du quiz');
+        this.showQuizPreviewModal = false;
+        this.quizPreviewLoading = false;
+      }
+    });
+  }
+
+  closeQuizPreviewModal(): void {
+    this.showQuizPreviewModal = false;
+    this.quizPreview = null;
+    this.quizPreviewAnswers = new Map();
+    this.quizPreviewResult = null;
+  }
+
+  selectQuizPreviewOption(questionId: number, optionId: number): void {
+    this.quizPreviewAnswers.set(questionId, optionId);
+  }
+
+  isQuizPreviewSelected(questionId: number, optionId: number): boolean {
+    return this.quizPreviewAnswers.get(questionId) === optionId;
+  }
+
+  allQuizPreviewAnswered(): boolean {
+    if (!this.quizPreview) return false;
+    return this.quizPreviewAnswers.size === this.quizPreview.questions.length;
+  }
+
+  submitQuizPreview(): void {
+    if (!this.allQuizPreviewAnswered() || !this.selectedFormationForSessions) return;
+    this.quizPreviewSubmitting = true;
+    const answers = Array.from(this.quizPreviewAnswers.entries()).map(([questionId, selectedOptionId]) => ({
+      questionId, selectedOptionId
+    }));
+    this.formationService.submitQuiz(this.selectedFormationForSessions.id!, answers).subscribe({
+      next: (result) => {
+        this.quizPreviewResult = result;
+        this.quizPreviewSubmitting = false;
+      },
+      error: (err) => {
+        console.error('Error submitting quiz:', err);
+        this.notificationService.error('Erreur lors de la soumission');
+        this.quizPreviewSubmitting = false;
+      }
+    });
   }
 
   closeQuizModal(): void {

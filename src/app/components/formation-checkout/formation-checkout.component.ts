@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { loadStripe, Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
@@ -27,6 +27,8 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
   stripe: Stripe | null = null;
   elements: StripeElements | null = null;
   cardElement: StripeCardElement | null = null;
+  private stripeInitialized = false;
+  private viewInitialized = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -34,7 +36,8 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
     private formationService: FormationService,
     private paymentService: PaymentService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -52,10 +55,22 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
     });
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void {
+    this.viewInitialized = true;
+    // Try to initialize Stripe if formation is already loaded
+    if (this.formation && this.isPaid() && !this.stripeInitialized) {
+      this.initializeStripe();
+    }
+  }
 
   ngOnDestroy(): void {
-    this.cardElement?.destroy();
+    if (this.cardElement) {
+      try {
+        this.cardElement.destroy();
+      } catch (e) {
+        console.error('Error destroying card element:', e);
+      }
+    }
   }
 
   loadFormation(): void {
@@ -63,8 +78,12 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
       next: (f) => {
         this.formation = f;
         this.loading = false;
-        if (this.isPaid()) {
-          setTimeout(() => this.initStripe(), 100);
+        this.cdr.detectChanges(); // Force change detection
+        
+        // Initialize Stripe after view is ready - give Angular time to render the @if block
+        if (this.isPaid() && this.viewInitialized && !this.stripeInitialized) {
+          // Use longer delay to ensure Angular has rendered the conditional block
+          setTimeout(() => this.initializeStripe(), 1000);
         }
       },
       error: () => {
@@ -83,31 +102,91 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
     return this.formation.participantIds?.includes(this.currentUser.id) || false;
   }
 
-  private async initStripe(): Promise<void> {
-    this.paymentService.getConfig().subscribe({
-      next: async (config) => {
-        this.stripe = await loadStripe(config.publishableKey);
-        if (!this.stripe) return;
-        this.elements = this.stripe.elements();
-        this.cardElement = this.elements.create('card', {
-          style: {
-            base: { fontSize: '16px', color: '#2c2c28', '::placeholder': { color: '#9ca3af' } },
-            invalid: { color: '#ef4444' }
+  private async initializeStripe(retryCount = 0): Promise<void> {
+    if (this.stripeInitialized) {
+      console.log('Stripe already initialized');
+      return;
+    }
+
+    // Check if container exists
+    const container = document.getElementById('card-element');
+    if (!container) {
+      if (retryCount < 5) {
+        console.log(`Card element container not found, retry ${retryCount + 1}/5 in 800ms...`);
+        setTimeout(() => this.initializeStripe(retryCount + 1), 800);
+      } else {
+        console.error('Card element container not found after 5 retries');
+        this.error = 'Impossible de charger le formulaire de paiement. Veuillez rafraîchir la page.';
+      }
+      return;
+    }
+
+    try {
+      console.log('Initializing Stripe for formation payment...');
+      
+      const config = await this.paymentService.getConfig().toPromise();
+      if (!config) {
+        this.error = 'Impossible de charger la configuration de paiement';
+        return;
+      }
+
+      this.stripe = await loadStripe(config.publishableKey);
+      if (!this.stripe) {
+        this.error = 'Impossible de charger Stripe';
+        console.error('Stripe object is null');
+        return;
+      }
+
+      console.log('Stripe loaded successfully');
+      this.elements = this.stripe.elements();
+      this.cardElement = this.elements.create('card', {
+        style: {
+          base: {
+            fontSize: '16px',
+            color: '#2c2c28',
+            fontFamily: '"DM Sans", sans-serif',
+            '::placeholder': {
+              color: '#9ca3af'
+            }
           },
-          hidePostalCode: true
-        });
-        const container = document.getElementById('card-element');
-        if (container) {
-          this.cardElement.mount('#card-element');
-          this.cardElement.on('change', (e) => { this.error = e.error?.message || null; });
+          invalid: {
+            color: '#ef4444'
+          }
+        },
+        hidePostalCode: true
+      });
+      
+      // Mount the card element
+      this.cardElement.mount('#card-element');
+      console.log('Card element mounted successfully');
+      this.stripeInitialized = true;
+      this.error = null;
+      this.cdr.detectChanges();
+      
+      // Listen for errors
+      this.cardElement.on('change', (event) => {
+        if (event.error) {
+          this.error = event.error.message;
+        } else {
+          this.error = null;
         }
-      },
-      error: () => { this.error = 'Impossible de charger le système de paiement.'; }
-    });
+        this.cdr.detectChanges();
+      });
+
+      this.cardElement.on('ready', () => {
+        console.log('Card element is ready for input');
+      });
+
+    } catch (err) {
+      console.error('Error initializing Stripe:', err);
+      this.error = 'Impossible de charger le système de paiement. Veuillez réessayer.';
+    }
   }
 
   async registerFree(): Promise<void> {
     this.processing = true;
+    this.error = null;
+    
     this.formationService.register(this.formationId, this.currentUser.id).subscribe({
       next: () => {
         this.success = true;
@@ -123,42 +202,59 @@ export class FormationCheckoutComponent implements OnInit, AfterViewInit, OnDest
 
   async payAndRegister(): Promise<void> {
     if (!this.stripe || !this.cardElement) {
-      this.error = 'Système de paiement non prêt';
+      this.error = 'Système de paiement non prêt. Veuillez patienter...';
       return;
     }
+
+    if (!this.stripeInitialized) {
+      this.error = 'Le formulaire de paiement n\'est pas encore prêt. Veuillez patienter...';
+      return;
+    }
+
     this.processing = true;
     this.error = null;
 
-    // Create payment intent for formation
-    this.paymentService.createFormationPaymentIntent(this.formationId, this.currentUser.id).subscribe({
-      next: async (response) => {
-        const { error: stripeError, paymentIntent } = await this.stripe!.confirmCardPayment(
-          response.clientSecret,
-          { payment_method: { card: this.cardElement! } }
-        );
-        if (stripeError) {
-          this.error = stripeError.message || 'Paiement échoué';
-          this.processing = false;
-        } else if (paymentIntent?.status === 'succeeded') {
-          // Register after payment
-          this.formationService.register(this.formationId, this.currentUser.id).subscribe({
-            next: () => {
-              this.success = true;
-              this.notificationService.show('Paiement et inscription réussis !', 'success');
-              setTimeout(() => this.router.navigate(['/formations', this.formationId]), 2000);
-            },
-            error: () => {
-              this.error = 'Paiement réussi mais inscription échouée. Contactez le support.';
-              this.processing = false;
-            }
-          });
-        }
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Erreur lors du paiement';
+    try {
+      // Create payment intent for formation
+      const response = await this.paymentService.createFormationPaymentIntent(
+        this.formationId, 
+        this.currentUser.id
+      ).toPromise();
+
+      if (!response || !response.clientSecret) {
+        this.error = 'Erreur lors de la création du paiement';
         this.processing = false;
+        return;
       }
-    });
+
+      // Confirm card payment
+      const { error: stripeError, paymentIntent } = await this.stripe.confirmCardPayment(
+        response.clientSecret,
+        { payment_method: { card: this.cardElement } }
+      );
+
+      if (stripeError) {
+        this.error = stripeError.message || 'Paiement échoué';
+        this.processing = false;
+      } else if (paymentIntent?.status === 'succeeded') {
+        // Register after successful payment
+        this.formationService.register(this.formationId, this.currentUser.id).subscribe({
+          next: () => {
+            this.success = true;
+            this.notificationService.show('Paiement et inscription réussis !', 'success');
+            setTimeout(() => this.router.navigate(['/formations', this.formationId]), 2000);
+          },
+          error: () => {
+            this.error = 'Paiement réussi mais inscription échouée. Contactez le support.';
+            this.processing = false;
+          }
+        });
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      this.error = err?.message || 'Erreur lors du paiement';
+      this.processing = false;
+    }
   }
 
   goBack(): void {

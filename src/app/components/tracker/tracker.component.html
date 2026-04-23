@@ -1,362 +1,448 @@
-<!-- ═══ VERO CARBON INTELLIGENCE DASHBOARD ═══ -->
-<div class="vt-page">
+<!-- ═══ VERO ECO-TECH DASHBOARD ═══ -->
+<div class="eco-page">
 
-  <!-- ═══ STITCH-STYLE INTERACTIVE DOT GRID ═══ -->
-  <canvas class="dot-grid-canvas" #dotCanvas></canvas>
+  <!-- ═══ LOADING ═══ -->
+  @if (state === 'loading') {
+    <div class="eco-loading">
+      <div class="eco-loader-grid">
+        <div class="sk-card lg"></div>
+        <div class="sk-card sm"></div>
+        <div class="sk-card sm"></div>
+        <div class="sk-card sm"></div>
+      </div>
+    </div>
+  }
 
-    <!-- ═══ CINEMATIC HERO PANEL ═══ -->
-    <section class="vt-hero" [class.hero-ready]="heroReady">
-      <!-- Removal of hero image to let the dot-grid flow everywhere -->
+  <!-- ═══ ERROR ═══ -->
+  @if (state === 'error') {
+    <div class="eco-error">
+      <div class="eco-error-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+        </svg>
+      </div>
+      <p>Unable to load dashboard data</p>
+      <button class="eco-pill-btn" (click)="loadDashboard()">Retry</button>
+    </div>
+  }
 
+  <!-- ═══ READY ═══ -->
+  @if (state === 'ready' && dashboard) {
 
-      <div class="vt-hero-content">
-        <div class="vt-eyebrow">
-          <span class="vt-eyebrow-line"></span>
-          <span data-tw="Carbon Intelligence — 2026"></span>
+    <!-- Ambient glows -->
+    <div class="eco-glow g1"></div>
+    <div class="eco-glow g2"></div>
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside class="eco-sidebar">
+      <div class="eco-sb-icon active" title="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/>
+          <rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>
+        </svg>
+      </div>
+      <div class="eco-sb-icon" title="Analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+      </div>
+      <div class="eco-sb-icon" title="Goals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+        </svg>
+      </div>
+      <div class="eco-sb-icon" title="History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="eco-sb-icon" title="Export" (click)="downloadReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </div>
+      <div class="eco-sb-spacer"></div>
+      <div class="eco-sb-icon" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2m-4.22-6.78l-1.42 1.42M6.64 17.36l-1.42 1.42m0-13.56l1.42 1.42m10.72 10.72l1.42 1.42"/>
+        </svg>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <main class="eco-main">
+
+      <!-- Top bar -->
+      <div class="eco-topbar">
+        <div class="eco-topbar-left">
+          <h1 class="eco-page-title">Dashboard</h1>
         </div>
+        <div class="eco-topbar-pills">
+          <button class="eco-pill-btn active">Dashboard</button>
+          <button class="eco-pill-btn" (click)="showAddForm = !showAddForm">
+            {{ showAddForm ? 'Cancel' : '+ Log Activity' }}
+          </button>
+          <button class="eco-pill-btn" (click)="downloadReport()">Export</button>
+        </div>
+      </div>
 
-        <div class="vt-hero-row">
-          <div class="vt-headline-block">
-            <h1 class="vt-headline">
-              <span #typedHeadline class="typed-headline"></span><span class="typed-cursor">|</span>
-            </h1>
+      <!-- Add Activity Form (slide-down) -->
+      @if (showAddForm) {
+        <div class="eco-addform">
+          <div class="eco-addform-types">
+            @for (t of activityTypes; track t) {
+              <button class="eco-cat-pill" [class.active]="newActivity.activityType === t"
+                      [style.--pill-color]="categoryColors[t]"
+                      (click)="newActivity.activityType = $any(t)">
+                {{ labels[t] }}
+              </button>
+            }
           </div>
+          <div class="eco-addform-fields">
+            <input type="text" [(ngModel)]="newActivity.description" placeholder="Description" class="eco-field flex" />
+            <input type="number" [(ngModel)]="newActivity.carbonKg" placeholder="CO₂ kg" class="eco-field sm" />
+            <input type="number" [(ngModel)]="newActivity.waterLiters" placeholder="Water L" class="eco-field sm" />
+            <input type="number" [(ngModel)]="newActivity.energyKwh" placeholder="Energy kWh" class="eco-field sm" />
+            <input type="number" [(ngModel)]="newActivity.wasteKg" placeholder="Waste kg" class="eco-field sm" />
+            <button class="eco-submit-btn" (click)="submitActivity()" [disabled]="submitting">Save</button>
+          </div>
+        </div>
+      }
 
-          <div class="vt-ring-panel">
-            <!-- SVG Ring Visualisation -->
-            <div class="vt-ring-wrap">
-              <svg class="vt-ring-svg" viewBox="0 0 280 280">
-                <circle cx="140" cy="140" r="130" class="ring-track"/>
-                <circle cx="140" cy="140" r="130" class="ring-fill"
-                        [style.stroke-dashoffset]="ringOffset"/>
-              </svg>
-              <div class="vt-ring-inner">
-                <div class="vt-ring-val">
-                  {{ displayCarbon >= 1000 ? (displayCarbon / 1000 | number:'1.1-1') : (displayCarbon | number:'1.0-0') }}
-                </div>
-                <div class="vt-ring-unit">{{ totalCarbon >= 1000 ? 'tonnes' : 'kg' }} CO₂</div>
-                <div class="vt-ring-label">Year to Date</div>
-              </div>
+      <!-- ═══ 3D ISLAND HERO ═══ -->
+      <section class="dash-hero">
+        <!-- Left: Score Panel -->
+        <div class="dash-score-panel">
+          <span class="dash-score-eyebrow">GP SCORE</span>
+          <span class="dash-score-value">{{ displayMetrics.score | number:'1.2-2' }}</span>
+          <div class="dash-score-scale">
+            <div class="dash-tick" *ngFor="let t of [0, 20, 40, 60, 80, 100]">
+              <span class="dash-tick-line"></span>
+              <span class="dash-tick-label">{{ t }}</span>
+            </div>
+          </div>
+          <div class="dash-metric-pills">
+            <div class="dash-mpill">
+              <span class="dash-mpill-dot" style="background:#00E5FF"></span>
+              <span class="dash-mpill-val">{{ formatVal(displayMetrics.carbon) }}</span>
+              <span class="dash-mpill-unit">kg CO₂</span>
+            </div>
+            <div class="dash-mpill">
+              <span class="dash-mpill-dot" style="background:#38bdf8"></span>
+              <span class="dash-mpill-val">{{ formatVal(displayMetrics.water) }}</span>
+              <span class="dash-mpill-unit">L H₂O</span>
+            </div>
+            <div class="dash-mpill">
+              <span class="dash-mpill-dot" style="background:#facc15"></span>
+              <span class="dash-mpill-val">{{ formatVal(displayMetrics.energy) }}</span>
+              <span class="dash-mpill-unit">kWh</span>
+            </div>
+            <div class="dash-mpill">
+              <span class="dash-mpill-dot" style="background:#fb923c"></span>
+              <span class="dash-mpill-val">{{ formatVal(displayMetrics.waste) }}</span>
+              <span class="dash-mpill-unit">kg waste</span>
             </div>
           </div>
         </div>
 
-        <!-- AI Input — Now inside the hero as a floating bar -->
-        <div class="vt-ai-bar">
-          <span class="vt-ai-dot"></span>
-          <input type="text" [(ngModel)]="aiText" class="vt-ai-input"
-                 [placeholder]="typedPlaceholder"
-                 (keyup.enter)="analyzeWithAI()" />
-          <button class="vt-ai-btn" (click)="analyzeWithAI()" [disabled]="aiLoading">
-            @if (aiLoading) {
-              <div class="vt-spinner"></div>
-            } @else {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+        <!-- Center: 3D Island -->
+        <div class="dash-island-wrap">
+          <canvas #islandCanvas class="dash-island-canvas"></canvas>
+          <div class="dash-island-shadow"></div>
+        </div>
+
+        <!-- Right: Activity Panels -->
+        <div class="dash-activity-panels">
+          <div class="dash-panel-section">
+            <h4 class="dash-panel-title positive">Positive Activities</h4>
+            <div class="dash-panel-list">
+              @for (a of activities; track a.id) {
+                @if ((a.carbonKg || 0) < 2) {
+                  <div class="dash-panel-item">
+                    <span class="dash-panel-dot positive"></span>
+                    <span class="dash-panel-label">{{ a.description }}</span>
+                    <span class="dash-panel-val positive">{{ formatVal(a.carbonKg) }}kg</span>
+                  </div>
+                }
+              }
+              @if (activities.length === 0) {
+                <div class="dash-panel-empty">No activities yet</div>
+              }
+            </div>
+          </div>
+          <div class="dash-panel-section">
+            <h4 class="dash-panel-title negative">Negative Activities</h4>
+            <div class="dash-panel-list">
+              @for (a of activities; track a.id) {
+                @if ((a.carbonKg || 0) >= 2) {
+                  <div class="dash-panel-item">
+                    <span class="dash-panel-dot negative"></span>
+                    <span class="dash-panel-label">{{ a.description }}</span>
+                    <span class="dash-panel-val negative">{{ formatVal(a.carbonKg) }}kg</span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CARD GRID ═══ -->
+      <div class="eco-grid">
+
+        <!-- ANALYTICS CARD (large, 2/3) -->
+        <div class="eco-card eco-card-lg eco-anim-stagger-1">
+          <!-- EcoScore badge -->
+          <div class="eco-score" [style.--sc]="scoreColor">
+            <div class="eco-score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" class="eco-ring-track"/>
+                <circle cx="60" cy="60" r="52" class="eco-ring-fill"
+                        [style.stroke-dashoffset]="326.7 - (326.7 * (displayMetrics.score / 100))"/>
               </svg>
+              <div class="eco-score-inner">
+                <span class="eco-score-num">{{ displayMetrics.score | number:'1.0-0' }}</span>
+              </div>
+            </div>
+            <span class="eco-score-label">{{ dashboard.ecoScoreLabel }}</span>
+          </div>
+
+          <div class="eco-card-head">
+            <h2>Vero <span>Analytics</span></h2>
+            <p>Multi-metric environmental impact for {{ dashboard.periodStart }} to {{ dashboard.periodEnd }}</p>
+          </div>
+
+          <!-- Dot matrix visualization -->
+          <div class="eco-dots-area">
+            @for (row of breakdownRows; track row.type) {
+              <div class="eco-dot-col">
+                <div class="eco-dot-title">{{ row.label }}</div>
+                <div class="eco-dot-matrix">
+                  @for (filled of getDotGrid(row.pct); track $index) {
+                    <div class="eco-dot" [class.filled]="filled" [style.--dc]="row.color"></div>
+                  }
+                </div>
+              </div>
             }
+            @if (breakdownRows.length === 0) {
+              <div class="eco-empty">No breakdown data yet</div>
+            }
+          </div>
+
+          <!-- Category pills -->
+          <div class="eco-cat-row">
+            @for (row of breakdownRows; track row.type) {
+              <span class="eco-cat-chip" [style.--cc]="row.color">
+                {{ row.letter }} {{ row.label }}
+              </span>
+            }
+          </div>
+
+          <!-- Metrics row -->
+          <div class="eco-metrics">
+            <div class="eco-m-item">
+              <span class="eco-m-val">{{ formatVal(displayMetrics.carbon) }}<em>kg</em></span>
+              <span class="eco-m-label">Carbon</span>
+            </div>
+            <div class="eco-m-item">
+              <span class="eco-m-val">{{ formatVal(displayMetrics.water) }}<em>L</em></span>
+              <span class="eco-m-label">Water</span>
+            </div>
+            <div class="eco-m-item">
+              <span class="eco-m-val">{{ formatVal(displayMetrics.energy) }}<em>kWh</em></span>
+              <span class="eco-m-label">Energy</span>
+            </div>
+            <div class="eco-m-item">
+              <span class="eco-m-val">{{ formatVal(displayMetrics.waste) }}<em>kg</em></span>
+              <span class="eco-m-label">Waste</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCAN CARD (right, 1/3) -->
+        <div class="eco-card eco-card-scan eco-anim-stagger-2">
+          <div class="eco-scan-glow"></div>
+          <div class="eco-scan-visual">
+            <svg viewBox="0 0 80 80" fill="none" stroke="currentColor" stroke-width="1" width="80" height="80" class="eco-scan-icon">
+              <rect x="10" y="10" width="60" height="60" rx="8" stroke-dasharray="6 4" opacity="0.4"/>
+              <path d="M30 50 L40 30 L50 50 Z" fill="rgba(74,222,128,0.1)" stroke="rgba(74,222,128,0.5)" stroke-width="1.5"/>
+              <circle cx="40" cy="25" r="3" fill="rgba(74,222,128,0.3)" stroke="rgba(74,222,128,0.6)"/>
+              <line x1="10" y1="40" x2="70" y2="40" stroke="rgba(74,222,128,0.2)" stroke-dasharray="3 3"/>
+            </svg>
+          </div>
+          <h3>Scan to analyze</h3>
+          <p>Take a photo or scan a receipt using Vero Lens, and we'll calculate the environmental impact automatically</p>
+          <button class="eco-scan-trigger" (click)="triggerFileSelect()" [disabled]="scanLoading">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M4 7V4h3M17 4h3v3M4 17v3h3M17 20h3v-3"/>
+            </svg>
+            Vero Lens
           </button>
         </div>
 
-        @if (aiResult) {
-          <div class="vt-ai-result">
-            <span class="vt-ai-tag">{{ labels[aiResult.activityType] }}</span>
-            <span class="vt-ai-desc" #typedAiDesc></span>
-            <span class="vt-ai-impact">+{{ formatKg(aiResult.carbonKg) }}</span>
+        <!-- GOALS CARD (bottom-left) -->
+        <div class="eco-card eco-card-goals eco-anim-stagger-3">
+          <div class="eco-card-head-inline">
+            <h3>Impact Goals</h3>
+            <button class="eco-mini-btn" (click)="showGoalForm = !showGoalForm">
+              {{ showGoalForm ? 'Cancel' : '+ New' }}
+            </button>
           </div>
-        }
-      </div>
 
-      <!-- Add Activity Button - floating pill -->
-      <button class="vt-fab" (click)="showAddForm = !showAddForm" [class.active]="showAddForm">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          @if (showAddForm) {
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          } @else {
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <!-- Goal form -->
+          @if (showGoalForm) {
+            <div class="eco-goal-form">
+              <div class="eco-gf-row">
+                <select [(ngModel)]="newGoal.activityType" class="eco-field sm">
+                  @for (t of activityTypes; track t) {
+                    <option [value]="t">{{ labels[t] }}</option>
+                  }
+                </select>
+                <input type="number" [(ngModel)]="newGoal.targetCarbonKg" class="eco-field sm" placeholder="Target kg" />
+              </div>
+              <div class="eco-gf-row">
+                <input type="date" [(ngModel)]="newGoal.startDate" class="eco-field sm" />
+                <span class="eco-gf-to">to</span>
+                <input type="date" [(ngModel)]="newGoal.endDate" class="eco-field sm" />
+              </div>
+              <button class="eco-submit-btn sm" (click)="submitGoal()" [disabled]="submitting">Set Goal</button>
+            </div>
           }
-        </svg>
-        {{ showAddForm ? 'Close' : 'Log Activity' }}
-      </button>
-    </section>
 
-    <!-- ═══ ADD FORM PANEL ═══ -->
-    @if (showAddForm) {
-      <div class="vt-form-panel">
-        <div class="vt-form-grid">
-          <div class="vt-form-group">
-            <label class="vt-label">01 / Activity Type</label>
-            <div class="vt-type-grid">
-              @for (t of activityTypes; track t) {
-                <button class="vt-type-btn" [class.active]="newActivity.activityType === t"
-                        (click)="newActivity.activityType = $any(t)">
-                  <span class="vt-type-icon">
-                    @if (t === 'TRANSPORT') {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                    } @else if (t === 'FOOD') {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-                    } @else if (t === 'ENERGY') {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    } @else {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                    }
-                  </span>
-                  <span class="vt-type-name">{{ labels[t] }}</span>
+          <!-- EcoScore summary in goals -->
+          <div class="eco-goals-hero">
+            <span class="eco-goals-big">{{ displayMetrics.score | number:'1.0-0' }}%</span>
+            <span class="eco-goals-sub">Accuracy score</span>
+          </div>
+
+          <!-- Goal list -->
+          @if (activeGoals.length === 0 && !showGoalForm) {
+            <div class="eco-empty">No active goals</div>
+          }
+          @for (g of activeGoals; track g.id) {
+            <div class="eco-goal-item eco-anim-slide-up">
+              <div class="eco-gi-top">
+                <span class="eco-gi-type">{{ labels[$any(g.activityType)] || g.activityType }}</span>
+                <span class="eco-gi-pct">{{ g.progressPct | number:'1.0-0' }}%</span>
+              </div>
+              <div class="eco-gi-bar">
+                <div class="eco-gi-fill" [style.width.%]="g.progressPct"></div>
+              </div>
+              <div class="eco-gi-bottom">
+                <span class="eco-gi-range">{{ g.startDate }} → {{ g.endDate }}</span>
+                <button class="eco-icon-btn" (click)="deleteGoal(g.id!)" title="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
                 </button>
-              }
-            </div>
-          </div>
-          <div class="vt-form-group">
-            <label class="vt-label">02 / Carbon Impact</label>
-            <div class="vt-kg-input-wrap">
-              <input type="number" [(ngModel)]="newActivity.carbonKg"
-                     class="vt-kg-input" placeholder="0.0" />
-              <span class="vt-kg-unit">kg CO₂</span>
-            </div>
-          </div>
-          <div class="vt-form-group vt-form-full">
-            <label class="vt-label">03 / Description</label>
-            <input type="text" [(ngModel)]="newActivity.description"
-                   class="vt-desc-input" placeholder="e.g. Flight Paris → London" />
-          </div>
-          <div class="vt-form-actions">
-            <button class="vt-submit-btn" (click)="submitActivity()">
-              Record Activity →
-            </button>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- ═══ MAIN BODY GRID ═══ -->
-    <div class="vt-body">
-
-      <!-- ── LEFT COLUMN: Analytics ── -->
-      <div class="vt-col-left">
-
-        <!-- Eco 3D Card -->
-        <div class="vt-card eco-panel vt-observe">
-          <div class="eco-hud">
-            <div class="eco-meta">
-              <span class="vt-card-tag" data-tw="Ecosystem"></span>
-              <h2 class="vt-card-title" data-tw="Terrarium Health"></h2>
-            </div>
-            <div class="eco-score-block">
-              <div class="eco-val">{{ ecoHealth }}</div>
-              <div class="eco-mood" [attr.data-mood]="ecoLabel.toLowerCase()">{{ ecoLabel }}</div>
-            </div>
-          </div>
-          <div class="eco-canvas-wrap">
-            <div #ecoCanvas class="eco-canvas"></div>
-          </div>
-        </div>
-
-        <!-- Category Breakdown -->
-        <div class="vt-card vt-observe">
-          <div class="vt-card-header">
-            <span class="vt-card-tag" data-tw="Breakdown"></span>
-            <h2 class="vt-card-title" data-tw="Emission Vectors"></h2>
-          </div>
-          <div class="vt-vectors">
-            @for (row of categoryRows; track row.type; let i = $index) {
-              <div class="vt-vector" [style.animation-delay]="(i * 0.1) + 's'">
-                <div class="vt-vector-head">
-                  <div class="vt-vector-name">
-                    <span class="vt-vector-icon">
-                      @if (row.type === 'TRANSPORT') {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                      } @else if (row.type === 'FOOD') {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-                      } @else if (row.type === 'ENERGY') {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                      } @else {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                      }
-                    </span>
-                    {{ row.label }}
-                  </div>
-                  <span class="vt-vector-val">{{ formatKg(row.value) }}</span>
-                </div>
-                <div class="vt-vector-bar">
-                  <div class="vt-vector-fill"
-                       [style.width.%]="row.pct"
-                       [style.background]="row.type === 'TRANSPORT' ? 'var(--forest)' : row.type === 'FOOD' ? 'var(--earth)' : row.type === 'ENERGY' ? 'var(--gold)' : 'var(--sage)'">
-                  </div>
-                </div>
               </div>
-            }
-          </div>
-        </div>
-
-        <!-- Active Goals -->
-        <div class="vt-card vt-observe">
-          <div class="vt-card-header vt-flex-header">
-            <div>
-              <span class="vt-card-tag" data-tw="Goals"></span>
-              <h2 class="vt-card-title" data-tw="My Targets"></h2>
             </div>
-            <button class="vt-add-btn" (click)="showGoalForm = !showGoalForm">
-              {{ showGoalForm ? 'Cancel' : '+ New Target' }}
-            </button>
-          </div>
-          
-          <div class="vt-goals">
-            @if (showGoalForm) {
-              <div class="vt-goal-form">
-                <div class="vt-goal-form-row">
-                  <select [(ngModel)]="newGoal.activityType" class="vt-select">
-                    @for (t of activityTypes; track t) {
-                      <option [value]="t">{{ labels[t] }}</option>
-                    }
-                  </select>
-                  <input type="number" [(ngModel)]="newGoal.targetCarbonKg" class="vt-edit-kg" placeholder="Target kg..." />
-                  <span class="vt-edit-kglabel">kg limit</span>
-                </div>
-                <div class="vt-goal-form-row">
-                  <input type="date" [(ngModel)]="newGoal.startDate" class="vt-edit-date" />
-                  <span class="vt-edit-kglabel">to</span>
-                  <input type="date" [(ngModel)]="newGoal.endDate" class="vt-edit-date" />
-                </div>
-                <button class="vt-submit-tiny" (click)="submitGoal()">Set Limit →</button>
-              </div>
-            }
+          }
 
-            @if (activeGoals.length === 0 && !showGoalForm) {
-              <div class="vt-log-empty-mini">No active targets set.</div>
-            }
-
-            @for (g of activeGoals; track g.id) {
-              <div class="vt-goal">
-                  <div class="vt-goal-top">
-                    <span class="vt-goal-type">{{ g.activityType }}</span>
-                    <span class="vt-goal-pct">{{ g.progressPct | number:'1.0-0' }}%</span>
-                  </div>
-                  <div class="vt-goal-bar">
-                    <div class="vt-goal-fill" [style.width.%]="g.progressPct"></div>
-                  </div>
-                <div class="vt-goal-bottom">
-                  <div class="vt-goal-range">{{ g.startDate }} → {{ g.endDate }}</div>
-                  <button class="vt-ctrl delete goal-del" (click)="deleteGoal(g.id!)" title="Delete Goal">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- AI Tips -->
-        <div class="vt-card vt-tips-card vt-observe">
-          <div class="vt-card-header">
-            <span class="vt-card-tag ai-tag" data-tw="AI Insights"></span>
-            <h2 class="vt-card-title" data-tw="Personalised Recommendations"></h2>
-          </div>
-          @if (tips.length === 0) {
-            <div class="vt-tips-loading">
-              <div class="vt-spinner dark"></div>
-              <span>Generating personalised tips...</span>
-            </div>
-          } @else {
-            <div class="vt-tips">
-              @for (tip of tips; track tip; let i = $index) {
-                <div class="vt-tip" [style.animation-delay]="(i * 0.15) + 's'">
-                  <div class="vt-tip-num">{{ i + 1 | number:'2.0-0' }}</div>
-                  <p class="vt-tip-text">{{ tip }}</p>
-                </div>
-              }
+          <!-- Goals stat -->
+          @if (dashboard.totalGoals > 0) {
+            <div class="eco-goals-stat">
+              <span class="eco-gs-achieved">{{ dashboard.achievedGoals }}</span>
+              <span class="eco-gs-of">of {{ dashboard.totalGoals }} goals achieved</span>
             </div>
           }
         </div>
-      </div>
 
-      <!-- ── RIGHT COLUMN: Activity Log ── -->
-      <div class="vt-col-right">
+        <!-- HISTORY CARD (bottom-right) -->
+        <div class="eco-card eco-card-history eco-anim-stagger-4">
+          <div class="eco-history-bg"></div>
+          <div class="eco-history-content">
+            <h3>History <span>&amp; Trends</span></h3>
 
-        <div class="vt-card vt-log-card vt-observe">
-          <div class="vt-card-header">
-            <span class="vt-card-tag" data-tw="Records"></span>
-            <h2 class="vt-card-title" data-tw="Activity Log"></h2>
-          </div>
+            <!-- Trend chart -->
+            <canvas #trendCanvas class="eco-trend-canvas"></canvas>
 
-          <div class="vt-log">
-            @if (loading) {
-              <div class="vt-log-loading">
-                <div class="vt-spinner dark"></div>
-              </div>
-            }
-            @if (!loading && activities.length === 0) {
-              <div class="vt-log-empty">
-                <div class="vt-log-empty-icon">✦</div>
-                <p>No activities recorded yet.<br>Start logging to see your footprint.</p>
-              </div>
-            }
-            @for (a of activities.slice(0, 12); track a.id; let i = $index) {
-              <div class="vt-log-row" [class.editing]="editingActivityId === a.id"
-                   [style.animation-delay]="(i * 0.04) + 's'">
-
-                <div class="vt-log-cat" [attr.data-type]="a.activityType">
-                  @if (a.activityType === 'TRANSPORT') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                  } @else if (a.activityType === 'FOOD') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-                  } @else if (a.activityType === 'ENERGY') {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  } @else {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                  }
-                </div>
-
-                <div class="vt-log-body">
+            <!-- Activity log -->
+            <div class="eco-log">
+              @if (activities.length === 0) {
+                <div class="eco-empty light">No activities recorded yet</div>
+              }
+              @for (a of activities.slice(0, 10); track a.id; let i = $index) {
+                <div class="eco-log-row eco-anim-slide-up" [style.animation-delay]="(i * 50) + 'ms'" [class.editing]="editingActivityId === a.id">
                   @if (editingActivityId === a.id) {
-                    <div class="vt-edit-form">
-                      <input type="text" [(ngModel)]="editActivityData.description"
-                             class="vt-edit-input" />
-                      <div class="vt-edit-row">
-                        <input type="number" [(ngModel)]="editActivityData.carbonKg"
-                               class="vt-edit-kg" />
-                        <span class="vt-edit-kglabel">kg</span>
-                        <div class="vt-edit-actions">
-                          <button class="vt-edit-save" (click)="saveEditActivity()">Save</button>
-                          <button class="vt-edit-cancel" (click)="cancelEditActivity()">Cancel</button>
-                        </div>
-                      </div>
+                    <div class="eco-edit-inline">
+                      <input type="text" [(ngModel)]="editActivityData.description" class="eco-field flex" />
+                      <button class="eco-submit-btn sm" (click)="saveEditActivity()">Save</button>
+                      <button class="eco-mini-btn" (click)="cancelEditActivity()">Cancel</button>
                     </div>
                   } @else {
-                    <div class="vt-log-desc">{{ a.description }}</div>
-                    <div class="vt-log-meta">{{ a.date }} · {{ a.source }}</div>
-                  }
-                </div>
-
-                @if (editingActivityId !== a.id) {
-                  <div class="vt-log-right">
-                    <span class="vt-log-kg">{{ formatKg(a.carbonKg) }}</span>
-                    <div class="vt-log-controls">
-                      <button class="vt-ctrl edit" (click)="startEditActivity(a)" title="Edit">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/>
+                    <div class="eco-lr-cat" [style.--lc]="categoryColors[a.activityType]">{{ icons[a.activityType] }}</div>
+                    <div class="eco-lr-desc">{{ a.description }}</div>
+                    <div class="eco-lr-tags">
+                      @if (a.carbonKg) { <span class="eco-tag c">{{ formatVal(a.carbonKg) }}kg</span> }
+                      @if (a.waterLiters) { <span class="eco-tag w">{{ formatVal(a.waterLiters) }}L</span> }
+                      @if (a.energyKwh) { <span class="eco-tag e">{{ formatVal(a.energyKwh) }}kWh</span> }
+                      @if (a.wasteKg) { <span class="eco-tag wa">{{ formatVal(a.wasteKg) }}kg</span> }
+                    </div>
+                    <div class="eco-lr-actions">
+                      <button class="eco-icon-btn" (click)="startEditActivity(a)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/>
                         </svg>
                       </button>
-                      <button class="vt-ctrl delete" (click)="deleteActivity(a.id!)" title="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      <button class="eco-icon-btn del" (click)="deleteActivity(a.id!)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
                       </button>
                     </div>
-                  </div>
-                }
-              </div>
-            }
+                  }
+                </div>
+              }
+            </div>
           </div>
         </div>
-
       </div>
+    </main>
+
+    <!-- ─── INPUT STRIP ─── -->
+    <div class="eco-input-strip">
+      <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
+      <div class="eco-ai-dot" [class.active]="aiLoading"></div>
+      <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
+             placeholder="Describe an activity — AI calculates impact..."
+             (keyup.enter)="analyzeWithAI()" />
+      <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
+        @if (aiLoading) { <div class="eco-spinner"></div> }
+        @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        }
+      </button>
+      <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
     </div>
 
+    <!-- AI Result Toast -->
+    @if (aiResult) {
+      <div class="eco-toast">
+        <span class="eco-toast-tag">{{ labels[aiResult.activityType] }}</span>
+        <span class="eco-toast-text">{{ aiResult.description }}</span>
+        <span class="eco-toast-val">+{{ formatVal(aiResult.carbonKg) }}kg CO₂</span>
+        <button class="eco-toast-x" (click)="aiResult = null">&times;</button>
+      </div>
+    }
+  }
+
+  <!-- ═══ SCAN OVERLAY ═══ -->
+  @if (scanPreviewUrl) {
+    <div class="eco-overlay">
+      <div class="eco-overlay-card">
+        <div class="eco-overlay-img">
+          <img [src]="scanPreviewUrl" alt="Scan" />
+          @if (scanLoading) { <div class="eco-laser"></div> }
+        </div>
+        <div class="eco-overlay-text">
+          @if (scanLoading) { <div class="eco-spinner"></div> <span>Analyzing...</span> }
+          @else { <span>Scan complete</span> }
+        </div>
+      </div>
+    </div>
+  }
 </div>

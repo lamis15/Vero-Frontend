@@ -109,6 +109,11 @@ export class FormationDetailComponent implements OnInit {
     return this.formation.participantIds?.includes(this.currentUser.id) || false;
   }
 
+  isUserEnrolled(): boolean {
+    if (!this.formation || !this.currentUser) return false;
+    return this.formation.participantIds?.includes(this.currentUser.id) || false;
+  }
+
   canTakeQuiz(): boolean {
     return this.isParticipant() &&
            this.formation?.status === 'COMPLETED' &&
@@ -143,6 +148,22 @@ export class FormationDetailComponent implements OnInit {
   getAvailableSpots(): number {
     if (!this.formation) return 0;
     return this.formation.maxCapacity - (this.formation.participantIds?.length || 0);
+  }
+
+  downloadResource(resourceId: number, fileName: string): void {
+    this.formationService.downloadResource(this.formationId, resourceId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.notificationService.show('Erreur lors du téléchargement', 'error');
+      }
+    });
   }
 
   getDownloadUrl(resourceId: number): string {

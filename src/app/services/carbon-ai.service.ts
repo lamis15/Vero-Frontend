@@ -6,7 +6,7 @@ import { CarbonActivity } from './carbon.models';
 
 @Injectable({ providedIn: 'root' })
 export class CarbonAIService {
-  private readonly API = `${environment.apiUrl}/api/carbon/ai`;
+  private readonly API = `${environment.apiUrl}/api/eco/ai`;
 
   constructor(private http: HttpClient) {}
 

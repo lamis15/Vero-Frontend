@@ -39,7 +39,7 @@ export class SessionService {
   }
 
   update(session: Session): Observable<Session> {
-    return this.http.put<Session>(this.API, session);
+    return this.http.put<Session>(`${this.API}/${session.id}`, session);
   }
 
   delete(id: number): Observable<void> {

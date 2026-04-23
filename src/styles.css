@@ -1,20 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
 :root {
-  --forest: #0a1f2e; /* Deep ocean navy */
-  --moss: #123e54; /* Deep teal/blue */
-  --sage: #1e708a; /* Azure */
-  --fern: #3b9ab2; /* Cyan/Sea glass */
-  --mist: #c8e0e8; /* Pale seafoam */
-  --cream: #f4f8fa; /* Crisp cool water white */
-  --parchment: #e5eff2; /* Soft water blue */
-  --earth: #9c8e73; /* Wet Sand */
-  --clay: #d6bfa3; /* Warm Sand */
-  --gold: #edda9d; /* Sunlit Dune */
-  --charcoal: #15222b; /* Very dark navy */
-  --smoke: #60798a; /* Cool grey-blue */
+  --forest: #0a1f2e;
+  --moss: #123e54;
+  --sage: #1e708a;
+  --fern: #3b9ab2;
+  --mist: #c8e0e8;
+  --cream: #f4f8fa;
+  --parchment: #e5eff2;
+  --earth: #9c8e73;
+  --clay: #d6bfa3;
+  --gold: #edda9d;
+  --charcoal: #15222b;
+  --smoke: #60798a;
   --white: #ffffff;
-  
+
   --nav-h: 72px;
+  --nav-height: 72px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

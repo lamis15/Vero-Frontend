@@ -94,6 +94,8 @@ export class FormationsComponent implements OnInit, OnDestroy {
     }
   ];
 
+  currentUserId: number | null = null;
+
   constructor(
     private formationService: FormationService,
     public authService: AuthService,
@@ -107,6 +109,19 @@ export class FormationsComponent implements OnInit, OnDestroy {
     this.loadPinnedFromStorage();
     this.loadFormations();
     this.createFabButton();
+    
+    // Load current user ID if logged in
+    if (this.authService.isLoggedIn) {
+      this.authService.getCurrentUser().subscribe({
+        next: (user) => {
+          this.currentUserId = user.id;
+          console.log('Current user ID:', this.currentUserId);
+        },
+        error: (err) => {
+          console.error('Error loading current user:', err);
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -209,7 +224,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   loadFormations(): void {
     this.loading = true;
-    this.formationService.getAvailable().subscribe({
+    this.formationService.getAll().subscribe({
       next: (data) => {
         this.formations = data;
         this.loading = false;
@@ -245,6 +260,15 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   getAvailableSpots(formation: Formation): number {
     return formation.maxCapacity - (formation.participantIds?.length || 0);
+  }
+
+  isUserEnrolled(formation: Formation): boolean {
+    if (!this.authService.isLoggedIn || !this.currentUserId) {
+      return false;
+    }
+    const isEnrolled = formation.participantIds?.includes(this.currentUserId) || false;
+    console.log(`User ${this.currentUserId} enrolled in formation ${formation.id}:`, isEnrolled, 'Participants:', formation.participantIds);
+    return isEnrolled;
   }
 
   hasPrice(formation: Formation): boolean {
