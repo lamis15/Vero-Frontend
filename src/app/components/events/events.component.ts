@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
+import { EventRatingService, RatingResponse } from '../../services/Event rating.service';
 
 interface Leaf { style: string; color: string; }
 interface Turtle { x: number; y: number; speed: number; size: number; delay: number; flipped: boolean; }
@@ -18,30 +19,30 @@ interface Turtle { x: number; y: number; speed: number; size: number; delay: num
 })
 export class EventsComponent implements OnInit, OnDestroy {
 
-  // ── Data ─────────────────────────────────────────────────────────────────
-  events: Event[]        = [];
-  loading                = true;
-  loadError              = false;
-  joinedEventIds         = new Set<number>();
+  // ── Data ──────────────────────────────────────────────────────────────────
+  events: Event[]  = [];
+  loading          = true;
+  loadError        = false;
+  joinedEventIds   = new Set<number>();
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
-  toastMsg    = '';
-  toastTitle  = '';
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  toastMsg     = '';
+  toastTitle   = '';
   toastIsError = false;
 
-  // ── Search / Filter ───────────────────────────────────────────────────────
+  // ── Search / Filter ────────────────────────────────────────────────────────
   searchQuery  = '';
   activeFilter = 'ALL';
 
-  // ── Detail Modal ──────────────────────────────────────────────────────────
+  // ── Detail Modal ───────────────────────────────────────────────────────────
   showDetail  = false;
   detailEvent: Event | null = null;
   joinLoading = false;
 
-  // ── Form Modal ────────────────────────────────────────────────────────────
+  // ── Form Modal ─────────────────────────────────────────────────────────────
   showFormModal   = false;
   editMode        = false;
-  selectedId?: number;
+  selectedId?:    number;
   formStep        = 1;
   expandedSection = 'identity';
   saveLoading     = false;
@@ -51,13 +52,13 @@ export class EventsComponent implements OnInit, OnDestroy {
   formEndDate     = '';
   formEndTime     = '';
 
-  // ── Image Upload ──────────────────────────────────────────────────────────
+  // ── Image Upload ───────────────────────────────────────────────────────────
   uploadedImageUrl  = '';
   uploadedImageFile: File | null = null;
   uploadPreview     = '';
   uploadLoading     = false;
 
-  // ── Delete Confirm ────────────────────────────────────────────────────────
+  // ── Delete Confirm ─────────────────────────────────────────────────────────
   showConfirm      = false;
   confirmEventName = '';
   confirmDeleteId?: number;
@@ -66,7 +67,19 @@ export class EventsComponent implements OnInit, OnDestroy {
   leaves:  Leaf[]   = [];
   turtles: Turtle[] = [];
 
-  // ── Categories ───────────────────────────────────────────────────────────
+  // ── Flip Card ─────────────────────────────────────────────────────────────
+  flippedId: number | null = null;
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  pageSize    = 3;
+  currentPage = 0;
+
+  // ── Ratings par event ─────────────────────────────────────────────────────
+  eventRatings:   { [eventId: number]: RatingResponse[] } = {};
+  latestRatingIds: { [eventId: number]: number | null }   = {};
+  private ratingSubs: { [eventId: number]: Subscription } = {};
+
+  // ── Categories ────────────────────────────────────────────────────────────
   categories = [
     { key: 'Cleanup',      label: 'Cleanup',      emoji: '🧹', desc: 'Clean beaches, parks & streets' },
     { key: 'Planting',     label: 'Planting',     emoji: '🌱', desc: 'Plant trees & restore habitats' },
@@ -77,10 +90,11 @@ export class EventsComponent implements OnInit, OnDestroy {
   private roleSub!: Subscription;
 
   constructor(
-    private api: EventApiService,
-    private auth: AuthService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private api:           EventApiService,
+    private auth:          AuthService,
+    private cdr:           ChangeDetectorRef,
+    private ratingService: EventRatingService
+  ) {}
 
   ngOnInit(): void {
     this.generateLeaves();
@@ -92,14 +106,17 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.roleSub = this.auth.roleStream$.subscribe(() => this.cdr.markForCheck());
   }
 
-  ngOnDestroy(): void { this.roleSub?.unsubscribe(); }
+  ngOnDestroy(): void {
+    this.roleSub?.unsubscribe();
+    Object.values(this.ratingSubs).forEach(s => s.unsubscribe());
+  }
 
-  // ── Leaves ───────────────────────────────────────────────────────────────
+  // ── Leaves ────────────────────────────────────────────────────────────────
   generateLeaves(): void {
     const colors = ['#74c69d','#52b788','#40916c','#95d5b2','#b7e4c7','#d8f3dc'];
     this.leaves = Array.from({ length: 14 }, () => {
       const left     = Math.random() * 100;
-      const duration = 8 + Math.random() * 12;
+      const duration = 8  + Math.random() * 12;
       const delay    = Math.random() * 15;
       const size     = 12 + Math.random() * 12;
       const color    = colors[Math.floor(Math.random() * colors.length)];
@@ -107,19 +124,19 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Turtles ──────────────────────────────────────────────────────────────
+  // ── Turtles ───────────────────────────────────────────────────────────────
   generateTurtles(): void {
     this.turtles = Array.from({ length: 4 }, (_, i) => ({
       x: -120 - i * 220,
       y: 18 + Math.random() * 24,
       speed: 0.3 + Math.random() * 0.3,
-      size: 52 + Math.random() * 28,
+      size: 52  + Math.random() * 28,
       delay: i * 4,
       flipped: false
     }));
   }
 
-  // ── Load ─────────────────────────────────────────────────────────────────
+  // ── Load ──────────────────────────────────────────────────────────────────
   load(): void {
     this.loading = true; this.loadError = false;
     this.api.getAll().subscribe({
@@ -139,7 +156,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Filters ──────────────────────────────────────────────────────────────
+  // ── Filters ───────────────────────────────────────────────────────────────
   get filteredEvents(): Event[] {
     return this.events.filter(ev => {
       const matchFilter = this.activeFilter === 'ALL' || this.getCategoryLabel(ev) === this.activeFilter;
@@ -148,6 +165,43 @@ export class EventsComponent implements OnInit, OnDestroy {
         ev.location.toLowerCase().includes(this.searchQuery.toLowerCase());
       return matchFilter && matchSearch;
     });
+  }
+
+  resetPage(): void { this.currentPage = 0; this.cdr.markForCheck(); }
+
+  get pagedEvents(): Event[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredEvents.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredEvents.length / this.pageSize);
+  }
+
+  get pagesArray(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i);
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.flippedId = null;
+      this.cdr.markForCheck();
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.flippedId = null;
+      this.cdr.markForCheck();
+    }
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = page;
+    this.flippedId = null;
+    this.cdr.markForCheck();
   }
 
   // ── Roles ─────────────────────────────────────────────────────────────────
@@ -171,8 +225,8 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.api.reserve(id).subscribe({
       next: () => {
         this.joinedEventIds.add(id);
-        this.joinLoading  = false;
-        this.showDetail   = false;
+        this.joinLoading = false;
+        this.showDetail  = false;
         this.showToast('Reservation confirmed! 🎉', 'A confirmation email with your QR ticket has been sent.');
         this.cdr.markForCheck();
       },
@@ -193,6 +247,64 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   hasJoined(id: number): boolean { return this.joinedEventIds.has(id); }
 
+  // ── Flip Card ─────────────────────────────────────────────────────────────
+  flipCard(eventId: number): void {
+    if (this.flippedId === eventId) {
+      this.flippedId = null;
+    } else {
+      this.flippedId = eventId;
+      if (!this.eventRatings[eventId]) {
+        this.loadRatingsForEvent(eventId);
+      }
+    }
+    this.cdr.markForCheck();
+  }
+
+  private loadRatingsForEvent(eventId: number): void {
+    this.ratingService.getRatings(eventId).subscribe({
+      next: (ratings: RatingResponse[]) => {
+        this.eventRatings[eventId] = ratings;
+        this.cdr.markForCheck();
+      }
+    });
+
+    if (!this.ratingSubs[eventId]) {
+      this.ratingSubs[eventId] = this.ratingService
+        .subscribeToRatings(eventId)
+        .subscribe((newRating: RatingResponse) => {
+          if (!this.eventRatings[eventId]) {
+            this.eventRatings[eventId] = [];
+          }
+          const idx = this.eventRatings[eventId].findIndex(r => r.id === newRating.id);
+          if (idx >= 0) {
+            this.eventRatings[eventId][idx] = newRating;
+          } else {
+            this.eventRatings[eventId] = [newRating, ...this.eventRatings[eventId]];
+          }
+          this.latestRatingIds[eventId] = newRating.id;
+          setTimeout(() => {
+            this.latestRatingIds[eventId] = null;
+            this.cdr.markForCheck();
+          }, 1000);
+          this.cdr.markForCheck();
+        });
+    }
+  }
+
+  getEventRatings(eventId: number): RatingResponse[] {
+    return this.eventRatings[eventId] || [];
+  }
+
+  getEventAvg(eventId: number): number {
+    const ratings = this.getEventRatings(eventId);
+    if (ratings.length === 0) return 0;
+    return ratings[0].averageStars;
+  }
+
+  getEventAvgRounded(eventId: number): number {
+    return Math.round(this.getEventAvg(eventId));
+  }
+
   // ── Image Upload ──────────────────────────────────────────────────────────
   onImageSelected(event: any): void {
     const file: File = event.target.files[0];
@@ -207,11 +319,10 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   uploadImage(): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!this.uploadedImageFile) { resolve(''); return; }
       const formData = new FormData();
       formData.append('file', this.uploadedImageFile);
-      // POST to your Spring Boot /uploads endpoint
       fetch('/api/uploads', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => resolve(data.url || ''))
@@ -255,13 +366,10 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   async submitForm(): Promise<void> {
     this.saveLoading = true;
-
-    // Upload image first if a new file was selected
     if (this.uploadedImageFile) {
       const url = await this.uploadImage();
       if (url) this.form.imageUrl = url;
     }
-
     const payload = { ...this.form };
     delete payload.category;
 
@@ -302,9 +410,9 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   doDelete(): void {
     if (!this.confirmDeleteId) return;
-    const id = this.confirmDeleteId;
+    const id     = this.confirmDeleteId;
     const backup = [...this.events];
-    this.events = this.events.filter(e => e.id !== id);
+    this.events  = this.events.filter(e => e.id !== id);
     this.showConfirm = false;
     this.cdr.markForCheck();
 
@@ -324,7 +432,7 @@ export class EventsComponent implements OnInit, OnDestroy {
     setTimeout(() => { this.toastMsg = ''; this.toastTitle = ''; this.cdr.markForCheck(); }, 4500);
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
   getCategoryLabel(ev: Event): string {
     const t = (ev.title + ' ' + (ev.description || '')).toLowerCase();
     if (t.includes('plant') || t.includes('tree') || t.includes('forest')) return 'Planting';
@@ -345,10 +453,10 @@ export class EventsComponent implements OnInit, OnDestroy {
     return images[cat] || images['Cleanup'];
   }
 
-  getCo2(ev: Event):          number { return Math.floor(ev.capacity * 3.2); }
-  getFilledSpots(ev: Event):  number { return Math.floor(ev.capacity * 0.6); }
-  getSpotsLeft(ev: Event):    number { return ev.capacity - this.getFilledSpots(ev); }
-  getFillPercent(ev: Event):  number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
+  getCo2(ev: Event):         number { return Math.floor(ev.capacity * 3.2); }
+  getFilledSpots(ev: Event): number { return Math.floor(ev.capacity * 0.6); }
+  getSpotsLeft(ev: Event):   number { return ev.capacity - this.getFilledSpots(ev); }
+  getFillPercent(ev: Event): number { return Math.round((this.getFilledSpots(ev) / ev.capacity) * 100); }
 
   trackById(_: number, ev: Event): number { return ev.id!; }
 }

@@ -1,17 +1,13 @@
 <div class="res-page">
 
-  <!-- Decorative leaves -->
   <div class="deco-leaf deco-leaf-1" aria-hidden="true">🍃</div>
   <div class="deco-leaf deco-leaf-2" aria-hidden="true">🌿</div>
   <div class="deco-leaf deco-leaf-3" aria-hidden="true">🍀</div>
 
-  <!-- Toasts -->
   <div class="toast-bar success" *ngIf="successMsg">✨ {{ successMsg }}</div>
   <div class="toast-bar error"   *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       HERO
-  ══════════════════════════════════════════════════════════════════════ -->
+  <!-- HERO -->
   <div class="page-hero">
     <div class="hero-left">
       <div class="hero-eyebrow">
@@ -21,7 +17,6 @@
       <h1 class="hero-title">Your <em>Reservations</em></h1>
       <p class="hero-sub">Track and manage your eco-event bookings. Access your tickets, get directions, and leave your impact.</p>
     </div>
-
     <div class="hero-stats">
       <div class="stat-bubble">
         <div class="stat-icon">🌿</div>
@@ -41,18 +36,15 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       PAGE CONTENT
-  ══════════════════════════════════════════════════════════════════════ -->
+  <!-- PAGE CONTENT -->
   <div class="page-content">
 
-    <!-- Loading -->
     <div class="loading-state" *ngIf="loading">
       <div class="loading-spinner"></div>
       <p style="color:var(--text-mid);font-size:14px">Loading your reservations…</p>
     </div>
 
-    <!-- ACTIVE RESERVATIONS -->
+    <!-- ACTIVE TICKETS -->
     <ng-container *ngIf="!loading && activeReservations.length > 0">
       <div class="section-header">
         <h2 class="section-title">Active Tickets</h2>
@@ -60,18 +52,14 @@
       </div>
 
       <div class="res-list">
-        <div class="res-card" *ngFor="let r of activeReservations"
-             [class.expanded]="isExpanded(r.id)">
+        <div class="res-card" *ngFor="let r of activeReservations" [class.expanded]="isExpanded(r.id)">
 
-          <!-- Card Header — always visible -->
           <div class="rcard-header" (click)="toggleExpand(r.id)">
-
             <div class="rcard-icon">
               {{ r.event.title.toLowerCase().includes('plant') || r.event.title.toLowerCase().includes('tree') ? '🌱' :
                  r.event.title.toLowerCase().includes('coral') || r.event.title.toLowerCase().includes('reef') ? '🐠' :
                  r.event.title.toLowerCase().includes('workshop') ? '🎨' : '🧹' }}
             </div>
-
             <div class="rcard-main">
               <div class="rcard-title">{{ r.event.title }}</div>
               <div class="rcard-meta">
@@ -83,12 +71,9 @@
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   {{ r.event.location }}
                 </div>
-                <div class="rcard-meta-item">
-                  🌿 {{ r.event.capacity * 3 }} kg CO₂
-                </div>
+                <div class="rcard-meta-item">🌿 {{ r.event.capacity * 3 }} kg CO₂</div>
               </div>
             </div>
-
             <div class="rcard-right">
               <span class="status-badge" [ngClass]="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
               <div class="chevron" [class.open]="isExpanded(r.id)">
@@ -97,57 +82,43 @@
             </div>
           </div>
 
-          <!-- Perforation line (shown only when expanded) -->
           <div class="perforation" *ngIf="isExpanded(r.id)"></div>
 
-          <!-- Expanded body — boarding pass stub -->
           <div class="rcard-body" [class.open]="isExpanded(r.id)">
-            <div class="rcard-body-grid">
+            <div class="rcard-body-grid" [class.no-qr]="r.status !== 'CONFIRMED'">
 
-              <!-- Left: QR code -->
-              <div class="qr-panel">
+              <!-- QR code — seulement si CONFIRMED -->
+              <div class="qr-panel" *ngIf="r.status === 'CONFIRMED'">
                 <div class="qr-frame">
                   <img [src]="getQrCodeUrl(r)" alt="QR ticket" />
                 </div>
                 <p class="qr-hint">Scan for PDF ticket · Your digital boarding pass</p>
               </div>
 
-              <!-- Right: Actions -->
+              <!-- Message si PENDING -->
+              <div class="pending-qr-msg" *ngIf="r.status === 'PENDING'">
+                <div class="pending-qr-icon">⏳</div>
+                <p>QR ticket will be available once your reservation is confirmed.</p>
+              </div>
+
               <div class="action-grid">
-
-                <!-- PDF Download -->
-                <button class="action-btn pdf-btn" (click)="downloadPdf(r, $event)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Download PDF Ticket
-                </button>
-
-                <!-- SMS Reminder -->
-                <button class="action-btn" [class.sms-on]="isSmsEnabled(r.id)" (click)="toggleSms(r.id, $event)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .18h3a2 2 0 012 1.72"/><path d="M15 7a4 4 0 010 8"/><path d="M15.54 4.76a9 9 0 010 14.49"/></svg>
-                  SMS Reminder ({{ isSmsEnabled(r.id) ? 'ON ✓' : 'OFF' }})
-                </button>
-
-                <!-- Google Maps -->
                 <button class="action-btn" (click)="openMaps(r.event.location, $event)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   View on Map & Get Directions
                 </button>
-
-                <!-- Cancel -->
                 <button class="action-btn cancel-btn" *ngIf="canCancel(r)" (click)="openCancelModal(r.id, $event)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                   Cancel Reservation
                 </button>
-
               </div>
             </div>
           </div>
 
-        </div><!-- /res-card -->
-      </div><!-- /res-list -->
+        </div>
+      </div>
     </ng-container>
 
-    <!-- EMPTY active -->
+    <!-- EMPTY -->
     <div class="empty-state" *ngIf="!loading && activeReservations.length === 0 && pastReservations.length === 0">
       <div class="empty-icon">🌱</div>
       <h2 class="empty-title">No reservations yet</h2>
@@ -155,65 +126,61 @@
       <a class="btn-explore" routerLink="/events">Explore Events →</a>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         HISTORY & RATINGS
-    ══════════════════════════════════════════════════════════════════════ -->
+    <!-- HISTORY & RATINGS -->
     <ng-container *ngIf="!loading && pastReservations.length > 0">
       <div class="section-header mt-section">
         <h2 class="section-title">History & Ratings</h2>
         <span class="section-count">{{ pastReservations.length }}</span>
       </div>
 
-      <div class="history-grid">
-        <div class="hist-card" *ngFor="let r of pastReservations">
+      <!-- Pagination header -->
+      <div class="hist-pag-header" *ngIf="pastReservations.length > histPageSize">
+        <span class="hist-pag-info">
+          Page {{ histPage + 1 }} / {{ histTotalPages }}
+        </span>
+        <div class="hist-pag-controls">
+          <button class="hist-page-btn" (click)="prevPage()" [disabled]="histPage === 0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="hist-page-dots">
+            <span class="hist-page-dot"
+                  *ngFor="let p of histPagesArray"
+                  [class.active]="p === histPage"
+                  (click)="goToHistPage(p)">
+            </span>
+          </div>
+          <button class="hist-page-btn" (click)="nextPage()" [disabled]="histPage >= histTotalPages - 1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
 
+      <div class="history-grid">
+        <div class="hist-card" *ngFor="let r of pagedPastReservations">
           <div class="hist-card-header">
             <span class="status-badge" [ngClass]="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
             <span class="hist-date">{{ r.event.startDate | date:'dd/MM/yyyy' }}</span>
           </div>
-
           <h3 class="hist-title">{{ r.event.title }}</h3>
 
-          <!-- Rating box — only for events that happened (CONFIRMED/COMPLETED status) -->
-          <div class="rating-box" *ngIf="r.status === 'CONFIRMED' ">
+          <app-event-rating
+            *ngIf="r.event.status === 'COMPLETED'"
+            [eventId]="r.event.id!"
+            [canRate]="r.status === 'CONFIRMED'">
+          </app-event-rating>
 
-            <!-- Not yet rated -->
-            <ng-container *ngIf="!submittedRatings.has(r.event.id!)">
-              <p class="rating-label">Rate your experience</p>
-              <div class="stars-row">
-                <button class="star-btn" *ngFor="let star of [1,2,3,4,5]"
-                        (click)="rateEvent(r.event.id!, star)"
-                        [class.filled]="(ratings[r.event.id!] || 0) >= star">★</button>
-              </div>
-              <textarea class="comment-area" rows="2"
-                        [(ngModel)]="commentDraft[r.event.id!]"
-                        placeholder="Share your thoughts about this event…"></textarea>
-              <button class="btn-submit-rating" (click)="submitRating(r.event.id!)">Submit Review</button>
-            </ng-container>
-
-            <!-- Already rated -->
-            <ng-container *ngIf="submittedRatings.has(r.event.id!)">
-              <div class="rating-done">
-                {{ '★'.repeat(ratings[r.event.id!]) }}{{ '☆'.repeat(5 - ratings[r.event.id!]) }}
-                &nbsp; Thank you for your review!
-              </div>
-              <p class="submitted-comment" *ngIf="comments[r.event.id!]">"{{ comments[r.event.id!] }}"</p>
-            </ng-container>
-
-          </div>
-
+          <p class="not-completed-msg" *ngIf="r.event.status !== 'COMPLETED'">
+            🕐 Ratings will be available once the event is completed.
+          </p>
         </div>
       </div>
     </ng-container>
 
-  </div><!-- /page-content -->
+  </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       MAP MODAL
-  ══════════════════════════════════════════════════════════════════════ -->
+  <!-- MAP MODAL -->
   <div class="modal-backdrop" *ngIf="showMapModal" (click)="showMapModal=false">
     <div class="map-modal" (click)="$event.stopPropagation()">
-
       <div class="map-modal-header">
         <div>
           <div class="map-modal-title">📍 Event Location</div>
@@ -221,14 +188,7 @@
         </div>
         <button class="map-close" (click)="showMapModal=false">✕</button>
       </div>
-
-      <iframe class="map-embed"
-              [src]="mapEmbedUrl"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade">
-      </iframe>
-
+      <iframe class="map-embed" [src]="mapEmbedUrl" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       <div class="map-modal-footer">
         <button class="btn-directions" (click)="openDirectMaps(mapLocation, $event)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
@@ -239,9 +199,7 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       CANCEL CONFIRM MODAL
-  ══════════════════════════════════════════════════════════════════════ -->
+  <!-- CANCEL MODAL -->
   <div class="modal-backdrop" *ngIf="showConfirmModal" (click)="closeConfirm()">
     <div class="cancel-modal" (click)="$event.stopPropagation()">
       <div class="cancel-icon">🎫</div>

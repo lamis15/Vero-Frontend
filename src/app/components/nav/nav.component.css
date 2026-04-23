@@ -45,11 +45,13 @@ nav.nav-transparent .nav-links a:not(.nav-cta).active-link {
   color: #fff;
 }
 
-nav.nav-transparent .btn-bell {
+nav.nav-transparent .btn-bell,
+nav.nav-transparent .btn-icon {
   color: rgba(255, 255, 255, 0.75);
 }
 
-nav.nav-transparent .btn-bell:hover {
+nav.nav-transparent .btn-bell:hover,
+nav.nav-transparent .btn-icon:hover {
   color: #fff;
 }
 
@@ -141,7 +143,8 @@ nav.nav-transparent .nav-cta:hover {
   align-items: center;
 }
 
-.btn-bell {
+.btn-bell,
+.btn-icon {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -154,7 +157,8 @@ nav.nav-transparent .nav-cta:hover {
   padding: 4px;
 }
 
-.btn-bell:hover {
+.btn-bell:hover,
+.btn-icon:hover {
   color: var(--forest);
 }
 
@@ -278,6 +282,112 @@ nav.nav-transparent .nav-cta:hover {
   color: var(--smoke);
 }
 
+/* ══ CHAT DROPDOWN (True Frosted Glass) ══ */
+.chat-dropdown {
+  right: -20px;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  /* Lighter, much more transparent base */
+  backdrop-filter: blur(0.5px) !important;
+  /* Reduced blur (less 'flou') */
+  -webkit-backdrop-filter: blur(0.5px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  color: white;
+}
+
+.chat-dropdown .notif-header {
+  background: transparent !important;
+  color: white !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.chat-options-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+}
+
+.chat-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.chat-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-dropdown-btn:hover .icon-wrapper {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  color: white;
+}
+
+.chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: 0.2px;
+}
+
+.chat-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+.chat-badge {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--fern);
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 100px;
+  box-shadow: 0 4px 12px rgba(59, 154, 178, 0.3);
+}
+
 /* Mes réservations link */
 .nav-reservations {
   background: rgba(44, 91, 44, 0.08) !important;
@@ -294,4 +404,91 @@ nav.nav-transparent .nav-cta:hover {
 .nav-reservations.active-link {
   background: rgba(44, 91, 44, 0.16) !important;
   border-color: rgba(44, 91, 44, 0.3) !important;
+}
+
+/* ══ TOAST NOTIFICATIONS ══ */
+.toast-container {
+  position: fixed;
+  top: max(80px, calc(var(--nav-h, 72px) + 20px));
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  /* Let clicks pass through container */
+}
+
+.toast-notification {
+  pointer-events: auto;
+  /* Enable clicks on the toast itself */
+  background: rgba(14, 23, 29, 0.85);
+  /* Deep sleek dark */
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Subtle bright edge */
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: max-content;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform: translateX(120%) scale(0.95);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Smoother sleek ease out */
+}
+
+.toast-notification.show {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(59, 154, 178, 0.2), rgba(44, 91, 44, 0.3));
+  /* Premium gradient */
+  color: var(--fern, #3b9ab2);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  border: 1px solid rgba(59, 154, 178, 0.2);
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #e2e8f0;
+  /* Soft light text */
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.toast-close:hover {
+  color: #fff;
+  transform: scale(1.1);
 }

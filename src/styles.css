@@ -1,32 +1,44 @@
 /* You can add global styles to this file, and also import other style files */
 :root {
-  --forest: #0a1f2e; /* Deep ocean navy */
-  --moss: #123e54; /* Deep teal/blue */
-  --sage: #1e708a; /* Azure */
-  --fern: #3b9ab2; /* Cyan/Sea glass */
-  --mist: #c8e0e8; /* Pale seafoam */
-  --cream: #f4f8fa; /* Crisp cool water white */
-  --parchment: #e5eff2; /* Soft water blue */
-  --earth: #9c8e73; /* Wet Sand */
-  --clay: #d6bfa3; /* Warm Sand */
-  --gold: #edda9d; /* Sunlit Dune */
-  --charcoal: #15222b; /* Very dark navy */
-  --smoke: #60798a; /* Cool grey-blue */
+  --forest: #0a1f2e;
+  /* Deep ocean navy */
+  --moss: #123e54;
+  /* Deep teal/blue */
+  --sage: #1e708a;
+  /* Azure */
+  --fern: #3b9ab2;
+  /* Cyan/Sea glass */
+  --mist: #c8e0e8;
+  /* Pale seafoam */
+  --cream: #f4f8fa;
+  /* Crisp cool water white */
+  --parchment: #e5eff2;
+  /* Soft water blue */
+  --earth: #9c8e73;
+  /* Wet Sand */
+  --clay: #d6bfa3;
+  /* Warm Sand */
+  --gold: #edda9d;
+  /* Sunlit Dune */
+  --charcoal: #15222b;
+  /* Very dark navy */
+  --smoke: #60798a;
+  /* Cool grey-blue */
   --white: #ffffff;
-  
+
   --nav-h: 72px;
-
-
-  --navy:  #0a1628;
-  --navy2: #0f1f35;
-  --navy3: #162840;
-  --teal:  #3b9ab2;
-  --teal2: #1e708a;
-  --teal3: #0d4a5e;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background: var(--cream);
@@ -34,48 +46,106 @@ body {
   overflow-x: hidden;
 }
 
-section { padding: 100px 80px; }
-.section-tag {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: 'DM Mono', monospace; font-size: 11px;
-  letter-spacing: .15em; text-transform: uppercase;
-  color: var(--sage); margin-bottom: 20px;
+main {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - var(--nav-h));
 }
-.section-tag::after { content: ''; width: 24px; height: 1px; background: var(--fern); }
+
+app-chatbot {
+  display: block;
+  width: 100%;
+}
+
+section {
+  padding: 100px 80px;
+}
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 20px;
+}
+
+.section-tag::after {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--fern);
+}
 
 .section-h2 {
-  font-family: 'Playfair Display', serif; font-size: clamp(36px, 4vw, 54px);
-  font-weight: 700; line-height: 1.12; color: var(--forest);
-  letter-spacing: -1px; margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 4vw, 54px);
+  font-weight: 700;
+  line-height: 1.12;
+  color: var(--forest);
+  letter-spacing: -1px;
+  margin-bottom: 16px;
 }
-.section-h2 em { font-style: italic; color: var(--fern); }
+
+.section-h2 em {
+  font-style: italic;
+  color: var(--fern);
+}
 
 .section-sub {
-  font-size: 16px; color: var(--smoke); font-weight: 300;
-  line-height: 1.7; max-width: 500px;
+  font-size: 16px;
+  color: var(--smoke);
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 500px;
 }
 
 .fade-in {
-  opacity: 0; transform: translateY(24px);
+  opacity: 0;
+  transform: translateY(24px);
   transition: opacity .7s ease, transform .7s ease;
 }
-.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 @media(max-width: 900px) {
-  section { padding: 60px 24px; }
-}
-/* ═══════════════════════════════════════════════════════════
-   FOOTER — Ocean Navy
-   ═══════════════════════════════════════════════════════════ */
-
-footer,
-app-footer,
-.footer,
-.app-footer,
-.site-footer,
-[class*="footer"] {
-  background: #0a1f2e !important;
-  background-color: #0a1f2e !important;
-  background-image: none !important;
+  section {
+    padding: 60px 24px;
+  }
 }
 
+/* ══════════════════════════════════════════════════════════
+   ADD THESE RULES TO YOUR GLOBAL styles.css
+   They prevent the white app shell from bleeding through
+   the sidebar's backdrop-filter on the eco-map page.
+   ══════════════════════════════════════════════════════════ */
+
+/* Option A — if you want the dark bg only on the map page,
+   add a class to your <body> or <app-root> when on the map route,
+   then target it here: */
+body.map-page-active,
+body.map-page-active app-root {
+  background: #1a3832 !important;
+}
+
+/* Option B — simpler, global dark base (won't affect other pages
+   since each page/component sets its own background): */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* Remove the default white — this is what bleeds through glass */
+  background: transparent;
+}
+
+/* ── Leaflet container must always fill its host ── */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+}

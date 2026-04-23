@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════
+   FLIP CARD — ajouts dans events.component.css
+═══════════════════════════════════════════ */
+
+/* Perspective sur la card */
+.event-card {
+  perspective: 1200px;
+  height: 480px; /* hauteur fixe pour le flip */
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%; height: 100%;
+  transition: transform 0.6s cubic-bezier(.4,0,.2,1);
+  transform-style: preserve-3d;
+}
+
+.event-card.flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+  position: absolute;
+  width: 100%; height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--r, 20px);
+  overflow: hidden;
+}
+
+.flip-front {
+  background: var(--bg-card, #f2efe8);
+  display: flex;
+  flex-direction: column;
+}
+
+.flip-back {
+  background: var(--bg-card, #f2efe8);
+  border: 1.5px solid rgba(30,107,69,.13);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* ── Bouton flip "★ Reviews" sur l'image ── */
+.btn-flip-ratings {
+  position: absolute;
+  bottom: 10px; left: 10px;
+  background: rgba(30,107,69,.85);
+  color: #fff;
+  border: none; border-radius: 50px;
+  padding: 5px 12px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all .2s;
+  z-index: 4;
+}
+.btn-flip-ratings:hover {
+  background: #1e6b45;
+  transform: scale(1.05);
+}
+
+/* ── Face arrière header ── */
+.back-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.back-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text, #141f1a);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.back-star { color: #f4b400; font-size: 16px; }
+.live-dot {
+  font-size: 9px;
+  font-weight: 700;
+  color: #c0392b;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.btn-flip-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg, #eae7df);
+  border: 1.5px solid rgba(30,107,69,.15);
+  border-radius: 50px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mid, #4a6357);
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-flip-back:hover {
+  border-color: var(--green, #1e6b45);
+  color: var(--green, #1e6b45);
+}
+
+/* ── Moyenne ── */
+.back-avg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg, #eae7df);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.back-avg-score {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--green, #1e6b45);
+  line-height: 1;
+}
+.back-avg-stars { display: flex; gap: 2px; }
+.bstar { font-size: 15px; color: #ddd; }
+.bstar.filled { color: #f4b400; }
+.back-avg-count {
+  font-size: 11px;
+  color: var(--text-lt, #8aaa96);
+  font-weight: 600;
+}
+
+/* ── Reviews liste ── */
+.back-reviews { flex: 1; overflow-y: auto; }
+
+.back-review-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg, #eae7df);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  transition: all .3s;
+}
+.back-review-item.new-rv {
+  animation: highlight-rv .8s ease;
+}
+@keyframes highlight-rv {
+  0%   { background: #d6eedd; }
+  100% { background: var(--bg, #eae7df); }
+}
+
+.brv-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--green, #1e6b45);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+}
+.brv-body { flex: 1; min-width: 0; }
+.brv-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.brv-name  { font-size: 11px; font-weight: 700; color: var(--text, #141f1a); }
+.brv-stars { display: flex; gap: 1px; }
+.bstar-sm  { font-size: 10px; color: #ddd; }
+.bstar-sm.filled { color: #f4b400; }
+.brv-date  { font-size: 10px; color: var(--text-lt, #8aaa96); margin-left: auto; }
+.brv-comment {
+  font-size: 11px;
+  color: var(--text-mid, #4a6357);
+  line-height: 1.5;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Empty ── */
+.back-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-lt, #8aaa96);
+  font-size: 13px;
+  gap: 8px;
+}
+.back-empty-icon { font-size: 32px; }

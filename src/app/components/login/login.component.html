@@ -5,34 +5,152 @@
     <div class="login-metric">
       <span class="login-zero">0.0</span>
       <span class="login-unit">kg CO₂</span>
+      <span class="eco-indicator">🌍</span>
     </div>
     <p class="login-manifesto">
-      Your environmental footprint is not a sin—it's a dataset. Unlock the intelligence.
+      Measure smarter. Act faster. Join the eco platform with your email, social account, or your device biometrics.
     </p>
   </div>
-  
+
   <div class="login-right">
     <div class="login-form-card">
-      <h2 class="login-form-title">Enter the grid</h2>
+      <div class="auth-tabs">
+        <button class="auth-tab" [class.active]="mode === 'login'" (click)="setMode('login')">Login</button>
+        <button class="auth-tab" [class.active]="mode === 'register'" (click)="setMode('register')">Register</button>
+      </div>
+
+      <h2 class="login-form-title">{{ mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create your account' :
+        'Reset your password' }}</h2>
       @if (loginError) { <div class="login-error">{{ loginError }}</div> }
-      
-      <div class="input-group">
-        <label>IDENTITY (EMAIL)</label>
-        <input type="email" [(ngModel)]="loginEmail" placeholder="name@domain.com" class="login-input" />
+      @if (passkeyInfo && mode === 'login') { <div class="login-note">{{ passkeyInfo }}</div> }
+
+      @if (mode === 'login' || mode === 'register') {
+      <div class="social-auth-block">
+        <button type="button" class="social-btn passkey" (click)="signInWithPasskey()"
+          [disabled]="socialBusy || loginLoading || mode !== 'login'">
+          <span class="social-mark">􀣺</span>
+          <span>Use Face ID / Passkey</span>
+        </button>
+        <button class="social-btn google" (click)="continueWith('google')" [disabled]="socialBusy || loginLoading">
+          <span class="social-mark">G</span>
+          <span>{{ mode === 'login' ? 'Continue with Google' : 'Sign up with Google' }}</span>
+        </button>
+        <button class="social-btn github" (click)="continueWith('github')" [disabled]="socialBusy || loginLoading">
+          <span class="social-mark">⌘</span>
+          <span>{{ mode === 'login' ? 'Continue with GitHub' : 'Sign up with GitHub' }}</span>
+        </button>
+        <button class="social-btn facebook" (click)="continueWith('facebook')" [disabled]="socialBusy || loginLoading">
+          <span class="social-mark">f</span>
+          <span>{{ mode === 'login' ? 'Continue with Facebook' : 'Sign up with Facebook' }}</span>
+        </button>
       </div>
 
-      <div class="input-group">
-        <label>CIPHER (PASSWORD)</label>
-        <input type="password" [(ngModel)]="loginPassword" placeholder="••••••••" class="login-input" (keyup.enter)="login()" />
-      </div>
+      <div class="divider"><span>or use your email</span></div>
+      }
 
-      <button class="login-btn" (click)="login()" [disabled]="loginLoading">
-        {{ loginLoading ? 'Authenticating...' : 'Authenticate' }}
-      </button>
+      @if (mode === 'login') {
+      <form class="auth-form" (ngSubmit)="login()">
+        <div class="input-group" [class.has-error]="errEmail">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="loginEmail" name="loginEmail" placeholder="name@domain.com"
+            class="login-input" />
+          @if (errEmail) { <span class="field-error">{{ errEmail }}</span> }
+        </div>
 
-      <div class="login-footer">
-        Default Identity: admin@root.com | Cipher: 1234
+        <div class="input-group" [class.has-error]="errPassword">
+          <label>Password</label>
+          <input type="password" [(ngModel)]="loginPassword" name="loginPassword" placeholder="••••••••"
+            class="login-input" />
+          @if (errPassword) { <span class="field-error">{{ errPassword }}</span> }
+        </div>
+
+        <button class="login-btn" type="submit" [disabled]="socialBusy">
+          Sign in
+        </button>
+      </form>
+
+      <div class="forgot-password-link">
+        <button class="link-btn" (click)="setMode('forgot-password')">Forgot your password?</button>
       </div>
+      } @else if (mode === 'forgot-password') {
+      @if (forgotPasswordSuccess) {
+      <div class="success-message-card">
+        <div class="success-icon">📧</div>
+        <h3>Check your inbox</h3>
+        <p>We sent a password reset link to <strong>{{ forgotPasswordEmail }}</strong>.</p>
+        <button class="login-btn mt-4" (click)="setMode('login')">Return to Login</button>
+      </div>
+      } @else {
+      <form class="auth-form" (ngSubmit)="forgotPassword()">
+        <div class="input-group" [class.has-error]="errForgotEmail">
+          <label>Email address</label>
+          <input type="email" [(ngModel)]="forgotPasswordEmail" name="forgotPasswordEmail" placeholder="name@domain.com"
+            class="login-input" />
+          @if (errForgotEmail) { <span class="field-error">{{ errForgotEmail }}</span> }
+        </div>
+
+        <button class="login-btn" type="submit" [disabled]="loginLoading">
+          {{ loginLoading ? 'Sending...' : 'Send reset link' }}
+        </button>
+      </form>
+
+      <div class="forgot-password-link">
+        <button class="link-btn" (click)="setMode('login')">Back to Login</button>
+      </div>
+      }
+      } @else {
+      @if (registrationSuccess) {
+      <div class="success-message-card">
+        <div class="success-icon">✉️</div>
+        <h3>Check your inbox</h3>
+        <p>Your account has been created successfully. We sent a verification link to <strong>{{ registerEmail
+            }}</strong>.</p>
+        <button class="login-btn mt-4" (click)="setMode('login')">Return to Login</button>
+      </div>
+      } @else {
+      <form class="auth-form" (ngSubmit)="register()">
+        <div class="input-group" [class.has-error]="errFullName">
+          <label>Full name</label>
+          <input type="text" [(ngModel)]="registerFullName" name="registerFullName" placeholder="John Doe"
+            class="login-input" />
+          @if (errFullName) { <span class="field-error">{{ errFullName }}</span> }
+        </div>
+
+        <div class="input-group" [class.has-error]="errEmail">
+          <label>Email</label>
+          <input type="email" [(ngModel)]="registerEmail" name="registerEmail" placeholder="name@domain.com"
+            class="login-input" />
+          @if (errEmail) { <span class="field-error">{{ errEmail }}</span> }
+        </div>
+
+        <div class="input-group" [class.has-error]="errPassword">
+          <label>Password</label>
+          <input type="password" [(ngModel)]="registerPassword" name="registerPassword"
+            placeholder="At least 6 characters" class="login-input" />
+          @if (errPassword) { <span class="field-error">{{ errPassword }}</span> }
+        </div>
+
+        <div class="input-group" [class.has-error]="errImage">
+          <label>Profile image (optional)</label>
+          <div class="file-upload-design" (click)="fileInput.click()">
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
+            @if (registerImage) {
+            <img [src]="registerImage" class="preview-avatar" />
+            <span class="file-label">✓ Image selected (click to change)</span>
+            } @else {
+            <span class="icon">📷</span>
+            <span class="file-label">Click to browse image (Max 500KB)</span>
+            }
+          </div>
+          @if (errImage) { <span class="field-error">{{ errImage }}</span> }
+        </div>
+
+        <button class="login-btn" type="submit" [disabled]="loginLoading || socialBusy">
+          {{ loginLoading ? 'Creating account...' : 'Create account' }}
+        </button>
+      </form>
+      }
+      }
     </div>
   </div>
 </div>

@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { NavComponent } from './components/nav/nav.component';
 import { FooterComponent } from './components/footer/footer.component';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { AuthService } from './services/auth.service';
 
 @Component({
@@ -11,12 +13,23 @@ import { AuthService } from './services/auth.service';
   templateUrl: './app.html'
 })
 export class App implements OnInit {
-  constructor(private auth: AuthService) { }
+  private router = inject(Router);
+  private auth = inject(AuthService);
+
+  private currentUrl = toSignal(
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      map(event => (event as NavigationEnd).urlAfterRedirects)
+    ),
+    { initialValue: this.router.url }
+  );
+
+  isAdminRoute = computed(() => {
+    const url = this.currentUrl();
+    return url.startsWith('/admin');
+  });
 
   ngOnInit(): void {
-    // If user was already logged in (token in localStorage but no role cached),
-    // restore the role from the backend so isPartner/isAdmin work after page refresh.
     this.auth.restoreSession();
   }
 }
-

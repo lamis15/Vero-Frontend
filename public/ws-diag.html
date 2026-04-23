@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+<title>WS diag</title>
+<script>window.global = window;</script>
+</head>
+<body>
+<pre id="log"></pre>
+<script type="module">
+const log = (...a) => {
+  const el = document.getElementById('log');
+  el.textContent += a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ') + '\n';
+  console.log(...a);
+};
+
+const token = localStorage.getItem('vero_access_token');
+if (!token) { log('NO TOKEN in localStorage. Login first on /login then come back.'); throw new Error('no token'); }
+log('token length:', token.length);
+
+try {
+  log('importing sockjs-client...');
+  const SockJS = (await import('https://unpkg.com/sockjs-client@1.6.1/dist/sockjs.min.js')).default;
+  log('sockjs imported OK');
+} catch (e) { log('sockjs import failed:', e.message); }
+
+// Use stomp from unpkg to match
+const { Client } = await import('https://unpkg.com/@stomp/stompjs@7.0.0/esm6/index.js');
+log('stompjs imported OK');
+
+const SockJS = window.SockJS || (await import('https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js')).default;
+
+const url = 'http://localhost:9091/ws';
+log('connecting to', url);
+const client = new Client({
+  webSocketFactory: () => new SockJS(url),
+  connectHeaders: { Authorization: `Bearer ${token}` },
+  reconnectDelay: 0,
+  connectionTimeout: 10000,
+  debug: (s) => log('[stomp]', s),
+  onConnect: () => log('✓ CONNECTED'),
+  onStompError: (f) => log('✗ STOMP error:', f.headers?.message || f.body),
+  onWebSocketError: (e) => log('✗ WS error:', e?.message || String(e)),
+  onWebSocketClose: (e) => log('WS close:', e?.code, e?.reason)
+});
+client.activate();
+</script>
+</body>
+</html>
