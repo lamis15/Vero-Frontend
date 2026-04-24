@@ -87,17 +87,46 @@ export const routes: Routes = [
       import('./components/community/thread/thread.component').then(m => m.ThreadComponent)
   },
   {
+    path: 'formations',
+    loadComponent: () => import('./components/formations/formations.component').then(m => m.FormationsComponent)
+  },
+  {
+    path: 'formations/:id',
+    loadComponent: () => import('./components/formation-detail/formation-detail.component').then(m => m.FormationDetailComponent)
+  },
+  {
+    path: 'formations/:id/checkout',
+    loadComponent: () => import('./components/formation-checkout/formation-checkout.component').then(m => m.FormationCheckoutComponent)
+  },
+  {
+    path: 'formations/:id/quiz',
+    loadComponent: () => import('./components/quiz/quiz.component').then(m => m.QuizComponent)
+  },
+  {
+    path: 'checkout',
+    loadComponent: () => import('./components/checkout/checkout.component').then(m => m.CheckoutComponent)
+  },
+  {
+    path: 'cart',
+    loadComponent: () => import('./components/cart/cart').then(m => m.CartComponent)
+  },
+  {
+    path: 'orders',
+    loadComponent: () => import('./components/orders/orders.component').then(m => m.OrdersComponent)
+  },
+  {
+    path: 'admin',
+    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
+  },
+  {
     path: 'my-reservations',
     loadComponent: () =>
       import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
   },
   {
     path: 'petitions',
-    loadComponent: () =>
-      import('./components/petition/petition').then(m => m.PetitionComponent)
+    loadComponent: () => import('./components/petition/petition')
+      .then(m => m.PetitionComponent)
   },
-  {
-    path: '**',
-    redirectTo: ''
-  }
+  { path: '**', redirectTo: '' }
 ];

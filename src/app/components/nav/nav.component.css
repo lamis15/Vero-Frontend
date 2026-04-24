@@ -234,6 +234,22 @@ nav.nav-solid .dot-badge { border-color: rgba(255,255,255,.9); }
 .mega-dropdown.show .item-clip:nth-child(6) .mega-header-inner,
 .mega-dropdown.show .item-clip:nth-child(6) .notif-row { transition-delay: 0.49s; }
 
+.mega-dropdown.show .item-clip:nth-child(7) .mega-item,
+.mega-dropdown.show .item-clip:nth-child(7) .mega-header-inner,
+.mega-dropdown.show .item-clip:nth-child(7) .notif-row { transition-delay: 0.58s; }
+
+.mega-dropdown.show .item-clip:nth-child(8) .mega-item,
+.mega-dropdown.show .item-clip:nth-child(8) .mega-header-inner,
+.mega-dropdown.show .item-clip:nth-child(8) .notif-row { transition-delay: 0.67s; }
+
+.mega-dropdown.show .item-clip:nth-child(9) .mega-item,
+.mega-dropdown.show .item-clip:nth-child(9) .mega-header-inner,
+.mega-dropdown.show .item-clip:nth-child(9) .notif-row { transition-delay: 0.76s; }
+
+.mega-dropdown.show .item-clip:nth-child(10) .mega-item,
+.mega-dropdown.show .item-clip:nth-child(10) .mega-header-inner,
+.mega-dropdown.show .item-clip:nth-child(10) .notif-row { transition-delay: 0.85s; }
+
 
 /* Invisible bridge so mouse doesn't lose the dropdown during gap */
 .nav-dd::after {
@@ -516,3 +532,227 @@ nav.nav-solid .dot-badge { border-color: rgba(255,255,255,.9); }
   transition: color .2s, transform .2s; margin-left: 8px;
 }
 .toast-close:hover { color: #fff; transform: scale(1.1); }
+
+/* ══ CHAT DROPDOWN (True Frosted Glass) ══ */
+.chat-dropdown {
+  right: -20px;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  /* Lighter, much more transparent base */
+  backdrop-filter: blur(0.5px) !important;
+  /* Reduced blur (less 'flou') */
+  -webkit-backdrop-filter: blur(0.5px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  color: white;
+}
+
+.chat-dropdown .notif-header {
+  background: transparent !important;
+  color: white !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.chat-options-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+}
+
+.chat-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.chat-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-dropdown-btn:hover .icon-wrapper {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  color: white;
+}
+
+.chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: 0.2px;
+}
+
+.chat-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+.chat-badge {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--fern);
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 100px;
+  box-shadow: 0 4px 12px rgba(59, 154, 178, 0.3);
+}
+
+/* Mes réservations link */
+.nav-reservations {
+  background: rgba(44, 91, 44, 0.08) !important;
+  color: var(--forest) !important;
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border: 1px solid rgba(44, 91, 44, 0.15);
+  transition: background 0.2s, border-color 0.2s !important;
+}
+
+.nav-reservations:hover,
+.nav-reservations.active-link {
+  background: rgba(44, 91, 44, 0.16) !important;
+  border-color: rgba(44, 91, 44, 0.3) !important;
+}
+
+/* ── Profile Dropdown ─────────────────────────────────────────── */
+.nav-profile {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background 0.2s, border-color 0.2s;
+}
+.nav-profile:hover .profile-avatar,
+.nav-profile .profile-avatar:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.7);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.625rem);
+  right: 0;
+  background: #0e2a1e;
+  border: 1px solid rgba(45,212,160,0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  min-width: 190px;
+  padding: 0.375rem;
+  z-index: 1000;
+  animation: dropIn 0.15s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e8f5f0;
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.profile-item:hover { background: rgba(45,212,160,0.1); }
+.profile-item svg { flex-shrink: 0; color: #7aaa94; }
+
+.profile-divider {
+  height: 1px;
+  background: rgba(45,212,160,0.15);
+  margin: 0.25rem 0.5rem;
+}
+
+.profile-item--logout {
+  color: #f87171;
+}
+.profile-item--logout svg { color: #f87171; }
+.profile-item--logout:hover { background: rgba(248,113,113,0.1); }
+
+/* ── Cart Icon ────────────────────────────────────────────────── */
+.nav-cart { position: relative; }
+
+.btn-cart {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #2dd4a0;
+  padding: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-cart:hover { background: rgba(45,212,160,0.15); color: #22b389; }
+
+/* ── Dark page nav backdrop ───────────────────────────────────── */
+nav.nav-transparent.nav-dark-bg {
+  background: rgba(14, 28, 38, 0.75);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}

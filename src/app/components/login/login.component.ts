@@ -11,6 +11,7 @@ import {
   group,
 } from '@angular/animations';
 import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 import { firstValueFrom } from 'rxjs';
 
 export const slideAnimation = trigger('slideAnimation', [
@@ -128,6 +129,7 @@ export const slideAnimation = trigger('slideAnimation', [
   animations: [slideAnimation],
 })
 export class LoginComponent implements OnInit {
+  returnUrl = '/track';
   loginEmail = '';
   loginPassword = '';
   registerFullName = '';
@@ -136,28 +138,28 @@ export class LoginComponent implements OnInit {
   registerImage = '';
   forgotPasswordEmail = '';
 
+  mode: 'login' | 'register' | 'forgot-password' = 'login';
+  loginError = '';
+  loginLoading = false;
+  socialBusy = false;
+  registrationSuccess = false;
+  forgotPasswordSuccess = false;
+
   errFullName = '';
   errEmail = '';
   errPassword = '';
   errImage = '';
   errForgotEmail = '';
 
-  mode: 'login' | 'register' | 'forgot-password' = 'login';
-  loginError = '';
+  passkeySupported = typeof window !== 'undefined' && !!navigator.credentials;
   passkeyInfo = '';
-  loginLoading = false;
-  registrationSuccess = false;
-  forgotPasswordSuccess = false;
-  socialBusy = false;
-  passkeySupported = false;
-
-  private returnUrl = '/track';
 
   constructor(
     private authService: AuthService,
+    private cartService: CartService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const r = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -253,11 +255,23 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginEmail, this.loginPassword).subscribe({
       next: (res) => {
         this.loginLoading = false;
-        if (res?.user?.role === 'ADMIN') {
-          this.router.navigateByUrl('/admin');
-        } else {
-          this.goAfterAuth();
-        }
+        // Reinitialize cart for the new user
+        this.cartService.reinitializeCart();
+
+        // Check if user is admin and redirect accordingly
+        this.authService.getCurrentUser().subscribe({
+          next: (user) => {
+            if (user.role === 'ADMIN') {
+              this.router.navigate(['/admin']);
+            } else {
+              this.router.navigate(['/track']);
+            }
+          },
+          error: () => {
+            // If we can't get user info, just go to track
+            this.router.navigate(['/track']);
+          }
+        });
       },
       error: (err) => {
         this.loginLoading = false;

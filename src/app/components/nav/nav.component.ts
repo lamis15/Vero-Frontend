@@ -1,21 +1,27 @@
 import {
   Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef
 } from '@angular/core';
-import {
-  Router, NavigationEnd, RouterLink, RouterLinkActive, RouterModule
-} from '@angular/router';
+import { Router, NavigationEnd, RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription, filter, catchError, of } from 'rxjs';
-
 import { ForumService } from '../../services/forum.service';
-import { AuthService, UserResponse } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 import { Notification as ForumNotification } from '../../services/forum.models';
 import { MessagerieService } from '../../services/messagerie.service';
+import { UserService } from '../../services/user.service';
+
+export interface UserResponse {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+}
 
 export interface ToastNotification {
   id: number;
   message: string;
-  type: string;
+  type?: string;
   visible: boolean;
   timeout?: any;
 }
@@ -37,6 +43,9 @@ export class NavComponent implements OnInit, OnDestroy {
   messageUnreadCount = 0;
   currentUser: UserResponse | null = null;
   toasts: ToastNotification[] = [];
+  isAdmin = false;
+  cartCount = 0;
+  isDarkPage = false;
 
   /* ── UI ── */
   activeDropdown: DropdownId = null;
@@ -54,15 +63,17 @@ export class NavComponent implements OnInit, OnDestroy {
   private routeSub?: Subscription;
   private messageSub?: Subscription;
   private notificationSub?: Subscription;
+  private cartSub?: Subscription;
   private knownConversationLastTime = new Map<string, number>();
 
   constructor(
     private forumService: ForumService,
     private messagerieService: MessagerieService,
     public authService: AuthService,
+    public cartService: CartService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   get isMapRoute(): boolean { return this.router.url.startsWith('/map'); }
 
@@ -114,6 +125,20 @@ export class NavComponent implements OnInit, OnDestroy {
       else { this.cleanupAll(); }
       this.cdr.markForCheck();
     });
+
+    // Also subscribe to role changes
+    this.authService.roleStream$.subscribe(role => {
+      this.isAdmin = role === 'ADMIN';
+      this.cdr.markForCheck();
+    });
+
+    this.cartSub = this.cartService.cartCount$.subscribe((count: number) => {
+      this.cartCount = count;
+      this.cdr.markForCheck();
+    });
+
+    const darkRoutes = ['/shop', '/formations', '/admin'];
+    this.isDarkPage = darkRoutes.some(r => this.router.url.startsWith(r));
 
     this.routeSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -178,11 +203,11 @@ export class NavComponent implements OnInit, OnDestroy {
       const ctx = new Ctx();
       const osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.connect(gain).connect(ctx.destination);
-      
+
       if (type === 'ECO_ALERT') {
         // Alarming rapid siren (sawtooth sweep)
         osc.type = 'sawtooth';
-        
+
         osc.frequency.setValueAtTime(700, ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.15);
         osc.frequency.linearRampToValueAtTime(700, ctx.currentTime + 0.3);
@@ -193,7 +218,7 @@ export class NavComponent implements OnInit, OnDestroy {
         gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
         gain.gain.setValueAtTime(0.15, ctx.currentTime + 0.55);
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.65);
-        
+
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.7);
       } else {
@@ -201,15 +226,15 @@ export class NavComponent implements OnInit, OnDestroy {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(350, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
-        
+
         gain.gain.setValueAtTime(0, ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.015);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-        
+
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.25);
       }
-    } catch {}
+    } catch { }
   }
 
   fetchNotifications(): void {
@@ -294,13 +319,26 @@ export class NavComponent implements OnInit, OnDestroy {
     else void this.router.navigate(['/login'], { queryParams: { returnUrl: '/chat' } });
   }
 
-  logout(): void { this.messagerieService.disconnect(); this.authService.logout(); this.cleanupAll(); }
+  logout(): void {
+    this.messagerieService.disconnect();
+    this.authService.logout().subscribe({
+      next: () => {
+        this.cleanupAll();
+        void this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.logoutLocal();
+        this.cleanupAll();
+        void this.router.navigate(['/login']);
+      }
+    });
+  }
 
   // ═════════════════════════════════════════════
   // DESKTOP NOTIFICATIONS
   // ═════════════════════════════════════════════
   private requestNotificationPermission(): void {
-    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => { });
   }
 
   private showDesktopNotification(title: string, body: string): void {
@@ -327,7 +365,7 @@ export class NavComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.authSub?.unsubscribe();
     this.routeSub?.unsubscribe();
-    this.messageSub?.unsubscribe();
+    this.cartSub?.unsubscribe();
     this.cleanupAll();
   }
 

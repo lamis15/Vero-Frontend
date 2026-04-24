@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, ChangeDetectionStrategy, NgZone, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,10 +9,10 @@ import { CarbonGoalService } from '../../services/carbon-goal.service';
 import { CarbonAIService } from '../../services/carbon-ai.service';
 import { CarbonTipService } from '../../services/carbon-tip.service';
 import { AuthService } from '../../services/auth.service';
-import { EcoDashboardDTO } from '../../services/dashboard.models';
+import { EcoDashboardDTO, DailyCarbon } from '../../services/dashboard.models';
 import {
   CarbonActivity, CarbonGoal, ActivityType,
-  ACTIVITY_ICONS, ACTIVITY_LABELS
+  ACTIVITY_ICONS, ACTIVITY_LABELS, ACTIVITY_COLORS
 } from '../../services/carbon.models';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -36,9 +36,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   state: 'loading' | 'ready' | 'error' = 'loading';
 
   // ─── Computed from dashboard ───
-  breakdownRows: { type: string; label: string; letter: string; value: number; pct: number; color: string; dotGrid: boolean[] }[] = [];
-  scoreColor = '#00E5FF';
-  recentActivities: CarbonActivity[] = [];
+  breakdownRows: { type: string; label: string; letter: string; value: number; pct: number; color: string }[] = [];
 
   // ─── Animated Values ───
   displayMetrics = {
@@ -89,11 +87,6 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   aiLoading = false;
   aiResult: CarbonActivity | null = null;
 
-  // ─── AI Tips ───
-  aiTips: string[] = [];
-  tipsLoading = false;
-  activeTipIndex = 0;
-
   // ─── Scan ───
   scanLoading = false;
   scanPreviewUrl: string | ArrayBuffer | null = null;
@@ -106,6 +99,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   activityTypes: ActivityType[] = ['TRANSPORT', 'FOOD', 'ENERGY', 'SHOPPING', 'WASTE'];
   icons: Record<string, string> = ACTIVITY_ICONS;
   labels: Record<string, string> = ACTIVITY_LABELS;
+  colors: Record<string, string> = ACTIVITY_COLORS;
 
   readonly categoryColors: Record<string, string> = {
     TRANSPORT: '#00E5FF',
@@ -137,10 +131,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     // Delay slightly so the canvas element is in the DOM
-    // Run outside Angular zone to avoid triggering change detection on every frame
-    this.ngZone.runOutsideAngular(() => {
-      setTimeout(() => this.initThreeScene(), 200);
-    });
+    setTimeout(() => this.initThreeScene(), 200);
   }
 
   ngOnDestroy(): void {
@@ -228,8 +219,8 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.threeScene!.add(this.islandModel);
     },
-      undefined,
-      (err) => console.warn('GLB load error:', err)
+    undefined,
+    (err) => console.warn('GLB load error:', err)
     );
 
     // Resize handler
@@ -274,7 +265,6 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         // Load detail data not in dashboard DTO
         this.loadActivities();
         this.loadGoals();
-        this.loadTips();
         // Trigger animations
         setTimeout(() => {
           this.animateValues();
@@ -292,41 +282,9 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.activityService.getAll().subscribe({
       next: (acts) => {
         this.activities = acts ?? [];
-        this.recentActivities = this.activities.slice(0, 10);
         this.cdr.markForCheck();
       }
     });
-  }
-
-  private loadTips(): void {
-    this.tipsLoading = true;
-    this.cdr.markForCheck();
-    this.tipService.getRecommended().subscribe({
-      next: (tips) => {
-        this.aiTips = tips ?? [];
-        this.activeTipIndex = 0;
-        this.tipsLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.tipsLoading = false;
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  nextTip(): void {
-    if (this.aiTips.length > 0) {
-      this.activeTipIndex = (this.activeTipIndex + 1) % this.aiTips.length;
-      this.cdr.markForCheck();
-    }
-  }
-
-  prevTip(): void {
-    if (this.aiTips.length > 0) {
-      this.activeTipIndex = (this.activeTipIndex - 1 + this.aiTips.length) % this.aiTips.length;
-      this.cdr.markForCheck();
-    }
   }
 
   private loadGoals(): void {
@@ -347,42 +305,30 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     const total = entries.reduce((s, [, v]) => s + (v || 0), 0) || 1;
 
     this.breakdownRows = entries
-      .map(([type, value]) => {
-        const pct = Math.round(((value || 0) / total) * 100);
-        return {
-          type,
-          label: ACTIVITY_LABELS[type as ActivityType] || type,
-          letter: ACTIVITY_ICONS[type as ActivityType] || '?',
-          value: value || 0,
-          pct,
-          color: this.categoryColors[type] || '#666',
-          dotGrid: this.buildDotGrid(pct)
-        };
-      })
+      .map(([type, value]) => ({
+        type,
+        label: ACTIVITY_LABELS[type as ActivityType] || type,
+        letter: ACTIVITY_ICONS[type as ActivityType] || '?',
+        value: value || 0,
+        pct: Math.round(((value || 0) / total) * 100),
+        color: this.categoryColors[type] || '#666'
+      }))
       .sort((a, b) => b.value - a.value);
-
-    // Cache score color
-    const s = this.dashboard.ecoScore ?? 0;
-    if (s >= 80) this.scoreColor = '#00E5FF';
-    else if (s >= 60) this.scoreColor = '#14b8a6';
-    else if (s >= 40) this.scoreColor = '#34d399';
-    else this.scoreColor = '#f43f5e';
   }
 
-  /** Pre-compute a 20-element boolean array for the dot matrix visualization */
-  private buildDotGrid(pct: number): boolean[] {
+  /** Generate a 20-element boolean array for the dot matrix visualization */
+  getDotGrid(pct: number): boolean[] {
     const total = 20;
     const filled = Math.round((pct / 100) * total);
     return Array.from({ length: total }, (_, i) => i < filled);
   }
 
-  // ─── Trend Chart (Pure Canvas) ───
-
-
   // ─── Animation Engines ───
 
+  private MathPow = Math.pow;
+
   private easeOutQuart(t: number): number {
-    return 1 - Math.pow(1 - t, 4);
+    return 1 - this.MathPow(1 - t, 4);
   }
 
   private animateValues(): void {
@@ -401,15 +347,13 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const duration = 1500;
     const start = performance.now();
-    let lastUpdateTime = 0;
 
-    // Run outside NgZone, only sync to Angular every ~50ms instead of every frame
-    this.ngZone.runOutsideAngular(() => {
-      const animate = (timestamp: number) => {
-        const elapsed = timestamp - start;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = this.easeOutQuart(progress);
+    const animate = (timestamp: number) => {
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this.easeOutQuart(progress);
 
+      this.ngZone.run(() => {
         this.displayMetrics = {
           score: targets.score * eased,
           carbon: targets.carbon * eased,
@@ -417,20 +361,15 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
           energy: targets.energy * eased,
           waste: targets.waste * eased
         };
+        this.cdr.markForCheck();
+      });
 
-        // Throttle change detection to ~20fps instead of 60fps
-        if (timestamp - lastUpdateTime > 50 || progress >= 1) {
-          lastUpdateTime = timestamp;
-          this.cdr.detectChanges();
-        }
+      if (progress < 1) {
+        this.animFrameId = requestAnimationFrame(animate);
+      }
+    };
 
-        if (progress < 1) {
-          this.animFrameId = requestAnimationFrame(animate);
-        }
-      };
-
-      this.animFrameId = requestAnimationFrame(animate);
-    });
+    this.animFrameId = requestAnimationFrame(animate);
   }
 
   private renderTrendChart(): void {
@@ -466,89 +405,87 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       y: padTop + chartH - (v / maxVal) * chartH
     }));
 
-    // Pre-compute day labels once
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const dayLabels = data.map(d => {
-      const dayIdx = new Date(d.date).getDay();
-      return dayNames[(dayIdx + 6) % 7];
-    });
-
     const duration = 1800;
     const start = performance.now();
 
-    // Run canvas animation outside Angular zone — pure canvas, no bindings
-    this.ngZone.runOutsideAngular(() => {
-      const draw = (timestamp: number) => {
-        const elapsed = timestamp - start;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = this.easeOutQuart(progress);
+    const draw = (timestamp: number) => {
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this.easeOutQuart(progress);
 
-        ctx.clearRect(0, 0, W, H);
+      ctx.clearRect(0, 0, W, H);
 
-        const currentSegments = Math.max(1, Math.floor(eased * points.length));
+      const currentSegments = Math.max(1, Math.floor(eased * points.length));
 
-        // Draw organic trailing line
+      ctx.beginPath();
+      for (let i = 0; i < currentSegments; i++) {
+        const p = points[i];
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+
+      if (currentSegments < points.length && currentSegments > 0) {
+        const prev = points[currentSegments - 1];
+        const next = points[currentSegments];
+        const segDist = 1 / (points.length - 1);
+        const startRawProgress = (currentSegments - 1) * segDist;
+        const localProgress = (eased - startRawProgress) / segDist;
+
+        ctx.lineTo(
+          prev.x + (next.x - prev.x) * localProgress,
+          prev.y + (next.y - prev.y) * localProgress
+        );
+      }
+
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      for (let i = 0; i < currentSegments; i++) {
+        const p = points[i];
+
+        const dotAge = (eased - (i / points.length)) * 5;
+        const dotScale = Math.min(Math.max(dotAge, 0), 1);
+
         ctx.beginPath();
-        for (let i = 0; i < currentSegments; i++) {
-          const p = points[i];
-          if (i === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
-        }
+        ctx.arc(p.x, p.y, 8 * dotScale, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
+        ctx.fill();
 
-        // If we are between points, interpolate
-        if (currentSegments < points.length && currentSegments > 0) {
-          const prev = points[currentSegments - 1];
-          const next = points[currentSegments];
-          const segDist = 1 / (points.length - 1);
-          const startRawProgress = (currentSegments - 1) * segDist;
-          const localProgress = (eased - startRawProgress) / segDist;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 * dotScale, 0, Math.PI * 2);
+        ctx.fillStyle = '#00E5FF';
+        ctx.fill();
+      }
 
-          ctx.lineTo(
-            prev.x + (next.x - prev.x) * localProgress,
-            prev.y + (next.y - prev.y) * localProgress
-          );
-        }
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '10px "DM Mono", monospace';
+      ctx.textAlign = 'center';
+      data.forEach((d, i) => {
+        const dayIdx = new Date(d.date).getDay();
+        const label = dayNames[(dayIdx + 6) % 7];
+        ctx.fillText(label, points[i].x, H - 8);
+      });
 
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.lineJoin = 'round';
-        ctx.stroke();
+      if (progress < 1) {
+        this.chartAnimId = requestAnimationFrame(draw);
+      }
+    };
 
-        // Glowing dots revealing
-        for (let i = 0; i < currentSegments; i++) {
-          const p = points[i];
-
-          const dotAge = (eased - (i / points.length)) * 5;
-          const dotScale = Math.min(Math.max(dotAge, 0), 1);
-
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 8 * dotScale, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 4 * dotScale, 0, Math.PI * 2);
-          ctx.fillStyle = '#00E5FF';
-          ctx.fill();
-        }
-
-        // X-axis labels
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.font = '10px "DM Mono", monospace';
-        ctx.textAlign = 'center';
-        dayLabels.forEach((label, i) => {
-          ctx.fillText(label, points[i].x, H - 8);
-        });
-
-        if (progress < 1) {
-          this.chartAnimId = requestAnimationFrame(draw);
-        }
-      };
-
-      this.chartAnimId = requestAnimationFrame(draw);
-    });
+    this.chartAnimId = requestAnimationFrame(draw);
   }
 
+  // ─── EcoScore helpers ───
+
+  get scoreColor(): string {
+    const s = this.dashboard?.ecoScore ?? 0;
+    if (s >= 80) return '#00E5FF';
+    if (s >= 60) return '#14b8a6';
+    if (s >= 40) return '#34d399';
+    return '#f43f5e';
+  }
 
   // ─── Formatting ───
 

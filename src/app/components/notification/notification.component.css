@@ -1,0 +1,125 @@
+.notification-container {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+  font-family: 'DM Sans', sans-serif;
+  min-width: 320px;
+}
+
+.notification-success {
+  border-left-color: #2c5f2d;
+  background: linear-gradient(to right, #f0f9f0 0%, white 100%);
+}
+
+.notification-error {
+  border-left-color: #d32f2f;
+  background: linear-gradient(to right, #fff5f5 0%, white 100%);
+}
+
+.notification-warning {
+  border-left-color: #f57c00;
+  background: linear-gradient(to right, #fff8f0 0%, white 100%);
+}
+
+.notification-info {
+  border-left-color: #1976d2;
+  background: linear-gradient(to right, #f0f7ff 0%, white 100%);
+}
+
+.notification-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.notification-success .notification-icon {
+  background: #2c5f2d;
+  color: white;
+}
+
+.notification-error .notification-icon {
+  background: #d32f2f;
+  color: white;
+}
+
+.notification-warning .notification-icon {
+  background: #f57c00;
+  color: white;
+}
+
+.notification-info .notification-icon {
+  background: #1976d2;
+  color: white;
+}
+
+.notification-message {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #2c2c28;
+}
+
+.notification-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-container {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .notification {
+    min-width: auto;
+  }
+}
