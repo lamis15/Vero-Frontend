@@ -137,7 +137,8 @@ export class NavComponent implements OnInit, OnDestroy {
           this.notifications.unshift(notification);
           this.unreadCount++;
           this.showToast(notification);
-          this.showDesktopNotification('Vero Forum', notification.message);
+          const title = notification.type === 'ECO_ALERT' ? 'Eco Alert' : 'Vero Forum';
+          this.showDesktopNotification(title, notification.message);
           this.cdr.markForCheck();
         });
       }
@@ -153,7 +154,7 @@ export class NavComponent implements OnInit, OnDestroy {
   }
 
   showToast(notif: ForumNotification) {
-    this.playNotificationSound();
+    this.playNotificationSound(notif.type);
     const toast: ToastNotification = { id: ++this.toastIdCounter, message: notif.message, type: notif.type, visible: false };
     this.toasts = [...this.toasts, toast];
     this.cdr.detectChanges();
@@ -170,7 +171,7 @@ export class NavComponent implements OnInit, OnDestroy {
     setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); this.cdr.detectChanges(); }, 400);
   }
 
-  playNotificationSound() {
+  playNotificationSound(type?: string) {
     try {
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
       if (!Ctx) return;
@@ -178,20 +179,36 @@ export class NavComponent implements OnInit, OnDestroy {
       const osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.connect(gain).connect(ctx.destination);
       
-      // Sine wave for a smooth, organic tone
-      osc.type = 'sine';
-      
-      // Pitch sweep for a "water drop" effect (starts mid, sweeps up fast)
-      osc.frequency.setValueAtTime(350, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
-      
-      // Amplitude envelope (instant hit, fast decay)
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.25);
+      if (type === 'ECO_ALERT') {
+        // Alarming rapid siren (sawtooth sweep)
+        osc.type = 'sawtooth';
+        
+        osc.frequency.setValueAtTime(700, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.15);
+        osc.frequency.linearRampToValueAtTime(700, ctx.currentTime + 0.3);
+        osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.45);
+        osc.frequency.linearRampToValueAtTime(700, ctx.currentTime + 0.6);
+
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + 0.55);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.65);
+        
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.7);
+      } else {
+        // Standard water drop for normal notifications
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(350, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
+        
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+      }
     } catch {}
   }
 

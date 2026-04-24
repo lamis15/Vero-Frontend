@@ -21,7 +21,6 @@
   overflow: hidden;
   background-color: var(--charcoal);
   box-shadow: 0 -30px 50px rgba(0, 0, 0, 0.4);
-  transform: translateZ(0);
   /* Optimization: Tell browser to skip rendering when off-screen */
   content-visibility: auto;
   contain-intrinsic-size: 100vh;
@@ -685,14 +684,16 @@
   padding: 40px;
   text-decoration: none;
   min-height: 280px;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.4s ease, box-shadow 0.4s ease;
+  will-change: transform, background-color, box-shadow;
+  transform: translateZ(0);
   color: white;
   border-radius: 24px;
 }
 
 .news-card:hover {
-  transform: translateY(-8px);
-  background: rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-8px) translateZ(0);
+  background-color: rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
 }
 
@@ -758,9 +759,10 @@
   left: 50%;
   height: 140px;
   width: auto;
-  transform: translateX(-50%) translateY(40px) scale(0.6);
+  transform: translateX(-50%) translateY(40px) scale(0.6) translateZ(0);
   opacity: 0;
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+  will-change: transform, opacity;
   pointer-events: none;
   z-index: 20;
 
@@ -794,58 +796,48 @@
 }
 
 .news-card:hover .peek-frog {
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0) scale(1) translateZ(0);
   animation: playfulFloat 3s ease-in-out infinite 0.4s;
 }
 
 .news-card:hover .peek-toucan {
-  transform: translateX(0) translateY(0) scale(1);
+  transform: translateX(0) translateY(0) scale(1) translateZ(0);
   animation: playfulFloatRotate 3s ease-in-out infinite 0.4s;
 }
 
 .news-card:hover .peek-monkey {
-  transform: translateX(0) translateY(0) scale(1);
+  transform: translateX(0) translateY(0) scale(1) translateZ(0);
   animation: playfulFloatBoth 3s ease-in-out infinite 0.4s;
 }
 
 /* Continuous playful animations after the initial pop-up */
 @keyframes playfulFloat {
-
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0) scale(1);
+  0%, 100% {
+    transform: translateX(-50%) translateY(0) scale(1) translateZ(0);
   }
-
   50% {
-    transform: translateX(-50%) translateY(-10px) scale(1);
+    transform: translateX(-50%) translateY(-10px) scale(1) translateZ(0);
   }
 }
 
 @keyframes playfulFloatRotate {
-
-  0%,
-  100% {
-    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+  0%, 100% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0deg) translateZ(0);
   }
-
   25% {
-    transform: translateX(0) translateY(-6px) scale(1) rotate(3deg);
+    transform: translateX(0) translateY(-6px) scale(1) rotate(3deg) translateZ(0);
   }
-
   75% {
-    transform: translateX(0) translateY(-2px) scale(1) rotate(-3deg);
+    transform: translateX(0) translateY(-2px) scale(1) rotate(-3deg) translateZ(0);
   }
 }
 
 @keyframes playfulFloatBoth {
-
-  0%,
-  100% {
-    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+  0%, 100% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0deg) translateZ(0);
   }
-
   50% {
-    transform: translateX(0) translateY(-8px) scale(1) rotate(5deg);
+    transform: translateX(0) translateY(-8px) scale(1) rotate(5deg) translateZ(0);
   }
 }
 
@@ -883,7 +875,8 @@
   object-fit: contain;
   /* Hidden until IntersectionObserver fires — then CSS takes over entirely */
   opacity: 0;
-  transform: scale(0.4);
+  transform: scale(0.4) translateZ(0);
+  will-change: transform, opacity;
   transition: none;
   /* Will be driven by @keyframes, not transition */
 }
@@ -892,17 +885,15 @@
 @keyframes itemBurst {
   0% {
     opacity: 0;
-    transform: scale(0.4);
+    transform: scale(0.4) translateZ(0);
   }
-
   60% {
     opacity: 1;
-    transform: scale(1.08);
+    transform: scale(1.08) translateZ(0);
   }
-
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
 }
 
@@ -964,12 +955,11 @@
 @keyframes textSlideIn {
   from {
     opacity: 0;
-    transform: translateY(32px);
+    transform: translateY(32px) translateZ(0);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0);
   }
 }
 

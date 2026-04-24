@@ -5,8 +5,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
-import { EcoMapService, MapPin, AirQuality } from '../../services/eco-map.service';
+import { EcoMapService, MapPin, AirQuality, EcoAlert } from '../../services/eco-map.service';
+import { EventApiService, Event as EcoEventModel } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
 
 /* ── Spot model ── */
@@ -62,6 +65,19 @@ const CAT: Record<string, { label: string; emoji: string; icon: string; color: s
   THRIFT:           { label: 'Thrift',      emoji: ICON.shirt,   icon: '👗', color: '#3a7e95', pts: 12 },
 };
 
+const ALERT_META: Record<string, { label: string; emoji: string; icon: string }> = {
+  ILLEGAL_DUMPING: { label: 'Illegal Dumping', emoji: '🗑️', icon: '🗑️' },
+  FIRE: { label: 'Fire', emoji: '🔥', icon: '🔥' },
+  WATER_POLLUTION: { label: 'Water Pollution', emoji: '💧', icon: '💧' },
+  AIR_POLLUTION: { label: 'Air Pollution', emoji: '🌫️', icon: '🌫️' },
+  OIL_SPILL: { label: 'Oil Spill', emoji: '🛢️', icon: '🛢️' },
+  DEFORESTATION: { label: 'Deforestation', emoji: '🌳', icon: '🌳' },
+  NOISE_POLLUTION: { label: 'Noise Pollution', emoji: '🔊', icon: '🔊' },
+  CHEMICAL_SPILL: { label: 'Chemical Spill', emoji: '☣️', icon: '☣️' },
+  DEAD_ANIMALS: { label: 'Dead Animals', emoji: '🐾', icon: '🐾' },
+  OTHER: { label: 'Other Alert', emoji: '⚠️', icon: '⚠️' }
+};
+
 /* ── Hardcoded Tunis spots ── */
 const TUNIS_SPOTS: EcoSpot[] = [
   { id: 1, name: 'Green Cycle Hub', category: 'Recycling', categoryKey: 'RECYCLING', lat: 36.8110, lng: 10.1660, description: 'Full-service recycling centre — electronics, batteries, textiles.', isOpen: true, pinColor: '#1e708a', emoji: ICON.recycle, sidebarIcon: '♻️', ecoPoints: 15, distance: '', source: 'LOCAL' },
@@ -99,6 +115,8 @@ export class EcoMapComponent implements OnInit, AfterViewInit, OnDestroy {
     { key: 'COMMUNITY_GARDEN', label: 'Gardens',     emoji: '🌱', color: '#057569', active: true },
     { key: 'COMPOSTING',       label: 'Composting',  emoji: '🔄', color: '#1a6b5a', active: true },
     { key: 'THRIFT',           label: 'Thrift',      emoji: '👗', color: '#3a7e95', active: true },
+    { key: 'ECO_EVENT',        label: 'Events',      emoji: '🌍', color: '#2892a8', active: true },
+    { key: 'ALERT',            label: 'Alerts',      emoji: '🚨', color: '#e63946', active: true },
   ];
 
   spots: EcoSpot[] = [];
@@ -111,16 +129,24 @@ export class EcoMapComponent implements OnInit, AfterViewInit, OnDestroy {
   private toastId = 0;
   loading = true;
   showAddPin = false;
+  showReportAlert = false;
   communityPinCount = 0;
 
   newPinName = '';
   newPinDesc = '';
   newPinType = 'RECYCLING';
 
+  newAlert = { type: 'ILLEGAL_DUMPING', desc: '' };
+
+  alertTypesList = Object.entries(ALERT_META).map(([k, v]) => ({ key: k, ...v }));
+
+  isSharingLocation = false;
+
   aqi: AirQuality = { latitude: 36.8065, longitude: 10.1815, aqi: 0, aqiLabel: 'Loading...' };
 
   constructor(
     private mapService: EcoMapService,
+    private eventApiService: EventApiService,
     public authService: AuthService,
     private zone: NgZone
   ) { }
@@ -173,22 +199,38 @@ export class EcoMapComponent implements OnInit, AfterViewInit, OnDestroy {
      ════════════════════════════════════ */
   private loadData(): void {
     this.loading = true;
-    this.mapService.getMap(this.userLat, this.userLng, 5).subscribe({
-      next: (dto) => {
-        const apiPins = [...(dto.communityPins || []), ...(dto.osmPins || [])];
-        const apiSpots = apiPins.map((p, i) => this.pinToSpot(p, i));
+    
+    forkJoin({
+      mapData: this.mapService.getMap(this.userLat, this.userLng, 5).pipe(catchError(() => of(null))),
+      events: this.eventApiService.getAll().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: ({ mapData, events }) => {
+        let apiSpots: EcoSpot[] = [];
+        let alertSpots: EcoSpot[] = [];
+        
+        if (mapData) {
+          const apiPins = [...(mapData.communityPins || []), ...(mapData.osmPins || [])];
+          apiSpots = apiPins.map((p, i) => this.pinToSpot(p, i));
+          alertSpots = (mapData.alertPins || []).map((a, i) => this.alertToSpot(a, i));
+          if (mapData.airQuality) this.aqi = mapData.airQuality;
+          this.communityPinCount = (mapData.communityPins || []).length;
+        }
+
+        const eventSpots = (events || []).map(e => this.eventToSpot(e));
+
         // Merge: hardcoded always present + API adds on top
         this.spots = [
           ...TUNIS_SPOTS.map(s => ({ ...s, distance: this.calcDist(s.lat, s.lng) })),
-          ...apiSpots
+          ...apiSpots,
+          ...alertSpots,
+          ...eventSpots
         ];
-        if (dto.airQuality) this.aqi = dto.airQuality;
-        this.communityPinCount = (dto.communityPins || []).length;
+
         this.zone.run(() => { this.loading = false; });
         setTimeout(() => this.renderMarkers(), 100);
       },
       error: () => {
-        // API down / 403 → show hardcoded Tunis spots
+        // Fallback
         this.spots = TUNIS_SPOTS.map(s => ({ ...s, distance: this.calcDist(s.lat, s.lng) }));
         this.zone.run(() => { this.loading = false; });
         setTimeout(() => this.renderMarkers(), 100);
@@ -211,10 +253,55 @@ export class EcoMapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  private alertToSpot(alert: EcoAlert, index: number): EcoSpot {
+    const meta = ALERT_META[alert.alertType] || ALERT_META['OTHER'];
+    return {
+      id: alert.id ?? -(index + 200), // Ensures unique IDs for UI tracking if new
+      name: `${meta.label} Alert`,
+      category: meta.label, categoryKey: 'ALERT', // Map all alerts to the 'ALERT' filter
+      distance: this.calcDist(alert.latitude, alert.longitude),
+      isOpen: alert.status === 'OPEN' || alert.status === 'CONFIRMED',
+      pinColor: '#e63946', emoji: meta.emoji,
+      sidebarIcon: meta.icon,
+      lat: alert.latitude, lng: alert.longitude,
+      description: `${alert.description || 'No description provided.'}\nConfirmations: ${alert.confirmations}`,
+      ecoPoints: 0, source: 'ALERT'
+    };
+  }
+
+  private eventToSpot(event: EcoEventModel): EcoSpot {
+    // Generate pseudo-random coordinates based on event ID so it stays in the same place
+    const id = event.id || 0;
+    const hash1 = Math.sin(id) * 10000;
+    const hash2 = Math.cos(id) * 10000;
+    const offsetLat = (hash1 - Math.floor(hash1)) * 0.08 - 0.04; // +/- 0.04 degrees
+    const offsetLng = (hash2 - Math.floor(hash2)) * 0.08 - 0.04;
+    const lat = this.userLat + offsetLat;
+    const lng = this.userLng + offsetLng;
+
+    return {
+      id: -(id + 500),
+      name: event.title,
+      category: 'Event', categoryKey: 'ECO_EVENT',
+      distance: this.calcDist(lat, lng),
+      isOpen: event.status === 'UPCOMING' || event.status === 'ONGOING',
+      pinColor: '#2892a8', emoji: '🌍', sidebarIcon: '🌍',
+      lat, lng,
+      description: `${event.description || ''}\nLocation: ${event.location}`,
+      ecoPoints: 30, source: 'EVENT'
+    };
+  }
+
   /* ════════════════════════════════════
      MARKERS
      ════════════════════════════════════ */
   private renderMarkers(): void {
+    // Force Leaflet to recalculate the map container size. 
+    // This fixes the issue where pins/tiles don't appear on initial load.
+    if (this.map) {
+      this.map.invalidateSize();
+    }
+
     // Clear old
     this.spotMarkers.forEach(m => m.remove());
     this.spotMarkers = [];
@@ -329,6 +416,66 @@ export class EcoMapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.newPinName = ''; this.newPinDesc = ''; this.showAddPin = false;
       },
       error: () => this.showToast('❌ Could not submit pin.')
+    });
+  }
+
+  /* ── Alerts ── */
+  toggleReportAlert(): void { this.showReportAlert = !this.showReportAlert; }
+
+  toggleLocationSharing(): void {
+    this.isSharingLocation = !this.isSharingLocation;
+    if (this.isSharingLocation) {
+      const center = this.map.getCenter();
+      this.mapService.updateLocation(center.lat, center.lng).subscribe({
+        next: () => this.showToast('📡 Location shared. You will be notified of nearby alerts.'),
+        error: () => {
+          this.isSharingLocation = false;
+          this.showToast('❌ Failed to share location.');
+        }
+      });
+    } else {
+      this.mapService.stopLocationSharing().subscribe({
+        next: () => this.showToast('🔕 Location sharing disabled.'),
+        error: () => this.showToast('❌ Failed to stop sharing.')
+      });
+    }
+  }
+
+  submitAlert(): void {
+    const center = this.map.getCenter();
+    this.mapService.reportAlert({
+      alertType: this.newAlert.type,
+      description: this.newAlert.desc,
+      latitude: center.lat,
+      longitude: center.lng
+    }).subscribe({
+      next: (alert) => {
+        this.showToast('🚨 Alert reported! Thank you for keeping the community safe.');
+        this.newAlert.desc = ''; this.showReportAlert = false;
+        // Optionally append to map instantly or reload data
+        this.loadData();
+      },
+      error: () => this.showToast('❌ Failed to report alert.')
+    });
+  }
+
+  confirmAlert(spot: EcoSpot): void {
+    this.mapService.confirmAlert(spot.id).subscribe({
+      next: () => {
+        this.showToast('👍 Alert confirmed!');
+        spot.description += ' (You confirmed this)';
+      },
+      error: () => this.showToast('❌ Could not confirm alert.')
+    });
+  }
+
+  resolveAlert(spot: EcoSpot): void {
+    this.mapService.resolveAlert(spot.id).subscribe({
+      next: () => {
+        this.showToast('✅ Alert resolved.');
+        spot.isOpen = false;
+      },
+      error: () => this.showToast('❌ Could not resolve alert.')
     });
   }
 

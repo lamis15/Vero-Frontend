@@ -469,25 +469,27 @@
           </div>
         </div>
       </div>
+
+      <!-- ─── INPUT STRIP (Moved here) ─── -->
+      <div class="eco-input-strip">
+        <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
+        <div class="eco-ai-dot" [class.active]="aiLoading"></div>
+        <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
+               placeholder="Describe an activity — AI calculates impact..."
+               (keyup.enter)="analyzeWithAI()" />
+        <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
+          @if (aiLoading) { <div class="eco-spinner"></div> }
+          @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          }
+        </button>
+        <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
+      </div>
     </main>
 
-    <!-- ─── INPUT STRIP ─── -->
-    <div class="eco-input-strip">
-      <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
-      <div class="eco-ai-dot" [class.active]="aiLoading"></div>
-      <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
-             placeholder="Describe an activity — AI calculates impact..."
-             (keyup.enter)="analyzeWithAI()" />
-      <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
-        @if (aiLoading) { <div class="eco-spinner"></div> }
-        @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        }
-      </button>
-      <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
-    </div>
+
 
     <!-- AI Result Toast -->
     @if (aiResult) {
