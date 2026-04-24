@@ -103,7 +103,7 @@
       <div class="spot-card" [class.active]="selectedSpot?.id === spot.id" [style.animation-delay]="(i * 50) + 'ms'"
         (click)="selectSpot(spot)">
         <div class="spot-icon" [style.background]="spot.pinColor + '15'" [style.color]="spot.pinColor">
-          {{ spot.emoji }}
+          {{ spot.sidebarIcon }}
         </div>
         <div class="spot-body">
           <h4>{{ spot.name }}</h4>
@@ -150,7 +150,7 @@
     <div class="popup-card">
       <button class="popup-x" (click)="closePopup()">✕</button>
       <div class="popup-icon" [style.background]="selectedSpot.pinColor + '12'">
-        <span>{{ selectedSpot.emoji }}</span>
+        <span>{{ selectedSpot.sidebarIcon }}</span>
       </div>
       <div class="popup-info">
         <div class="popup-row1">

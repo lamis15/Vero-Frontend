@@ -1,21 +1,22 @@
 /* ═══════════════════════════════════════════════════
-   VERO ECO MAP — Jade Aurora Edition
-   Palette: #1b2121 · #1c434a · #057569 · #6dab8c · #bbd7c8
+   VERO ECO MAP — Ocean Atlas Edition
+   Palette: #0a1f2e · #123e54 · #1e708a · #3b9ab2 · #c8e0e8
    ═══════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :host {
-  --twilight: #1b2121;
-  --deep-jade: #1c434a;
-  --mystic-jade: #057569;
-  --frosted-mint: #6dab8c;
-  --cloud-mint: #bbd7c8;
+  --forest:  #0a1f2e;
+  --moss:    #123e54;
+  --sage:    #1e708a;
+  --fern:    #3b9ab2;
+  --mist:    #c8e0e8;
+  --smoke:   #60798a;
 
-  --primary: var(--mystic-jade);
-  --primary-light: rgba(109, 171, 140, 0.18);
-  --primary-glow: rgba(5, 117, 105, 0.35);
-  --secondary: var(--deep-jade);
-  --accent: var(--frosted-mint);
+  --primary:       var(--sage);
+  --primary-light: rgba(30, 112, 138, 0.18);
+  --primary-glow:  rgba(59, 154, 178, 0.35);
+  --secondary:     var(--moss);
+  --accent:        var(--fern);
   --bg: transparent;
   --surface: rgba(255, 255, 255, 0.08);
   --txt: #ffffff;
@@ -37,10 +38,10 @@
   height: calc(100vh - var(--nav-h));
   margin-top: var(--nav-h);
   background: linear-gradient(135deg,
-      #1c434a 0%,
-      #057569 40%,
-      #6dab8c 75%,
-      #bbd7c8 100%);
+      #0a1f2e 0%,
+      #123e54 40%,
+      #1e708a 75%,
+      #3b9ab2 100%);
   font-family: 'Poppins', 'Inter', sans-serif;
   color: var(--txt);
   overflow: hidden;
@@ -54,8 +55,9 @@
   min-width: 380px;
   height: 100%;
   background: linear-gradient(180deg,
-      #1c434a 0%,
-      #057569 100%);
+      #0a1f2e 0%,
+      #123e54 60%,
+      #1e708a 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
@@ -82,7 +84,7 @@
   left: 0;
   right: 0;
   padding: 16px 20px;
-  background: linear-gradient(transparent, rgba(28, 67, 74, 0.88) 40%);
+  background: linear-gradient(transparent, rgba(10, 31, 46, 0.90) 40%);
 }
 
 .hero-content h1 {
@@ -99,7 +101,7 @@
 
 .hero-content p {
   font-size: 12px;
-  color: var(--cloud-mint);
+  color: var(--mist);
   margin: 2px 0 0;
   font-weight: 500;
 }
@@ -164,7 +166,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--aqi-clr, #6dab8c);
+  background: var(--aqi-clr, #3b9ab2);
   animation: aqiPulse 2s ease-in-out infinite;
 }
 
@@ -206,10 +208,10 @@
 }
 
 .pill.active {
-  background: linear-gradient(135deg, #057569, #6dab8c);
+  background: linear-gradient(135deg, #1e708a, #3b9ab2);
   border-color: transparent;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(5, 117, 105, 0.35);
+  box-shadow: 0 4px 14px rgba(59, 154, 178, 0.35);
 }
 
 .pill span {
@@ -230,7 +232,7 @@
 }
 
 .spot-list::-webkit-scrollbar-thumb {
-  background: rgba(109, 171, 140, 0.3);
+  background: rgba(59, 154, 178, 0.3);
   border-radius: 10px;
 }
 
@@ -267,13 +269,13 @@
   background: rgba(255, 255, 255, 0.15);
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
-  border-left-color: var(--frosted-mint);
+  border-left-color: var(--fern);
 }
 
 .spot-card.active {
-  border-color: var(--frosted-mint);
-  border-left-color: var(--frosted-mint);
-  box-shadow: 0 0 20px rgba(109, 171, 140, 0.3);
+  border-color: var(--fern);
+  border-left-color: var(--fern);
+  box-shadow: 0 0 20px rgba(59, 154, 178, 0.3);
 }
 
 .spot-icon {
@@ -315,6 +317,9 @@
   border-radius: var(--pill);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  /* Override inline color — ocean pin colors are too dark for the sidebar */
+  color: var(--mist) !important;
+  background: rgba(59, 154, 178, 0.18) !important;
 }
 
 .dist {
@@ -326,9 +331,9 @@
 .btn-ci {
   padding: 5px 12px;
   border-radius: var(--pill);
-  border: 1.5px solid var(--frosted-mint);
+  border: 1.5px solid var(--fern);
   background: transparent;
-  color: var(--frosted-mint);
+  color: var(--fern);
   font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 700;
@@ -338,13 +343,13 @@
 }
 
 .btn-ci:hover:not(:disabled) {
-  background: linear-gradient(135deg, #057569, #6dab8c);
+  background: linear-gradient(135deg, #1e708a, #3b9ab2);
   border-color: transparent;
   color: white;
 }
 
 .btn-ci.done {
-  background: linear-gradient(135deg, #057569, #6dab8c);
+  background: linear-gradient(135deg, #1e708a, #3b9ab2);
   border-color: transparent;
   color: white;
 }
@@ -371,8 +376,8 @@
   width: 28px;
   height: 28px;
   margin: 0 auto 10px;
-  border: 3px solid rgba(109, 171, 140, 0.2);
-  border-top-color: var(--frosted-mint);
+  border: 3px solid rgba(59, 154, 178, 0.2);
+  border-top-color: var(--fern);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -431,11 +436,11 @@
 */
 :host ::ng-deep .leaflet-tile-pane {
   filter:
-    sepia(60%) hue-rotate(140deg) saturate(0.9) brightness(1.05);
+    sepia(60%) hue-rotate(185deg) saturate(0.9) brightness(1.05);
 }
 
 :host ::ng-deep .leaflet-container {
-  background: #bbd7c8;
+  background: var(--mist);
 }
 
 /* ── Custom Leaflet Pin (DivIcon) ── */
@@ -449,6 +454,8 @@
 
 :host ::ng-deep .leaflet-marker-icon {
   overflow: visible !important;
+  /* Let the browser GPU-composite marker positioning for silky panning */
+  will-change: transform;
 }
 
 :host ::ng-deep .eco-pin-icon {
@@ -458,9 +465,8 @@
   flex-direction: column;
   align-items: center;
   overflow: visible;
-  /* NO animation or transform here — Leaflet uses inline transform:translate3d()
-     to position markers. CSS animations/transforms would override it. */
-  transition: opacity 0.35s ease;
+  /* IMPORTANT: NO transition on transform — Leaflet sets translate3d() inline
+     every frame during pan/drag. A CSS transition would make pins lag behind. */
   cursor: pointer;
 }
 
@@ -471,20 +477,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Float animation lives here — combined with rotation so both work */
-  animation: pinFloat 3s ease-in-out infinite;
-  /* Jade aurora shadow: depth + soft jade glow + white border ring */
+  transform: rotate(-45deg);
+  animation: pinGlow 2.5s ease-in-out infinite;
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.14),
-    0 4px 12px rgba(5, 117, 105, 0.4),
+    0 4px 12px rgba(30, 112, 138, 0.4),
     0 0 0 2px white;
+  /* Only transition scale & shadow for hover — NOT the wrapper's translate3d */
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-:host ::ng-deep .eco-pin-icon .pin-emoji {
+:host ::ng-deep .eco-pin-icon .pin-icon {
   transform: rotate(45deg);
-  font-size: 14px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+:host ::ng-deep .eco-pin-icon .pin-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: white;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
 }
 
 :host ::ng-deep .eco-pin-icon .pin-tail {
@@ -497,21 +512,21 @@
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.12));
 }
 
-/* Hover: lift + jade glow ring — applied to .pin-body, not the wrapper */
+/* Hover: lift + ocean glow ring — applied to .pin-body, not the wrapper */
 :host ::ng-deep .eco-pin-icon:hover {
   z-index: 9999 !important;
 }
 
 :host ::ng-deep .eco-pin-icon:hover .pin-body {
-  transform: rotate(-45deg) scale(1.18) translateY(-3px);
+  transform: rotate(-45deg) scale(1.18);
   box-shadow:
     0 6px 18px rgba(0, 0, 0, 0.18),
     0 0 0 3px white,
-    0 0 0 5px rgba(109, 171, 140, 0.3);
+    0 0 0 5px rgba(59, 154, 178, 0.3);
 }
 
 /* ── User location marker ── */
-/* ── User Location Pin — jade eco glow ── */
+/* ── User Location Pin — ocean eco glow ── */
 :host ::ng-deep .user-marker-icon {
   background: none !important;
   border: none !important;
@@ -524,11 +539,11 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #057569;
+  background: var(--sage);
   border: 3px solid white;
   box-shadow:
-    0 2px 8px rgba(5, 117, 105, 0.4),
-    0 0 0 4px rgba(5, 117, 105, 0.12);
+    0 2px 8px rgba(30, 112, 138, 0.4),
+    0 0 0 4px rgba(30, 112, 138, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -540,7 +555,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 8px;
   font-weight: 700;
-  color: #1c434a;
+  color: var(--forest);
   background: white;
   padding: 1px 6px;
   border-radius: 99px;
@@ -554,7 +569,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1.5px solid rgba(109, 171, 140, 0.3);
+  border: 1.5px solid rgba(59, 154, 178, 0.3);
   top: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -573,7 +588,7 @@
 /* ── Leaflet overrides ── */
 :host ::ng-deep .leaflet-control-zoom {
   border: none !important;
-  box-shadow: 0 4px 16px rgba(5, 117, 105, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(30, 112, 138, 0.2) !important;
   border-radius: 12px !important;
   overflow: hidden;
 }
@@ -583,14 +598,14 @@
   height: 34px !important;
   line-height: 34px !important;
   font-size: 16px !important;
-  color: #1c434a !important;
+  color: var(--forest) !important;
   background: rgba(255, 255, 255, 0.95) !important;
-  border-bottom: 1px solid rgba(5, 117, 105, 0.1) !important;
+  border-bottom: 1px solid rgba(30, 112, 138, 0.1) !important;
 }
 
 :host ::ng-deep .leaflet-control-zoom a:hover {
-  background: var(--cloud-mint) !important;
-  color: #057569 !important;
+  background: var(--mist) !important;
+  color: var(--sage) !important;
 }
 
 /* ── FAB ── */
@@ -602,11 +617,11 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #057569, #6dab8c);
+  background: linear-gradient(135deg, #1e708a, #3b9ab2);
   border: none;
   color: white;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(5, 117, 105, 0.45);
+  box-shadow: 0 6px 20px rgba(30, 112, 138, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -615,7 +630,7 @@
 
 .fab:hover {
   transform: scale(1.1);
-  box-shadow: 0 8px 28px rgba(5, 117, 105, 0.55);
+  box-shadow: 0 8px 28px rgba(30, 112, 138, 0.55);
 }
 
 .fab-count {
@@ -625,7 +640,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--frosted-mint);
+  background: var(--fern);
   color: white;
   font-size: 8px;
   font-weight: 700;
@@ -966,15 +981,18 @@
   }
 }
 
-@keyframes pinFloat {
-
-  0%,
-  100% {
-    transform: rotate(-45deg) translateY(0);
+@keyframes pinGlow {
+  0%, 100% {
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.14),
+      0 4px 12px rgba(30, 112, 138, 0.4),
+      0 0 0 2px white;
   }
-
   50% {
-    transform: rotate(-45deg) translateY(-5px);
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.14),
+      0 4px 18px rgba(59, 154, 178, 0.7),
+      0 0 0 2px white;
   }
 }
 
