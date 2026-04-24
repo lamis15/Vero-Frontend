@@ -95,6 +95,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
   ];
 
   currentUserId: number | null = null;
+  quizAvailableIds: Set<number> = new Set(); // formation IDs that have a quiz
 
   constructor(
     private formationService: FormationService,
@@ -108,14 +109,12 @@ export class FormationsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadPinnedFromStorage();
     this.loadFormations();
-    this.createFabButton();
     
     // Load current user ID if logged in
     if (this.authService.isLoggedIn) {
       this.authService.getCurrentUser().subscribe({
         next: (user) => {
           this.currentUserId = user.id;
-          console.log('Current user ID:', this.currentUserId);
         },
         error: (err) => {
           console.error('Error loading current user:', err);
@@ -228,6 +227,13 @@ export class FormationsComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.formations = data;
         this.loading = false;
+        // Check quiz availability for COMPLETED formations
+        data.filter(f => f.status === 'COMPLETED').forEach(f => {
+          this.formationService.getQuiz(f.id!).subscribe({
+            next: () => this.quizAvailableIds.add(f.id!),
+            error: () => {}
+          });
+        });
       },
       error: (err) => {
         this.error = 'Erreur lors du chargement des formations';
@@ -256,6 +262,16 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   viewDetails(formationId: number): void {
     this.router.navigate(['/formations', formationId]);
+  }
+
+  canTakeQuiz(formation: Formation): boolean {
+    return formation.status === 'COMPLETED'
+      && this.isUserEnrolled(formation)
+      && this.quizAvailableIds.has(formation.id!);
+  }
+
+  goToQuiz(formationId: number): void {
+    this.router.navigate(['/formations', formationId, 'quiz']);
   }
 
   getAvailableSpots(formation: Formation): number {

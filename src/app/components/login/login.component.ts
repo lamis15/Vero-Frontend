@@ -22,11 +22,31 @@ export class LoginComponent implements OnInit {
   registerImage = '';
   forgotPasswordEmail = '';
 
+  mode: 'login' | 'register' | 'forgot-password' = 'login';
+  loginError = '';
+  loginLoading = false;
+  socialBusy = false;
+  registrationSuccess = false;
+  forgotPasswordSuccess = false;
+
+  errFullName = '';
+  errEmail = '';
+  errPassword = '';
+  errImage = '';
+  errForgotEmail = '';
+
+  passkeySupported = typeof window !== 'undefined' && !!navigator.credentials;
+  passkeyInfo = '';
+
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private router: Router,
     private cartService: CartService
   ) {}
+
+  ngOnInit(): void {
+    // Component initialization
+  }
 
   goBack(): void {
     window.history.back();
@@ -354,6 +374,10 @@ export class LoginComponent implements OnInit {
     } else {
       this.goAfterAuth();
     }
+  }
+
+  private goAfterAuth(): void {
+    this.router.navigate(['/track']);
   }
 
   private base64UrlToBuffer(base64Url: string): ArrayBuffer {

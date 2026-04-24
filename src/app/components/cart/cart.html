@@ -9,6 +9,9 @@
           </svg>
         </button>
         <h1>Shopping Cart</h1>
+        <button class="btn-currency-cart" (click)="toggleCurrency()">
+          {{ currency === 'EUR' ? '€ → DT' : 'DT → €' }}
+        </button>
       </div>
 
       @if (cartItems.length === 0) {
@@ -37,7 +40,7 @@
               <div class="item-details">
                 <h3>{{ item.product.name }}</h3>
                 <p class="item-category">{{ item.product.category }}</p>
-                <div class="item-price">€{{ item.product.price.toFixed(2) }}</div>
+                <div class="item-price">{{ formatPrice(item.product.price) }}</div>
               </div>
 
               <div class="item-actions">
@@ -65,7 +68,7 @@
               </div>
 
               <div class="item-total">
-                €{{ (item.product.price * item.quantity).toFixed(2) }}
+                {{ formatPrice(item.product.price * item.quantity) }}
               </div>
             </div>
           }
@@ -85,7 +88,7 @@
                 <span class="summary-item-name">{{ item.product.name }}</span>
                 <span class="summary-item-qty">x{{ item.quantity }}</span>
               </div>
-              <span class="summary-item-price">€{{ (item.product.price * item.quantity).toFixed(2) }}</span>
+              <span class="summary-item-price">{{ formatPrice(item.product.price * item.quantity) }}</span>
             </div>
           }
         </div>
@@ -94,7 +97,7 @@
 
         <div class="summary-row">
           <span>Subtotal</span>
-          <span class="summary-value">€{{ getSubtotal().toFixed(2) }}</span>
+          <span class="summary-value">{{ formatPrice(getSubtotal()) }}</span>
         </div>
 
         <div class="summary-row">
@@ -104,14 +107,14 @@
 
         <div class="summary-row discount">
           <span>Discount (10% off)</span>
-          <span class="summary-value">-€{{ getDiscount().toFixed(2) }}</span>
+          <span class="summary-value">-{{ formatPrice(getDiscount()) }}</span>
         </div>
 
         <div class="summary-divider"></div>
 
         <div class="summary-total">
           <span>Total</span>
-          <span class="total-amount">€{{ getTotal().toFixed(2) }}</span>
+          <span class="total-amount">{{ formatPrice(getTotal()) }}</span>
         </div>
 
         <button class="btn-checkout" (click)="proceedToCheckout()">

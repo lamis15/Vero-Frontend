@@ -1,7 +1,38 @@
 .orders-section {
   min-height: calc(100vh - var(--nav-h));
   padding: 80px 48px;
-  background: var(--cream);
+  background: #0a1a14;
+}
+
+.page-header.bg-parchment {
+  background: #0a1a14 !important;
+  padding: calc(var(--nav-h, 64px) + 24px) 48px 24px;
+}
+
+.page-header.bg-parchment .section-tag {
+  color: #2dd4a0;
+  background: rgba(45,212,160,0.1);
+  border: 1px solid rgba(45,212,160,0.2);
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.page-header.bg-parchment .page-h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 48px);
+  color: #e8f5f0;
+  margin: 0;
+}
+
+.page-header.bg-parchment .page-h1 em {
+  color: #2dd4a0;
+  font-style: italic;
 }
 
 .orders-container {
@@ -11,8 +42,8 @@
 
 /* Success Banner */
 .success-banner {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  color: #155724;
+  background: linear-gradient(135deg, #0e2a1e 0%, #122b1f 100%);
+  color: #2dd4a0;
   padding: 16px 24px;
   border-radius: 12px;
   display: flex;
@@ -22,7 +53,8 @@
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(21, 87, 36, 0.1);
+  box-shadow: 0 4px 12px rgba(45,212,160,0.1);
+  border: 1px solid rgba(45,212,160,0.15);
 }
 
 .success-banner svg {
@@ -40,13 +72,13 @@
 .error-state p {
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
-  color: var(--smoke);
+  color: #7aaa94;
   margin-bottom: 16px;
 }
 
 .error-state button {
-  background: var(--forest);
-  color: white;
+  background: #2dd4a0;
+  color: #0a1a14;
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -58,7 +90,7 @@
 }
 
 .error-state button:hover {
-  background: var(--moss);
+  background: #22b389;
 }
 
 /* Empty State */
@@ -68,28 +100,28 @@
 }
 
 .empty-state svg {
-  color: var(--smoke);
+  color: #7aaa94;
   margin-bottom: 24px;
 }
 
 .empty-state h3 {
   font-family: 'Playfair Display', serif;
   font-size: 28px;
-  color: var(--forest);
+  color: #2dd4a0;
   margin: 0 0 12px 0;
 }
 
 .empty-state p {
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
-  color: var(--smoke);
+  color: #7aaa94;
   margin: 0 0 32px 0;
 }
 
 .btn-shop {
   display: inline-block;
-  background: var(--forest);
-  color: white;
+  background: #2dd4a0;
+  color: #0a1a14;
   padding: 14px 32px;
   border-radius: 12px;
   font-family: 'DM Sans', sans-serif;
@@ -100,9 +132,9 @@
 }
 
 .btn-shop:hover {
-  background: var(--moss);
+  background: #22b389;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(26, 46, 26, 0.2);
+  box-shadow: 0 8px 20px rgba(45,212,160,0.2);
 }
 
 /* Orders List */
@@ -113,16 +145,18 @@
 }
 
 .order-card {
-  background: white;
+  background: #0e2a1e;
   border-radius: 20px;
   padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(45,212,160,0.15);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .order-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(45,212,160,0.3);
 }
 
 /* Order Header */
@@ -132,7 +166,7 @@
   align-items: flex-start;
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 2px solid var(--cream);
+  border-bottom: 2px solid #122b1f;
 }
 
 .order-info {
@@ -145,14 +179,14 @@
   font-family: 'Playfair Display', serif;
   font-size: 22px;
   font-weight: 700;
-  color: var(--forest);
+  color: #2dd4a0;
   margin: 0;
 }
 
 .order-date {
   font-family: 'DM Mono', monospace;
   font-size: 13px;
-  color: var(--smoke);
+  color: #7aaa94;
 }
 
 .order-status {
@@ -166,18 +200,21 @@
 }
 
 .status-pending {
-  background: #fff3cd;
-  color: #856404;
+  background: rgba(133, 100, 4, 0.2);
+  color: #f0c040;
+  border: 1px solid rgba(133, 100, 4, 0.3);
 }
 
 .status-accepted {
-  background: #d4edda;
-  color: #155724;
+  background: rgba(45,212,160,0.1);
+  color: #2dd4a0;
+  border: 1px solid rgba(45,212,160,0.2);
 }
 
 .status-rejected {
-  background: #f8d7da;
-  color: #721c24;
+  background: rgba(114, 28, 36, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(114, 28, 36, 0.3);
 }
 
 /* Order Body */
@@ -199,21 +236,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: var(--cream);
+  background: #122b1f;
   border-radius: 10px;
 }
 
 .product-name {
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
-  color: var(--charcoal);
+  color: #e8f5f0;
   font-weight: 500;
 }
 
 .product-price {
   font-family: 'DM Mono', monospace;
   font-size: 14px;
-  color: var(--forest);
+  color: #2dd4a0;
   font-weight: 600;
 }
 
@@ -224,17 +261,18 @@
   gap: 10px;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  color: var(--smoke);
+  color: #7aaa94;
   padding: 12px;
-  background: rgba(106, 170, 106, 0.05);
+  background: rgba(45,212,160,0.05);
   border-radius: 10px;
+  border: 1px solid rgba(45,212,160,0.1);
 }
 
 .order-address svg,
 .order-notes svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--fern);
+  color: #2dd4a0;
 }
 
 /* Order Footer */
@@ -243,20 +281,20 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 20px;
-  border-top: 2px solid var(--cream);
+  border-top: 2px solid #122b1f;
 }
 
 .order-total-label {
   font-family: 'DM Sans', sans-serif;
   font-size: 16px;
-  color: var(--charcoal);
+  color: #e8f5f0;
   font-weight: 600;
 }
 
 .order-total-amount {
   font-family: 'DM Mono', monospace;
   font-size: 24px;
-  color: var(--forest);
+  color: #2dd4a0;
   font-weight: 700;
 }
 

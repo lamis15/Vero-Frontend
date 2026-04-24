@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FadeInDirective } from '../../fade-in.directive';
@@ -22,7 +22,9 @@ interface ProductDisplay extends Product {
   templateUrl: './shop.component.html',
   styleUrl: './shop.component.css'
 })
-export class ShopComponent implements OnInit {
+export class ShopComponent implements OnInit, AfterViewInit {
+
+  @ViewChild('heroVideo') heroVideoRef!: ElementRef<HTMLVideoElement>;
   currentCategory: string = 'all';
   products: ProductDisplay[] = [];
   filteredProducts: ProductDisplay[] = [];
@@ -70,8 +72,34 @@ export class ShopComponent implements OnInit {
     private authService: AuthService
   ) {}
 
+  ngAfterViewInit() {
+    const video = this.heroVideoRef?.nativeElement;
+    if (video) {
+      video.muted = true;
+      video.loop = true;
+      video.play().catch(() => {});
+    }
+  }
+
   ngOnInit() {
+    this.loadImageCache();
     this.loadProducts();
+  }
+
+  private imageCache = new Map<number, string>();
+
+  private loadImageCache(): void {
+    try {
+      const raw = localStorage.getItem('vero_product_images');
+      if (raw) {
+        const obj = JSON.parse(raw) as Record<string, string>;
+        Object.entries(obj).forEach(([k, v]) => this.imageCache.set(Number(k), v));
+      }
+    } catch { /* ignore */ }
+  }
+
+  getImage(product: Product): string | null {
+    return this.imageCache.get(product.id) ?? product.image ?? null;
   }
 
   loadProducts() {
@@ -259,49 +287,47 @@ export class ShopComponent implements OnInit {
     link.click();
   }
 
+  // Currency
+  currency: 'EUR' | 'TND' = 'EUR';
+  private readonly EUR_TO_TND = 3.37;
+
+  toggleCurrency() {
+    this.currency = this.currency === 'EUR' ? 'TND' : 'EUR';
+  }
+
+  formatPrice(price: number): string {
+    if (this.currency === 'TND') {
+      return (price * this.EUR_TO_TND).toFixed(3) + ' DT';
+    }
+    return '€' + price.toFixed(2);
+  }
+
   getRecommendations() {
     if (!this.authService.isLoggedIn) {
-      alert('Please login to get personalized recommendations');
       return;
     }
 
-    // Show loading state
     this.loading = true;
 
-    // Use user-based recommendations based on purchase history
     this.recommendationService.getRecommendationsForCurrentUser().subscribe({
       next: (recommendedProducts) => {
         this.loading = false;
-        
+
         if (recommendedProducts.length === 0) {
-          alert('No recommendations available at the moment. Try purchasing some products first!');
           return;
         }
 
-        // Display recommended products by filtering the current view
-        this.filteredProducts = this.products.filter(p => 
+        this.filteredProducts = this.products.filter(p =>
           recommendedProducts.some(rp => rp.id === p.id)
         ).map(p => ({ ...p, added: false }));
 
-        // Scroll to products
         setTimeout(() => {
           document.getElementById('product-grid')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
-
-        alert(`🤖 Showing ${recommendedProducts.length} AI-recommended products based on your purchase history!`);
       },
       error: (err) => {
         this.loading = false;
         console.error('Error getting recommendations:', err);
-        
-        // Check if it's a 401/403 (authentication issue)
-        if (err.status === 401 || err.status === 403) {
-          alert('Authentication error. Please login again.');
-        } else if (err.status === 500) {
-          alert('Server error. Please check if the Groq API key is configured correctly in the backend.');
-        } else {
-          alert('Failed to get recommendations. Please try again later.');
-        }
       }
     });
   }

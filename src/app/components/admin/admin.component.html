@@ -624,79 +624,106 @@
 <!-- ══ SESSION MODAL ══ -->
 @if (showSessionModal) {
   <div class="modal-overlay" (click)="closeSessionModal()">
-    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ editingSession ? 'Modifier la Session' : 'Nouvelle Session' }}</h2>
+    <div class="session-modal-card" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="session-modal-header">
+        <div class="session-modal-title-wrap">
+          <span class="material-symbols-outlined session-modal-icon">{{ editingSession ? 'edit_calendar' : 'calendar_add_on' }}</span>
+          <h2>{{ editingSession ? 'Modifier la Session' : 'Nouvelle Session' }}</h2>
+        </div>
         <button class="modal-close" (click)="closeSessionModal()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Titre <span class="required">*</span></label>
-          <input type="text" [(ngModel)]="sessionForm.title" placeholder="Ex: Session Introduction">
+
+      <!-- Body -->
+      <div class="session-modal-body">
+
+        <!-- Titre -->
+        <div class="sm-field">
+          <label class="sm-label">Titre <span class="required">*</span></label>
+          <input class="sm-input" type="text" [(ngModel)]="sessionForm.title" placeholder="Ex: Introduction au module 1">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Date de début <span class="required">*</span></label>
-            <input type="datetime-local" [(ngModel)]="sessionForm.startDate">
+
+        <!-- Dates -->
+        <div class="sm-row">
+          <div class="sm-field">
+            <label class="sm-label">Date de début <span class="required">*</span></label>
+            <input class="sm-input" type="datetime-local" [(ngModel)]="sessionForm.startDate">
           </div>
-          <div class="form-group">
-            <label>Date de fin <span class="required">*</span></label>
-            <input type="datetime-local" [(ngModel)]="sessionForm.endDate">
+          <div class="sm-field">
+            <label class="sm-label">Date de fin <span class="required">*</span></label>
+            <input class="sm-input" type="datetime-local" [(ngModel)]="sessionForm.endDate">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Statut</label>
-            <select [(ngModel)]="sessionForm.status">
+
+        <!-- Statut + Type -->
+        <div class="sm-row">
+          <div class="sm-field">
+            <label class="sm-label">Statut</label>
+            <select class="sm-input" [(ngModel)]="sessionForm.status">
               @for (s of sessionStatuses; track s) {
                 <option [value]="s">{{ s }}</option>
               }
             </select>
           </div>
-          <div class="form-group">
-            <label>Type</label>
-            <select [(ngModel)]="sessionForm.type">
+          <div class="sm-field">
+            <label class="sm-label">Type</label>
+            <select class="sm-input" [(ngModel)]="sessionForm.type">
               <option value="ONLINE">En ligne</option>
               <option value="IN_PERSON">Présentiel</option>
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Lien Meet (optionnel)</label>
-          <input type="text" [(ngModel)]="sessionForm.meetLink" placeholder="https://meet.google.com/...">
+
+        <!-- Lien Meet -->
+        <div class="sm-field">
+          <label class="sm-label">Lien Meet <span class="sm-optional">(optionnel)</span></label>
+          <input class="sm-input" type="url" [(ngModel)]="sessionForm.meetLink" placeholder="https://meet.google.com/...">
         </div>
-        <div class="form-group">
-          <label>Trainer <span class="required">*</span></label>
+
+        <!-- Trainer -->
+        <div class="sm-field">
+          <label class="sm-label">Trainer <span class="required">*</span></label>
           @if (trainers.length === 0) {
-            <p class="trainer-empty-hint">Aucun trainer disponible. Créez d'abord un utilisateur avec le rôle TRAINER.</p>
+            <div class="sm-warn-box">
+              <span class="material-symbols-outlined">warning</span>
+              <div>
+                <strong>Aucun trainer disponible</strong>
+                <p>Créez un utilisateur avec le rôle TRAINER, puis réessayez.</p>
+              </div>
+            </div>
           } @else {
-            <div class="trainer-scroll-list">
+            <div class="sm-trainer-list">
               @for (trainer of trainers; track trainer.id) {
-                <label class="trainer-option" [class.trainer-option--selected]="sessionForm.trainerId === trainer.id">
+                <label class="sm-trainer-item" [class.sm-trainer-item--active]="sessionForm.trainerId === trainer.id">
                   <input type="radio" name="trainerSelect" [value]="trainer.id" [(ngModel)]="sessionForm.trainerId" class="trainer-radio">
-                  <div class="trainer-avatar">{{ trainer.fullName.charAt(0) }}</div>
-                  <div class="trainer-info">
-                    <span class="trainer-name">{{ trainer.fullName }}</span>
-                    <span class="trainer-email">{{ trainer.email }}</span>
+                  <div class="sm-trainer-avatar">{{ trainer.fullName.charAt(0).toUpperCase() }}</div>
+                  <div class="sm-trainer-info">
+                    <span class="sm-trainer-name">{{ trainer.fullName }}</span>
+                    <span class="sm-trainer-email">{{ trainer.email }}</span>
                   </div>
                   @if (sessionForm.trainerId === trainer.id) {
-                    <span class="material-symbols-outlined trainer-check">check_circle</span>
+                    <span class="material-symbols-outlined sm-trainer-check">check_circle</span>
                   }
                 </label>
               }
             </div>
           }
         </div>
+
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="closeSessionModal()">Annuler</button>
-        <button class="btn-verdant-primary" (click)="saveSession()">
+
+      <!-- Footer -->
+      <div class="session-modal-footer">
+        <button class="sm-btn-cancel" (click)="closeSessionModal()">Annuler</button>
+        <button class="sm-btn-save" (click)="saveSession()">
           <span class="material-symbols-outlined">{{ editingSession ? 'save' : 'add_circle' }}</span>
-          {{ editingSession ? 'Enregistrer' : 'Créer' }}
+          {{ editingSession ? 'Enregistrer' : 'Créer la session' }}
         </button>
       </div>
+
     </div>
   </div>
 }

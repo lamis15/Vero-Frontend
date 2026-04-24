@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
 import { EcoDashboardDTO, DailyCarbon } from '../../services/dashboard.models';
 import {
   CarbonActivity, CarbonGoal, ActivityType,
-  ACTIVITY_ICONS, ACTIVITY_LABELS
+  ACTIVITY_ICONS, ACTIVITY_LABELS, ACTIVITY_COLORS
 } from '../../services/carbon.models';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -486,25 +486,6 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (s >= 40) return '#34d399';
     return '#f43f5e';
   }
-
-  // ─── Formatting ───
-
-  formatVal(val: number | undefined | null): string {
-    if (!val || !isFinite(val)) return '0';
-    if (val >= 10000) return (val / 1000).toFixed(0) + 'k';
-    if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
-    if (val >= 100) return val.toFixed(0);
-    return val.toFixed(1);
-  }
-
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-
-  // ─── Activity CRUD ───
-
 
   // ─── Formatting ───
 

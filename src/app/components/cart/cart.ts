@@ -12,6 +12,8 @@ import { CartService, CartItem } from '../../services/cart.service';
 })
 export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
+  currency: 'EUR' | 'TND' = 'EUR';
+  private readonly EUR_TO_TND = 3.37;
 
   constructor(
     private cartService: CartService,
@@ -20,11 +22,24 @@ export class CartComponent implements OnInit {
 
   ngOnInit() {
     this.loadCart();
-    
-    // Subscribe to cart changes
     this.cartService.cartItems$.subscribe(items => {
       this.cartItems = items;
     });
+  }
+
+  toggleCurrency() {
+    this.currency = this.currency === 'EUR' ? 'TND' : 'EUR';
+  }
+
+  formatPrice(price: number): string {
+    if (this.currency === 'TND') {
+      return (price * this.EUR_TO_TND).toFixed(3) + ' DT';
+    }
+    return '€' + price.toFixed(2);
+  }
+
+  get currencySymbol(): string {
+    return this.currency === 'EUR' ? '€' : 'DT';
   }
 
   loadCart() {

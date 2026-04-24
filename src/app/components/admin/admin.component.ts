@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ProductService } from '../../services/product.service';
 import { OrderService } from '../../services/order.service';
@@ -153,6 +153,7 @@ export class AdminComponent implements OnInit {
   
   // Participants details
   allUsers: any[] = [];
+  trainersMap: Map<number, string> = new Map();
   expandedFormationId: number | null = null;
 
   // Sessions
@@ -208,6 +209,7 @@ export class AdminComponent implements OnInit {
     private formationService: FormationService,
     private sessionService: SessionService,
     public router: Router,
+    private route: ActivatedRoute,
     private notificationService: NotificationService
   ) {}
 
@@ -221,9 +223,12 @@ export class AdminComponent implements OnInit {
           this.loadDashboardData();
         }
       },
-      error: (err) => {
-        console.error('Error loading user:', err);
-        this.router.navigate(['/login']);
+      error: () => this.router.navigate(['/login'])
+    });
+
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'];
       }
     });
   }
@@ -429,16 +434,18 @@ export class AdminComponent implements OnInit {
       orders: this.orderService.getAll(),
       users: this.userService.getAll()
     }).subscribe({
-      next: ({ orders, users }) => {
+      next: ({ orders, users: usersRaw }: any) => {
+        // Handle both plain array and paginated response
+        const users: any[] = Array.isArray(usersRaw) ? usersRaw : (usersRaw?.content ?? []);
         // Create a map of users for quick lookup
-        const userMap = new Map(users.map(u => [u.id, u]));
+        const userMap = new Map(users.map((u: any) => [u.id, u]));
         
         // Enhance orders with customer names
-        this.orders = orders.map(order => ({
+        this.orders = orders.map((order: any) => ({
           ...order,
           customerName: userMap.get(order.idUser)?.fullName || 'Unknown User',
           customerEmail: userMap.get(order.idUser)?.email || ''
-        })).sort((a, b) => {
+        })).sort((a: any, b: any) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
@@ -446,8 +453,8 @@ export class AdminComponent implements OnInit {
         
         this.stats.totalOrders = orders.length;
         this.stats.totalRevenue = orders
-          .filter(o => o.status === 'ACCEPTED')
-          .reduce((sum, o) => sum + o.totalAmount, 0);
+          .filter((o: any) => o.status === 'ACCEPTED')
+          .reduce((sum: number, o: any) => sum + o.totalAmount, 0);
         this.ordersLoading = false;
       },
       error: (err) => {
@@ -633,6 +640,10 @@ export class AdminComponent implements OnInit {
     this.selectedFormationForSessions = formation;
     this.loadSessionsForFormation(formation.id!);
     this.loadResources(formation.id!);
+    // Ensure trainers are loaded (may not be ready yet on first load)
+    if (this.trainersMap.size === 0) {
+      this.loadAllUsers();
+    }
   }
 
   closeSessionsView() {
@@ -682,7 +693,7 @@ export class AdminComponent implements OnInit {
         status: 'SCHEDULED' as SessionStatus,
         type: 'ONLINE',
         meetLink: '',
-        trainerId: this.currentUser?.id || 0,
+        trainerId: this.trainers.length > 0 ? this.trainers[0].id : 0,
         formationId: this.selectedFormationForSessions.id!
       };
     }
@@ -715,6 +726,11 @@ export class AdminComponent implements OnInit {
 
     if (endDate <= startDate) {
       this.notificationService.warning('End date must be after start date');
+      return;
+    }
+
+    if (!this.sessionForm.trainerId || this.sessionForm.trainerId <= 0) {
+      this.notificationService.warning('Please select a trainer');
       return;
     }
 
@@ -816,23 +832,40 @@ export class AdminComponent implements OnInit {
 
   // Load all users for participant details
   loadAllUsers(): void {
-    this.userService.getAll().subscribe({
-      next: (users) => {
-        this.allUsers = users;
+    this.userService.getUsersByRole('TRAINER').subscribe({
+      next: (res: any) => {
+        const list: any[] = Array.isArray(res) ? res : (res?.content ?? []);
+        this.allUsers = list;
+        // Build a fast lookup map: id -> fullName
+        this.trainersMap = new Map(list.map((u: any) => [u.id, u.fullName || u.full_name || '—']));
       },
       error: (err) => {
-        console.error('Error loading users:', err);
+        console.error('Error loading trainers:', err);
+        this.allUsers = [];
+        this.trainersMap = new Map();
       }
     });
   }
 
   get trainers(): any[] {
-    return this.allUsers.filter(u => u.role === 'TRAINER');
+    if (!Array.isArray(this.allUsers)) return [];
+    return this.allUsers;
   }
 
   getTrainerName(trainerId: number): string {
-    const trainer = this.allUsers.find(u => u.id === trainerId);
-    return trainer ? trainer.fullName : '—';
+    if (!trainerId) return '—';
+    // Use the map first (always safe)
+    if (this.trainersMap && this.trainersMap.has(trainerId)) {
+      return this.trainersMap.get(trainerId)!;
+    }
+    // Safe array fallback
+    try {
+      if (Array.isArray(this.allUsers)) {
+        const trainer = this.allUsers.find((u: any) => u.id === trainerId);
+        return trainer ? (trainer.fullName || trainer.full_name || '—') : '—';
+      }
+    } catch { /* ignore */ }
+    return '—';
   }
 
   // Toggle participants panel
@@ -846,12 +879,11 @@ export class AdminComponent implements OnInit {
 
   // Get participant details
   getParticipantDetails(participantIds: number[]): any[] {
-    if (!participantIds || participantIds.length === 0) {
-      return [];
-    }
+    if (!participantIds || participantIds.length === 0) return [];
+    if (!Array.isArray(this.allUsers)) return [];
     return participantIds
-      .map(id => this.allUsers.find(user => user.id === id))
-      .filter(user => user !== undefined);
+      .map((id: number) => this.allUsers.find((user: any) => user.id === id))
+      .filter((user: any) => user !== undefined);
   }
 
   // Format date short (for sessions table)

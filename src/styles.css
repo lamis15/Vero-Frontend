@@ -30,7 +30,7 @@ html {
 
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--cream);
+  background: #0a1a14;
   color: var(--charcoal);
   overflow-x: hidden;
 }

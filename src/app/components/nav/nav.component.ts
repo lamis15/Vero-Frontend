@@ -5,23 +5,22 @@ import {
   HostListener,
   ChangeDetectorRef
 } from '@angular/core';
-
-import {
-  Router,
-  NavigationEnd,
-  RouterLink,
-  RouterLinkActive,
-  RouterModule
-} from '@angular/router';
-
+import { Router, NavigationEnd, RouterLink, RouterLinkActive, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription, filter, catchError, of } from 'rxjs';
-
 import { ForumService } from '../../services/forum.service';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
-import { Notification } from '../../services/forum.models';
-import { Subscription } from 'rxjs';
+import { Notification as ForumNotification } from '../../services/forum.models';
+import { MessagerieService } from '../../services/messagerie.service';
+import { UserService } from '../../services/user.service';
+
+export interface UserResponse {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+}
 
 @Component({
   selector: 'app-nav',
@@ -32,21 +31,22 @@ import { Subscription } from 'rxjs';
 })
 export class NavComponent implements OnInit, OnDestroy {
 
-  // ===================== FORUM =====================
   notifications: ForumNotification[] = [];
   unreadCount = 0;
-
-  // ===================== MESSAGES =====================
   messageUnreadCount = 0;
   currentUser: UserResponse | null = null;
-
-  // ===================== UI =====================
   showDropdown = false;
   showProfileMenu = false;
+  showChatDropdown = false;
   cartCount = 0;
   isDarkPage = false;
+  isAdmin = false;
+
   private pollInterval: any;
   private cartSub: Subscription | null = null;
+  private authSub: Subscription | null = null;
+  private routeSub: Subscription | null = null;
+  private messageSub: Subscription | undefined;
 
   constructor(
     private forumService: ForumService,
@@ -55,57 +55,53 @@ export class NavComponent implements OnInit, OnDestroy {
     private cartService: CartService,
     private cdr: ChangeDetectorRef,
     private router: Router
-  ) {
-  }
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
+    this.isAdmin = this.authService.isAdmin;
     if (this.authService.isLoggedIn) {
-      this.fetchNotifications();
-      this.pollInterval = setInterval(() => this.fetchNotifications(), 30000);
+      this.startForumPolling();
     }
+
+    this.authSub = this.authService.isLoggedIn$.subscribe(loggedIn => {
+      if (loggedIn) {
+        this.isAdmin = this.authService.isAdmin;
+        this.startForumPolling();
+      } else {
+        this.isAdmin = false;
+        this.cleanupAll();
+      }
+      this.cdr.markForCheck();
+    });
+
+    // Also subscribe to role changes
+    this.authService.roleStream$.subscribe(role => {
+      this.isAdmin = role === 'ADMIN';
+      this.cdr.markForCheck();
+    });
+
     this.cartSub = this.cartService.cartCount$.subscribe(count => {
       this.cartCount = count;
       this.cdr.markForCheck();
     });
-    // Track dark pages
+
     const darkRoutes = ['/shop', '/formations', '/admin'];
     this.isDarkPage = darkRoutes.some(r => this.router.url.startsWith(r));
-    this.router.events.subscribe(e => {
-      if (e instanceof NavigationEnd) {
-        this.isDarkPage = darkRoutes.some(r => e.urlAfterRedirects.startsWith(r));
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-    if (this.cartSub) {
-      this.cartSub.unsubscribe();
-    }
-  }
-
-      this.cdr.markForCheck();
-    });
 
     this.routeSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
+        this.isAdmin = this.authService.isAdmin;
+        this.isDarkPage = darkRoutes.some(r => e.urlAfterRedirects.startsWith(r));
         if (e.urlAfterRedirects.startsWith('/messages')) {
           this.messageUnreadCount = 0;
-          this.cdr.markForCheck();
         }
+        this.cdr.markForCheck();
       });
   }
 
-  // =================================================
-  // FORUM NOTIFICATIONS
-  // =================================================
   private startForumPolling(): void {
     if (this.pollInterval) return;
-
     this.fetchNotifications();
     this.pollInterval = setInterval(() => this.fetchNotifications(), 30000);
   }
@@ -117,16 +113,18 @@ export class NavComponent implements OnInit, OnDestroy {
     }
   }
 
+  private stopMessageSync(): void {
+    this.messageSub?.unsubscribe();
+    this.messageSub = undefined;
+  }
+
   fetchNotifications(): void {
     this.forumService.getUnreadNotifications()
       .pipe(catchError(() => of([])))
       .subscribe((nots: ForumNotification[]) => {
         this.notifications = nots.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime()
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-
         this.unreadCount = this.notifications.filter(n => !n.isRead).length;
         this.cdr.markForCheck();
       });
@@ -134,7 +132,6 @@ export class NavComponent implements OnInit, OnDestroy {
 
   markAsRead(n: ForumNotification, event: Event): void {
     event.stopPropagation();
-
     this.forumService.markNotificationAsRead(n.id).subscribe(() => {
       n.isRead = true;
       this.unreadCount = Math.max(0, this.unreadCount - 1);
@@ -142,24 +139,22 @@ export class NavComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleProfileMenu(event: Event) {
+  toggleProfileMenu(event: Event): void {
     event.stopPropagation();
     this.showProfileMenu = !this.showProfileMenu;
     this.showDropdown = false;
   }
 
-  logout() {
-    this.authService.logout().subscribe({
-      next: () => this.router.navigate(['/']),
-      error: () => { this.authService.logoutLocal(); this.router.navigate(['/']); }
-    });
+  toggleDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showDropdown = !this.showDropdown;
     this.showProfileMenu = false;
   }
 
-  @HostListener('document:click')
-  closeDropdown() {
+  toggleChatDropdown(event: Event): void {
+    event.stopPropagation();
+    this.showChatDropdown = !this.showChatDropdown;
     this.showDropdown = false;
-    this.showProfileMenu = false;
   }
 
   openMessages(): void {
@@ -171,66 +166,55 @@ export class NavComponent implements OnInit, OnDestroy {
     if (this.authService.isLoggedIn) {
       void this.router.navigateByUrl('/chat');
     } else {
-      void this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/chat' }
-      });
+      void this.router.navigate(['/login'], { queryParams: { returnUrl: '/chat' } });
     }
   }
 
   logout(): void {
     this.messagerieService.disconnect();
-    this.authService.logout();
-
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/']),
+      error: () => { this.authService.logoutLocal(); this.router.navigate(['/']); }
+    });
+    this.showProfileMenu = false;
     this.cleanupAll();
   }
 
-  // =================================================
-  // NOTIFICATIONS (DESKTOP)
-  // =================================================
   private requestNotificationPermission(): void {
     if (!('Notification' in window)) return;
-
-    if (Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => { });
+    if ((window as any).Notification.permission === 'default') {
+      (window as any).Notification.requestPermission().catch(() => {});
     }
   }
 
   private showDesktopNotification(title: string, body: string): void {
     if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-
-    new Notification(`New message from ${title}`, {
+    if ((window as any).Notification.permission !== 'granted') return;
+    new (window as any).Notification(`New message from ${title}`, {
       body: body.length > 90 ? body.slice(0, 87) + '...' : body
     });
   }
 
-  // =================================================
-  // CLEANUP
-  // =================================================
   private cleanupAll(): void {
     this.stopForumPolling();
     this.stopMessageSync();
-
     this.notifications = [];
     this.unreadCount = 0;
     this.messageUnreadCount = 0;
     this.currentUser = null;
-
-    this.messageSub?.unsubscribe();
-    this.messageSub = undefined;
   }
 
   ngOnDestroy(): void {
     this.authSub?.unsubscribe();
     this.routeSub?.unsubscribe();
-    this.messageSub?.unsubscribe();
+    this.cartSub?.unsubscribe();
     this.cleanupAll();
   }
 
-  // close dropdown
   @HostListener('document:click')
   closeDropdown(): void {
     this.showDropdown = false;
+    this.showProfileMenu = false;
     this.showChatDropdown = false;
   }
 }

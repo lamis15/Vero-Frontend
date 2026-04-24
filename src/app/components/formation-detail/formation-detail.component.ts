@@ -49,12 +49,12 @@ export class FormationDetailComponent implements OnInit {
         this.formation = formation;
         this.loadSessions();
         this.loadResources();
-        // Load user AFTER formation is ready so checkQuizStatus works
+        this.checkQuizStatus(); // always check quiz
+        // Load user AFTER formation is ready
         if (this.authService.isLoggedIn) {
           this.authService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
-              this.checkQuizStatus();
             }
           });
         }
@@ -88,7 +88,8 @@ export class FormationDetailComponent implements OnInit {
   }
 
   checkQuizStatus(): void {
-    if (!this.formation || this.formation.status !== 'COMPLETED') return;
+    if (!this.formation) return;
+    // Check quiz availability regardless of status
     this.formationService.getQuiz(this.formationId).subscribe({
       next: () => { this.hasQuiz = true; },
       error: () => { this.hasQuiz = false; }
@@ -116,7 +117,6 @@ export class FormationDetailComponent implements OnInit {
 
   canTakeQuiz(): boolean {
     return this.isParticipant() &&
-           this.formation?.status === 'COMPLETED' &&
            this.hasQuiz &&
            !this.quizPassed;
   }

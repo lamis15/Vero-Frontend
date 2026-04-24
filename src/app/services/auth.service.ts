@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, of, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-/* ===================== MODELS ===================== */
 
 export interface UserResponse {
   id: number;
@@ -37,8 +35,6 @@ export interface PasskeyLoginOptionsResponse {
   allowCredentialIds: string[];
 }
 
-/* ===================== SERVICE ===================== */
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
@@ -52,9 +48,7 @@ export class AuthService {
   private loggedIn$ = new BehaviorSubject<boolean>(this.hasToken());
   private role$ = new BehaviorSubject<string | null>(this.readRole());
 
-  constructor(private http: HttpClient) { }
-
-  /* ===================== STATE ===================== */
+  constructor(private http: HttpClient) {}
 
   get isLoggedIn(): boolean {
     return this.hasToken();
@@ -81,8 +75,6 @@ export class AuthService {
     return this.currentUser?.email || this.getTokenPayload()?.sub || null;
   }
 
-  /* ===================== ROLE HELPERS ===================== */
-
   get isAdmin(): boolean {
     return this.currentUserRole === 'ADMIN';
   }
@@ -95,8 +87,6 @@ export class AuthService {
     return this.isAdmin || this.isPartner;
   }
 
-  /* ===================== TOKEN ===================== */
-
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
@@ -104,7 +94,6 @@ export class AuthService {
   private getTokenPayload(): any | null {
     const token = this.getToken();
     if (!token) return null;
-
     try {
       return JSON.parse(atob(token.split('.')[1]));
     } catch {
@@ -112,7 +101,9 @@ export class AuthService {
     }
   }
 
-  /* ===================== AUTH ===================== */
+  private readRole(): string | null {
+    return localStorage.getItem(this.roleKey);
+  }
 
   login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API}/login`, { email, password })
@@ -134,72 +125,35 @@ export class AuthService {
 
   getMe(): Observable<UserResponse> {
     return this.http.get<UserResponse>(`${this.API}/me`).pipe(
-      tap(user => localStorage.setItem(this.userKey, JSON.stringify(user)))
+      tap(user => localStorage.setItem(this.userKey, JSON.stringify(user))),
+      catchError(() => {
+        const cached = this.currentUser;
+        if (cached) return of(cached);
+        return throwError(() => new Error('Not authenticated'));
+      })
     );
   }
-
-  /* ===================== PASSKEY ===================== */
 
   getCurrentUser(): Observable<any> {
     return this.http.get(`${this.API}/me`);
   }
 
-  // ─── Login ──────────────────────────────────────────────────────────────────
-  login(email: string, password: string): Observable<{ token: string }> {
-    return this.http
-      .post<{ token: string }>(`${this.API}/login`, { email, password })
-      .pipe(
-        tap(res => {
-          console.log('🔐 Login successful for:', email);
-          console.log('📦 Clearing old user data...');
-          // Clear all user-specific data before logging in
-          this.clearUserData();
-          console.log('✅ Old data cleared');
-          // Set the new token
-          localStorage.setItem(this.tokenKey, res.token);
-          console.log('🎫 New token stored');
-          this.loggedIn$.next(true);
-          
-          // Verify token was stored correctly
-          const storedToken = localStorage.getItem(this.tokenKey);
-          if (storedToken) {
-            try {
-              const payload = JSON.parse(atob(storedToken.split('.')[1]));
-              console.log('👤 Logged in as:', payload.sub);
-            } catch (e) {
-              console.error('❌ Error decoding token:', e);
-            }
-          }
-          
-          // JWT has no role → fetch it from /api/users
-          this.fetchAndStoreRole(res.token, email);
-        })
-      );
+  passkeyRegisterOptions(email: string) {
+    return this.http.post<PasskeyRegisterOptionsResponse>(`${this.API}/passkey/register/options`, { email });
   }
 
   passkeyRegisterVerify(email: string, credentialId: string, challenge: string) {
-    return this.http.post(`${this.API}/passkey/register/verify`, {
-      email,
-      credentialId,
-      challenge
-    });
+    return this.http.post(`${this.API}/passkey/register/verify`, { email, credentialId, challenge });
   }
 
   passkeyLoginOptions(email: string) {
-    return this.http.post<PasskeyLoginOptionsResponse>(
-      `${this.API}/passkey/login/options`,
-      { email }
-    );
+    return this.http.post<PasskeyLoginOptionsResponse>(`${this.API}/passkey/login/options`, { email });
   }
 
   passkeyLoginVerify(email: string, credentialId: string, challenge: string) {
-    return this.http.post<AuthResponse>(
-      `${this.API}/passkey/login/verify`,
-      { email, credentialId, challenge }
-    ).pipe(tap(res => this.applyAuthResponse(res)));
+    return this.http.post<AuthResponse>(`${this.API}/passkey/login/verify`, { email, credentialId, challenge })
+      .pipe(tap(res => this.applyAuthResponse(res)));
   }
-
-  /* ===================== SOCIAL ===================== */
 
   applySocialSession(params: URLSearchParams): boolean {
     const accessToken = params.get('accessToken');
@@ -208,29 +162,16 @@ export class AuthService {
     const fullName = params.get('fullName');
     const role = params.get('role');
 
-    if (!accessToken || !refreshToken || !email || !fullName || !role) {
-      return false;
-    }
+    if (!accessToken || !refreshToken || !email || !fullName || !role) return false;
 
-    const user: UserResponse = {
-      id: 0,
-      fullName,
-      email,
-      role,
-      verified: true,
-      banned: false,
-      image: null
-    };
-
+    const user: UserResponse = { id: 0, fullName, email, role, verified: true, banned: false, image: null };
     this.storeSession(accessToken, refreshToken, user);
     return true;
   }
 
   getSocialAuthUrl(provider: 'google' | 'github' | 'facebook'): string {
-    return `${environment.authServerUrl}/oauth2/authorization/${provider}`;
+    return `${environment.apiUrl}/oauth2/authorization/${provider}`;
   }
-
-  /* ===================== SESSION ===================== */
 
   private applyAuthResponse(res: AuthResponse): void {
     this.storeSession(res.accessToken, res.refreshToken, res.user);
@@ -241,7 +182,6 @@ export class AuthService {
     localStorage.setItem(this.refreshTokenKey, refreshToken);
     localStorage.setItem(this.roleKey, user.role);
     localStorage.setItem(this.userKey, JSON.stringify(user));
-
     this.loggedIn$.next(true);
     this.role$.next(user.role);
   }
@@ -251,7 +191,6 @@ export class AuthService {
     this.role$.next(this.readRole());
   }
 
-  // ─── Logout ─────────────────────────────────────────────────────────────────
   logout(): Observable<any> {
     return this.http.post<any>(`${this.API}/logout`, {}).pipe(
       tap(() => {
@@ -269,20 +208,12 @@ export class AuthService {
   }
 
   private clearUserData(): void {
-    console.log('🧹 Clearing user data from localStorage...');
-    // Clear all user-specific data from localStorage
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.userKey);
     localStorage.removeItem('vero_cart');
-    console.log('✨ User data cleared:', {
-      token: localStorage.getItem(this.tokenKey),
-      role: localStorage.getItem(this.roleKey),
-      cart: localStorage.getItem('vero_cart')
-    });
-    // Add any other user-specific keys here if needed
   }
-
-  /* ===================== UTIL ===================== */
 
   private hasToken(): boolean {
     return !!localStorage.getItem(this.tokenKey);

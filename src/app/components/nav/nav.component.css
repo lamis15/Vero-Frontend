@@ -434,10 +434,11 @@ nav.nav-transparent .nav-cta:hover {
   position: absolute;
   top: calc(100% + 0.625rem);
   right: 0;
-  background: #fff;
+  background: #0e2a1e;
+  border: 1px solid rgba(45,212,160,0.2);
   border-radius: 0.75rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  min-width: 190px;
   padding: 0.375rem;
   z-index: 1000;
   animation: dropIn 0.15s ease;
@@ -456,7 +457,7 @@ nav.nav-transparent .nav-cta:hover {
   border-radius: 0.5rem;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #1a1c19;
+  color: #e8f5f0;
   text-decoration: none;
   background: none;
   border: none;
@@ -464,20 +465,20 @@ nav.nav-transparent .nav-cta:hover {
   cursor: pointer;
   transition: background 0.15s;
 }
-.profile-item:hover { background: #f4f4ef; }
-.profile-item svg { flex-shrink: 0; color: #555; }
+.profile-item:hover { background: rgba(45,212,160,0.1); }
+.profile-item svg { flex-shrink: 0; color: #7aaa94; }
 
 .profile-divider {
   height: 1px;
-  background: #e8e8e0;
+  background: rgba(45,212,160,0.15);
   margin: 0.25rem 0.5rem;
 }
 
 .profile-item--logout {
-  color: #c0392b;
+  color: #f87171;
 }
-.profile-item--logout svg { color: #c0392b; }
-.profile-item--logout:hover { background: #fce8e8; }
+.profile-item--logout svg { color: #f87171; }
+.profile-item--logout:hover { background: rgba(248,113,113,0.1); }
 
 /* ── Cart Icon ────────────────────────────────────────────────── */
 .nav-cart { position: relative; }
@@ -487,15 +488,15 @@ nav.nav-transparent .nav-cta:hover {
   background: none;
   border: none;
   cursor: pointer;
-  color: inherit;
+  color: #2dd4a0;
   padding: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.btn-cart:hover { background: rgba(255,255,255,0.15); }
+.btn-cart:hover { background: rgba(45,212,160,0.15); color: #22b389; }
 
 /* ── Dark page nav backdrop ───────────────────────────────────── */
 nav.nav-transparent.nav-dark-bg {
