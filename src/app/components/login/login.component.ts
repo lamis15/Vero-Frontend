@@ -1,16 +1,131 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Router, ActivatedRoute } from '@angular/router';
+import {
+  trigger,
+  transition,
+  style,
+  animate,
+  query,
+  group,
+} from '@angular/animations';
 import { AuthService } from '../../services/auth.service';
+import { firstValueFrom } from 'rxjs';
+
+export const slideAnimation = trigger('slideAnimation', [
+  // Login → Register (slide left)
+  transition('login => register', [
+    query(':enter, :leave', [
+      style({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%'
+      })
+    ], { optional: true }),
+    group([
+      query(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ], { optional: true }),
+      query(':leave', [
+        style({ transform: 'translateX(0)', opacity: 1 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(-100%)', opacity: 0 })
+        ),
+      ], { optional: true }),
+    ]),
+  ]),
+
+  // Register → Login (slide right)
+  transition('register => login', [
+    query(':enter, :leave', [
+      style({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%'
+      })
+    ], { optional: true }),
+    group([
+      query(':enter', [
+        style({ transform: 'translateX(-100%)', opacity: 0 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ], { optional: true }),
+      query(':leave', [
+        style({ transform: 'translateX(0)', opacity: 1 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(100%)', opacity: 0 })
+        ),
+      ], { optional: true }),
+    ]),
+  ]),
+
+  // Login / Register → Forgot Password (slide left)
+  transition('* => forgot-password', [
+    query(':enter, :leave', [
+      style({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%'
+      })
+    ], { optional: true }),
+    group([
+      query(':enter', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ], { optional: true }),
+      query(':leave', [
+        style({ transform: 'translateX(0)', opacity: 1 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(-100%)', opacity: 0 })
+        ),
+      ], { optional: true }),
+    ]),
+  ]),
+
+  // Forgot Password → Login (slide right)
+  transition('forgot-password => *', [
+    query(':enter, :leave', [
+      style({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%'
+      })
+    ], { optional: true }),
+    group([
+      query(':enter', [
+        style({ transform: 'translateX(-100%)', opacity: 0 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(0)', opacity: 1 })
+        ),
+      ], { optional: true }),
+      query(':leave', [
+        style({ transform: 'translateX(0)', opacity: 1 }),
+        animate('400ms cubic-bezier(0.35, 0, 0.25, 1)',
+          style({ transform: 'translateX(100%)', opacity: 0 })
+        ),
+      ], { optional: true }),
+    ]),
+  ]),
+]);
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrl: './login.component.scss',
+  animations: [slideAnimation],
 })
 export class LoginComponent implements OnInit {
   loginEmail = '';
@@ -42,7 +157,7 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     const r = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -50,9 +165,11 @@ export class LoginComponent implements OnInit {
       this.returnUrl = r;
     }
 
-    this.passkeySupported = typeof window !== 'undefined' && 'PublicKeyCredential' in window;
+    this.passkeySupported =
+      typeof window !== 'undefined' && 'PublicKeyCredential' in window;
     if (!this.passkeySupported) {
-      this.passkeyInfo = 'Passkey sign-in is only available on compatible devices and browsers.';
+      this.passkeyInfo =
+        'Passkey sign-in is only available on compatible devices and browsers.';
     }
 
     const queryParams = new URLSearchParams(window.location.search);
@@ -71,7 +188,9 @@ export class LoginComponent implements OnInit {
     }
 
     if (socialError) {
-      this.loginError = reason ? `Social sign-in failed: ${reason}` : 'Social sign-in failed. Check your provider keys on the backend, then try again.';
+      this.loginError = reason
+        ? `Social sign-in failed: ${reason}`
+        : 'Social sign-in failed. Check your provider keys on the backend, then try again.';
       window.history.replaceState({}, document.title, '/login');
     }
   }
@@ -96,8 +215,9 @@ export class LoginComponent implements OnInit {
     this.forgotPasswordSuccess = false;
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (file) {
       if (file.size > 500 * 1024) {
         this.errImage = 'Image is too large. Please select a file smaller than 500KB.';
@@ -148,25 +268,25 @@ export class LoginComponent implements OnInit {
           err?.error?.details?.[0]?.defaultMessage ||
           err?.error?.errors?.[0]?.defaultMessage;
 
-        const isGeneric = rawMessage === 'Forbidden' || rawMessage === 'Unauthorized';
+        const isGeneric =
+          rawMessage === 'Forbidden' || rawMessage === 'Unauthorized';
 
         if (rawMessage && !isGeneric && err?.status !== 0) {
           this.loginError = rawMessage;
           return;
         }
-
         if (err?.status === 401 || err?.status === 403) {
-          this.loginError = 'Invalid credentials. Please check your email and password. If you just registered, you may need to verify your email first.';
+          this.loginError =
+            'Invalid credentials. Please check your email and password. If you just registered, you may need to verify your email first.';
           return;
         }
-
         if (err?.status === 0) {
-          this.loginError = 'Connection failed. Please ensure the backend is running.';
+          this.loginError =
+            'Connection failed. Please ensure the backend is running.';
           return;
         }
-
         this.loginError = 'Authentication failed. Please try again.';
-      }
+      },
     });
   }
 
@@ -193,42 +313,49 @@ export class LoginComponent implements OnInit {
     if (!valid) return;
 
     this.loginLoading = true;
-    this.authService.register({
-      fullName: this.registerFullName,
-      email: this.registerEmail,
-      password: this.registerPassword,
-      image: this.registerImage || undefined
-    }).subscribe({
-      next: () => {
-        this.loginLoading = false;
-        this.registrationSuccess = true;
-      },
-      error: (err) => {
-        this.loginLoading = false;
-        const backendMessage =
-          err?.error?.message ||
-          err?.error?.error ||
-          (typeof err?.error === 'string' ? err.error : null) ||
-          err?.error?.details?.[0]?.defaultMessage ||
-          err?.error?.errors?.[0]?.defaultMessage;
-        if (backendMessage) {
-          this.loginError = backendMessage;
-          return;
-        }
-        if (err?.status === 409) {
-          this.loginError = 'This email is already used. Try another email or login.';
-          return;
-        }
-        this.loginError = 'Registration failed. Please check your data and try again.';
-      }
-    });
+    this.authService
+      .register({
+        fullName: this.registerFullName,
+        email: this.registerEmail,
+        password: this.registerPassword,
+        image: this.registerImage || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.loginLoading = false;
+          this.registrationSuccess = true;
+        },
+        error: (err) => {
+          this.loginLoading = false;
+          const backendMessage =
+            err?.error?.message ||
+            err?.error?.error ||
+            (typeof err?.error === 'string' ? err.error : null) ||
+            err?.error?.details?.[0]?.defaultMessage ||
+            err?.error?.errors?.[0]?.defaultMessage;
+          if (backendMessage) {
+            this.loginError = backendMessage;
+            return;
+          }
+          if (err?.status === 409) {
+            this.loginError =
+              'This email is already used. Try another email or login.';
+            return;
+          }
+          this.loginError =
+            'Registration failed. Please check your data and try again.';
+        },
+      });
   }
 
   forgotPassword(): void {
     this.errForgotEmail = '';
     this.loginError = '';
 
-    if (!this.forgotPasswordEmail.trim() || !this.forgotPasswordEmail.includes('@')) {
+    if (
+      !this.forgotPasswordEmail.trim() ||
+      !this.forgotPasswordEmail.includes('@')
+    ) {
       this.errForgotEmail = 'Please provide a valid email address.';
       return;
     }
@@ -252,7 +379,7 @@ export class LoginComponent implements OnInit {
           return;
         }
         this.loginError = 'Failed to send reset email. Please try again.';
-      }
+      },
     });
   }
 
@@ -267,9 +394,11 @@ export class LoginComponent implements OnInit {
       return;
     }
     if (typeof window !== 'undefined' && !window.isSecureContext) {
-      this.passkeyInfo = 'Passkey requires a secure context (https or localhost).';
+      this.passkeyInfo =
+        'Passkey requires a secure context (https or localhost).';
       return;
     }
+
     this.loginError = '';
     this.passkeyInfo = 'Opening Face ID / Passkey...';
     const email = this.loginEmail.trim().toLowerCase();
@@ -285,39 +414,57 @@ export class LoginComponent implements OnInit {
       const backendMessage = this.extractBackendErrorMessage(error);
 
       if (error?.status === 0) {
-        this.passkeyInfo = 'Connection failed. Please ensure the backend is running on port 9090.';
+        this.passkeyInfo =
+          'Connection failed. Please ensure the backend is running on port 9090.';
         return;
       }
       if (error?.name === 'NotAllowedError') {
-        this.passkeyInfo = 'Passkey request was canceled or blocked by the browser.';
+        this.passkeyInfo =
+          'Passkey request was canceled or blocked by the browser.';
         return;
       }
-      const genericBadRequest = error?.status === 400 && (!backendMessage || backendMessage === 'Bad Request');
+      const genericBadRequest =
+        error?.status === 400 &&
+        (!backendMessage || backendMessage === 'Bad Request');
       if (genericBadRequest) {
         if (this.loginPassword) {
           try {
-            await this.createPasskeyForCurrentCredentials(email, this.loginPassword);
+            await this.createPasskeyForCurrentCredentials(
+              email,
+              this.loginPassword
+            );
             await this.tryPasskeyLogin(email);
           } catch (createError: any) {
-            this.passkeyInfo = this.extractBackendErrorMessage(createError) || 'Unable to create passkey for this account.';
+            this.passkeyInfo =
+              this.extractBackendErrorMessage(createError) ||
+              'Unable to create passkey for this account.';
           }
         } else {
-          this.passkeyInfo = 'Passkey not ready for this account. Enter email and password once, then click Face ID again.';
+          this.passkeyInfo =
+            'Passkey not ready for this account. Enter email and password once, then click Face ID again.';
         }
         return;
       }
 
-      const noPasskey = typeof backendMessage === 'string' && backendMessage.toLowerCase().includes('no passkey');
+      const noPasskey =
+        typeof backendMessage === 'string' &&
+        backendMessage.toLowerCase().includes('no passkey');
 
       if (noPasskey && this.loginPassword) {
         try {
-          await this.createPasskeyForCurrentCredentials(email, this.loginPassword);
+          await this.createPasskeyForCurrentCredentials(
+            email,
+            this.loginPassword
+          );
           await this.tryPasskeyLogin(email);
         } catch (createError: any) {
-          this.passkeyInfo = createError?.error?.message || 'Unable to create passkey for this account.';
+          this.passkeyInfo =
+            createError?.error?.message ||
+            'Unable to create passkey for this account.';
         }
       } else if (noPasskey) {
-        this.passkeyInfo = 'No passkey registered for this account. Login once with password to create it.';
+        this.passkeyInfo =
+          'No passkey registered for this account. Login once with password to create it.';
       } else {
         this.passkeyInfo = backendMessage || 'Passkey authentication failed.';
       }
@@ -337,57 +484,73 @@ export class LoginComponent implements OnInit {
     );
   }
 
-  private async createPasskeyForCurrentCredentials(email: string, password: string): Promise<void> {
+  private async createPasskeyForCurrentCredentials(
+    email: string,
+    password: string
+  ): Promise<void> {
     await firstValueFrom(this.authService.login(email, password));
-    const options = await firstValueFrom(this.authService.passkeyRegisterOptions(email));
+    const options = await firstValueFrom(
+      this.authService.passkeyRegisterOptions(email)
+    );
 
-    const credential = await navigator.credentials.create({
+    const credential = (await navigator.credentials.create({
       publicKey: {
         challenge: this.base64UrlToBuffer(options.challenge),
         rp: { id: options.rpId, name: options.rpName },
         user: {
           id: this.base64UrlToBuffer(options.userId),
           name: options.userName,
-          displayName: options.displayName
+          displayName: options.displayName,
         },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
         authenticatorSelection: { userVerification: 'preferred' },
         timeout: 60000,
-        attestation: 'none'
-      }
-    }) as PublicKeyCredential | null;
+        attestation: 'none',
+      },
+    })) as PublicKeyCredential | null;
 
     if (!credential) {
       throw new Error('Passkey creation canceled.');
     }
 
     await firstValueFrom(
-      this.authService.passkeyRegisterVerify(email, this.bufferToBase64Url(credential.rawId), options.challenge)
+      this.authService.passkeyRegisterVerify(
+        email,
+        this.bufferToBase64Url(credential.rawId),
+        options.challenge
+      )
     );
-    this.passkeyInfo = 'Passkey created successfully. You can now use Face ID / biometrics.';
+    this.passkeyInfo =
+      'Passkey created successfully. You can now use Face ID / biometrics.';
   }
 
   private async tryPasskeyLogin(email: string): Promise<void> {
-    const options = await firstValueFrom(this.authService.passkeyLoginOptions(email));
-    const assertion = await navigator.credentials.get({
+    const options = await firstValueFrom(
+      this.authService.passkeyLoginOptions(email)
+    );
+    const assertion = (await navigator.credentials.get({
       publicKey: {
         challenge: this.base64UrlToBuffer(options.challenge),
         rpId: options.rpId,
-        allowCredentials: options.allowCredentialIds.map((id) => ({
+        allowCredentials: options.allowCredentialIds.map((id: string) => ({
           id: this.base64UrlToBuffer(id),
-          type: 'public-key'
+          type: 'public-key' as PublicKeyCredentialType,
         })),
         userVerification: 'preferred',
-        timeout: 60000
-      }
-    }) as PublicKeyCredential | null;
+        timeout: 60000,
+      },
+    })) as PublicKeyCredential | null;
 
     if (!assertion) {
       throw new Error('Passkey login canceled.');
     }
 
     const res = await firstValueFrom(
-      this.authService.passkeyLoginVerify(email, this.bufferToBase64Url(assertion.rawId), options.challenge)
+      this.authService.passkeyLoginVerify(
+        email,
+        this.bufferToBase64Url(assertion.rawId),
+        options.challenge
+      )
     );
     if (res?.user?.role === 'ADMIN') {
       await this.router.navigateByUrl('/admin');
@@ -398,21 +561,29 @@ export class LoginComponent implements OnInit {
 
   private base64UrlToBuffer(base64Url: string): ArrayBuffer {
     const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
-    const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = (base64Url + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
+    for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    return bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength
+    );
   }
 
   private bufferToBase64Url(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
     let binary = '';
-    for (let i = 0; i < bytes.length; i += 1) {
+    for (let i = 0; i < bytes.length; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   }
 }
