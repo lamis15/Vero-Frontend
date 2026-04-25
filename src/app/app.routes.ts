@@ -116,7 +116,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    loadComponent: () => import('./components/admin/admin.component').then(m => m.AdminComponent)
+    loadComponent: () => import('./components/admin/admin').then(m => m.Admin)
   },
   {
     path: 'my-reservations',

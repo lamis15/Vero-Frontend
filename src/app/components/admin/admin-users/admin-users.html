@@ -1,0 +1,253 @@
+<!-- ═══ USERS ═══ -->
+@if (activeTab === 'users') {
+  <section class="vc-section">
+    <div class="vc-section-head">
+      <div>
+        <h2 class="vc-h2">Members</h2>
+        <p class="vc-muted">Search, filter and moderate accounts.</p>
+      </div>
+      <div class="vc-filters">
+        <input type="text" placeholder="Search users" [(ngModel)]="searchQuery" (input)="onSearchChange()" class="vc-input" />
+        <select [(ngModel)]="selectedRole" (change)="onRoleFilterChange()" class="vc-input">
+          <option value="">All roles</option>
+          <option value="ADMIN">Admin</option>
+          <option value="USER">User</option>
+          <option value="PARTNER">Partner</option>
+        </select>
+        <select [(ngModel)]="usersPerPage" (change)="onPageSizeChange()" class="vc-input sm">
+          <option [ngValue]="10">10 / page</option>
+          <option [ngValue]="20">20 / page</option>
+          <option [ngValue]="30">30 / page</option>
+        </select>
+      </div>
+    </div>
+
+    @if (error) {
+      <p class="vc-empty">{{ error }}</p>
+    } @else if (!loading && users.length === 0) {
+      <p class="vc-empty">No users match the current filters.</p>
+    } @else if (users.length > 0 || loading) {
+      <table class="vc-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users; track user.id) {
+            <tr [class.suspended]="user.banned">
+              <td>
+                <div class="vc-person">
+                  <div class="vc-avatar" [attr.data-role]="user.role">{{ initials(user.fullName) }}</div>
+                  <div>
+                    <strong>{{ user.fullName }}</strong>
+                    <small>{{ user.email }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="vc-tag">{{ user.role }}</span>
+              </td>
+              <td>
+                <div class="vc-tag-stack">
+                  <span class="vc-tag" [class.ok]="user.verified" [class.warn]="!user.verified">
+                    {{ user.verified ? 'Verified' : 'Pending' }}
+                  </span>
+                  <span class="vc-tag" [class.bad]="user.banned">
+                    {{ user.banned ? 'Suspended' : 'Active' }}
+                  </span>
+                </div>
+              </td>
+              <td class="right">
+                <div class="vc-row-actions">
+                  <button class="vc-link-btn" (click)="startEdit(user)">Edit</button>
+                  <button class="vc-link-btn warn" (click)="toggleBan(user)">{{ user.banned ? 'Restore' : 'Suspend' }}</button>
+                  <button class="vc-link-btn danger" (click)="requestDelete(user.id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="vc-pager">
+        <button class="vc-link-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">← Previous</button>
+        <span class="vc-muted">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="vc-link-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">Next →</button>
+      </div>
+    }
+  </section>
+}
+
+<!-- DELETE MODAL -->
+@if (confirmDeleteId) {
+  <div class="vc-modal-overlay" (click)="cancelDelete()">
+    <div class="vc-modal" (click)="$event.stopPropagation()">
+      <h3>Delete this account</h3>
+      <p>This action is permanent. Related platform data may be affected.</p>
+      <div class="vc-modal-actions">
+        <button class="vc-btn ghost" (click)="cancelDelete()">Cancel</button>
+        <button class="vc-btn danger" (click)="confirmDelete()">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══ ADD USER ═══ -->
+@if (activeTab === 'add') {
+  <form class="vc-compose" (ngSubmit)="createUser()">
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">01 · Identity</span>
+        <h3>Who is joining</h3>
+        <p>Public profile information. Shown to other members across the platform.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Full name</span>
+          <input type="text" [(ngModel)]="newUser.fullName" name="fullName" required placeholder="First &amp; last name" />
+        </label>
+        <label class="vc-line">
+          <span>Email address</span>
+          <input type="email" [(ngModel)]="newUser.email" name="email" required placeholder="name@company.com" />
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">02 · Access</span>
+        <h3>Credentials</h3>
+        <p>The initial password is shared with the member for first sign-in and can be rotated later.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Initial password</span>
+          <input type="password" [(ngModel)]="newUser.password" name="password" required placeholder="At least 8 characters" />
+        </label>
+        <label class="vc-line">
+          <span>Role</span>
+          <select [(ngModel)]="newUser.role" name="role">
+            <option value="USER">Member — standard access</option>
+            <option value="ADMIN">Administrator — full platform access</option>
+            <option value="PARTNER">Partner — managed account</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">03 · Policy</span>
+        <h3>Initial state</h3>
+        <p>Control how the account behaves the moment it is created.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="newUser.verified" name="verified" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Verified on creation</strong>
+            <small>Allow the member to sign in immediately, skipping email verification.</small>
+          </div>
+        </label>
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="newUser.banned" name="banned" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Start suspended</strong>
+            <small>Provision the account but block access until a manual review is complete.</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <footer class="vc-compose-foot">
+      <p class="vc-muted">Creating an account sends no automatic notification. Share the credentials securely.</p>
+      <div class="vc-form-actions">
+        <button class="vc-btn ghost" type="button" (click)="setTab('users')">Cancel</button>
+        <button class="vc-btn primary" type="submit">Create account</button>
+      </div>
+    </footer>
+  </form>
+}
+
+<!-- ═══ EDIT USER ═══ -->
+@if (activeTab === 'edit' && editingUserId) {
+  <form class="vc-compose" (ngSubmit)="saveEdit(editingUserId)">
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">01 · Identity</span>
+        <h3>Profile</h3>
+        <p>Update the information shown to other members across the platform.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Full name</span>
+          <input type="text" [(ngModel)]="editUserForm.fullName" name="editFullName" required />
+        </label>
+        <label class="vc-line">
+          <span>Email address</span>
+          <input type="email" [(ngModel)]="editUserForm.email" name="editEmail" required />
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">02 · Access</span>
+        <h3>Role</h3>
+        <p>Raising or lowering a role takes effect on the next sign-in.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Role</span>
+          <select [(ngModel)]="editUserForm.role" name="editRole">
+            <option value="USER">Member — standard access</option>
+            <option value="ADMIN">Administrator — full platform access</option>
+            <option value="PARTNER">Partner — managed account</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">03 · Policy</span>
+        <h3>Account state</h3>
+        <p>Toggle verification and suspension without leaving the directory.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="editUserForm.verified" name="editVerified" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Verified</strong>
+            <small>Account passes the email verification requirement.</small>
+          </div>
+        </label>
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="editUserForm.banned" name="editBanned" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Suspended</strong>
+            <small>Block access until the account is restored.</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <footer class="vc-compose-foot">
+      <p class="vc-muted">Changes apply immediately. Email notifications are not sent automatically.</p>
+      <div class="vc-form-actions">
+        <button class="vc-btn ghost" type="button" (click)="cancelEdit()">Cancel</button>
+        <button class="vc-btn primary" type="submit">Save changes</button>
+      </div>
+    </footer>
+  </form>
+}
