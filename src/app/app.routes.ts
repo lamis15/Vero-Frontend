@@ -55,6 +55,7 @@ export const routes: Routes = [
     path: 'anomaly',
     loadComponent: () => import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
   },
+  
   { path: '**', redirectTo: '' }
 
 
