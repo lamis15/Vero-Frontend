@@ -1,15 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Post, Comment, Notification } from './forum.models';
+import { Client, IMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class ForumService {
   private readonly API_POSTS = `${environment.apiUrl}/api/posts`;
   private readonly API_COMMENTS = `${environment.apiUrl}/api`; // base for /comments & /posts/{id}/comments
 
-  constructor(private http: HttpClient) {}
+  private notificationSubject = new Subject<Notification>();
+  private notificationStompClient: Client | null = null;
+
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   // ─── POSTS ───
   getAllPosts(): Observable<Post[]> {
@@ -74,5 +83,48 @@ export class ForumService {
 
   markNotificationAsRead(id: number): Observable<Notification> {
     return this.http.put<Notification>(`${this.API_NOTIFICATIONS}/${id}/read`, {});
+  }
+
+  // ─── REAL-TIME NOTIFICATIONS (STOMP) ───
+  subscribeToNotifications(userId: number): Observable<Notification> {
+    if (!this.notificationStompClient || !this.notificationStompClient.connected) {
+      this.connectNotificationStomp(userId);
+    }
+    return this.notificationSubject.asObservable();
+  }
+
+  private connectNotificationStomp(userId: number): void {
+    const wsUrl = this.API_NOTIFICATIONS.replace('/api/notifications', '/ws');
+    const token = this.authService.getToken();
+
+    if (!token) return;
+
+    this.notificationStompClient = new Client({
+      webSocketFactory: () => new SockJS(wsUrl),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      onConnect: () => {
+        this.notificationStompClient!.subscribe(
+          `/topic/notifications/${userId}`,
+          (message: IMessage) => {
+            const notification: Notification = JSON.parse(message.body);
+            this.notificationSubject.next(notification);
+          }
+        );
+      },
+      onStompError: (frame) => {
+        console.error('STOMP notification error:', frame);
+      }
+    });
+
+    this.notificationStompClient.activate();
+  }
+
+  disconnectNotificationStomp(): void {
+    this.notificationStompClient?.deactivate();
   }
 }

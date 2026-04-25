@@ -190,9 +190,7 @@
       <!-- ═══ CARD GRID ═══ -->
       <div class="eco-grid">
 
-        <!-- ──────────────────────────────
-             ANALYTICS CARD (large, 2/3)
-             ────────────────────────────── -->
+        <!-- ANALYTICS CARD (large, 2/3) -->
         <div class="eco-card eco-card-lg eco-anim-stagger-1">
           <!-- EcoScore badge -->
           <div class="eco-score" [style.--sc]="scoreColor">
@@ -261,9 +259,7 @@
           </div>
         </div>
 
-        <!-- ──────────────────────────────
-             SCAN CARD (right, 1/3)
-             ────────────────────────────── -->
+        <!-- SCAN CARD (right, 1/3) -->
         <div class="eco-card eco-card-scan eco-anim-stagger-2">
           <div class="eco-scan-glow"></div>
           <div class="eco-scan-visual">
@@ -284,9 +280,7 @@
           </button>
         </div>
 
-        <!-- ──────────────────────────────
-             GOALS CARD (bottom-left)
-             ────────────────────────────── -->
+        <!-- GOALS CARD (bottom-left) -->
         <div class="eco-card eco-card-goals eco-anim-stagger-3">
           <div class="eco-card-head-inline">
             <h3>Impact Goals</h3>
@@ -345,7 +339,7 @@
             </div>
           }
 
-          <!-- Nearby bins styled section -->
+          <!-- Goals stat -->
           @if (dashboard.totalGoals > 0) {
             <div class="eco-goals-stat">
               <span class="eco-gs-achieved">{{ dashboard.achievedGoals }}</span>
@@ -354,13 +348,11 @@
           }
         </div>
 
-        <!-- ──────────────────────────────
-             HISTORY CARD (bottom-right)
-             ────────────────────────────── -->
+        <!-- HISTORY CARD (bottom-right) -->
         <div class="eco-card eco-card-history eco-anim-stagger-4">
           <div class="eco-history-bg"></div>
           <div class="eco-history-content">
-            <h3>History <span>& Trends</span></h3>
+            <h3>History <span>&amp; Trends</span></h3>
 
             <!-- Trend chart -->
             <canvas #trendCanvas class="eco-trend-canvas"></canvas>
@@ -407,25 +399,27 @@
           </div>
         </div>
       </div>
+
+      <!-- ─── INPUT STRIP (Moved here) ─── -->
+      <div class="eco-input-strip">
+        <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
+        <div class="eco-ai-dot" [class.active]="aiLoading"></div>
+        <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
+               placeholder="Describe an activity — AI calculates impact..."
+               (keyup.enter)="analyzeWithAI()" />
+        <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
+          @if (aiLoading) { <div class="eco-spinner"></div> }
+          @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          }
+        </button>
+        <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
+      </div>
     </main>
 
-    <!-- ─── INPUT STRIP ─── -->
-    <div class="eco-input-strip">
-      <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
-      <div class="eco-ai-dot" [class.active]="aiLoading"></div>
-      <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
-             placeholder="Describe an activity — AI calculates impact..."
-             (keyup.enter)="analyzeWithAI()" />
-      <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
-        @if (aiLoading) { <div class="eco-spinner"></div> }
-        @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        }
-      </button>
-      <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
-    </div>
+
 
     <!-- AI Result Toast -->
     @if (aiResult) {

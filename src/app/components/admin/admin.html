@@ -1,0 +1,1074 @@
+<!-- ═══ VERO ADMIN — ENTERPRISE CONSOLE ═══ -->
+<div class="vc-app">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="vc-nav">
+    <div class="vc-brand">
+      <span class="vc-mark">V</span>
+      <span class="vc-brand-word">Vero</span>
+      <span class="vc-brand-sub">Admin</span>
+    </div>
+
+    <div class="vc-nav-label">Workspace</div>
+    <nav class="vc-nav-list">
+      <button [class.active]="activeTab === 'users'" (pointerdown)="onTabPointerDown('users')" (click)="setTab('users')">
+        Overview
+      </button>
+      <button [class.active]="activeTab === 'messages'" (pointerdown)="onTabPointerDown('messages')" (click)="setTab('messages')">
+        Conversations
+      </button>
+      <button [class.active]="activeTab === 'add'" (pointerdown)="onTabPointerDown('add')" (click)="setTab('add')">
+        Create user
+      </button>
+      <button [class.active]="activeTab === 'products'" (pointerdown)="onTabPointerDown('products')" (click)="setTab('products')">
+        Products
+      </button>
+      <button [class.active]="activeTab === 'formations'" (pointerdown)="onTabPointerDown('formations')" (click)="setTab('formations')">
+        Trainings
+      </button>
+    </nav>
+
+    <div class="vc-nav-art">
+      <img src="assets/images/hero_minimal_leaf.png" alt="" />
+      <div class="vc-nav-art-pill">Eco <em>premium</em></div>
+    </div>
+
+    <div class="vc-nav-foot">
+      @if (adminMe) {
+        <div class="vc-me">
+          <div class="vc-me-avatar">{{ initials(adminMe.fullName) }}</div>
+          <div class="vc-me-body">
+            <strong>{{ adminMe.fullName }}</strong>
+            <small>{{ adminMe.email }}</small>
+          </div>
+        </div>
+      }
+      <button class="vc-link-btn" (click)="logout()">Sign out →</button>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="vc-main">
+
+    <!-- HERO IMAGE STRIP -->
+    <div class="vc-hero" [class.compact]="activeTab !== 'users'">
+      <img class="vc-hero-img" src="assets/images/hero-forest2.png" alt="" />
+      <div class="vc-hero-veil"></div>
+      <div class="vc-hero-inner">
+        <div class="vc-crumb light">Administration · <span>{{
+          activeTab === 'users' ? 'Directory' :
+          activeTab === 'messages' ? 'Conversations' :
+          activeTab === 'add' ? 'New user' :
+          activeTab === 'edit' ? 'Edit user' : ''
+        }}</span></div>
+
+        <div class="vc-hero-row">
+          <div class="vc-hero-text">
+            <h1 class="vc-title light">
+              @switch (activeTab) {
+                @case ('users') { The <em>Directory</em> }
+                @case ('messages') { Conversation <em>monitor</em> }
+                @case ('add') { A <em>new</em> member }
+                @case ('edit') { Editing a <em>member</em> }
+              }
+            </h1>
+            <p class="vc-sub light">
+              @switch (activeTab) {
+                @case ('users') { Manage accounts, roles and moderation actions across the Vero platform. }
+                @case ('messages') { Inspect private conversations and keep supervision light but present. }
+                @case ('add') { Provision a new account with the correct role and initial access policy. }
+                @case ('edit') { Update the selected account in place without leaving the directory. }
+              }
+            </p>
+          </div>
+          <div class="vc-header-actions">
+            <button class="vc-btn ghost-light" (click)="setTab('messages')">Open monitor</button>
+            <button class="vc-btn gold" (click)="setTab('add')">+ New user</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS STRIP -->
+    <section class="vc-stats">
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Total members</span>
+        <strong class="vc-stat-val">{{ totalUsers }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Loaded</span>
+        <strong class="vc-stat-val">{{ users.length }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Suspended</span>
+        <strong class="vc-stat-val">{{ suspendedOnPage }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Threads</span>
+        <strong class="vc-stat-val">{{ monitoredConversationCount }}</strong>
+      </div>
+    </section>
+
+    <!-- AI TOPIC HEATMAP — only on Overview tab -->
+    @if (activeTab === 'users' && topicHeatmapTotal > 0) {
+      <section class="vc-heatmap">
+        <div class="vc-heatmap-head">
+          <div>
+            <span class="vc-heatmap-kicker">— AI · Topic classifier</span>
+            <h3>Conversation <em>heatmap</em></h3>
+          </div>
+          <div class="vc-heatmap-total">
+            <strong>{{ topicHeatmapTotal }}</strong>
+            <span>tagged messages</span>
+          </div>
+        </div>
+
+        <div class="vc-heatmap-bar">
+          @if (topicHeatmap.eco) {
+            <span class="vc-heatmap-seg vc-heatmap-eco"       [style.flex]="topicHeatmap.eco"></span>
+          }
+          @if (topicHeatmap.lifestyle) {
+            <span class="vc-heatmap-seg vc-heatmap-lifestyle" [style.flex]="topicHeatmap.lifestyle"></span>
+          }
+          @if (topicHeatmap.product) {
+            <span class="vc-heatmap-seg vc-heatmap-product"   [style.flex]="topicHeatmap.product"></span>
+          }
+          @if (topicHeatmap.other) {
+            <span class="vc-heatmap-seg vc-heatmap-other"     [style.flex]="topicHeatmap.other"></span>
+          }
+        </div>
+
+        <ul class="vc-heatmap-legend">
+          <li><span class="vc-heatmap-dot vc-heatmap-eco"></span>       Eco &amp; sustainability <em>{{ topicPercent('eco') }}%</em> <small>{{ topicHeatmap.eco }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-lifestyle"></span> Lifestyle <em>{{ topicPercent('lifestyle') }}%</em> <small>{{ topicHeatmap.lifestyle }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-product"></span>   Product <em>{{ topicPercent('product') }}%</em> <small>{{ topicHeatmap.product }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-other"></span>     Other <em>{{ topicPercent('other') }}%</em> <small>{{ topicHeatmap.other }}</small></li>
+        </ul>
+      </section>
+    }
+
+    <!-- BANNERS -->
+    @if (successMessage) { <div class="vc-banner ok">{{ successMessage }}</div> }
+    @if (errorMessage) { <div class="vc-banner err">{{ errorMessage }}</div> }
+
+    <!-- DELETE MODAL -->
+    @if (confirmDeleteId) {
+      <div class="vc-modal-overlay" (click)="cancelDelete()">
+        <div class="vc-modal" (click)="$event.stopPropagation()">
+          <h3>Delete this account</h3>
+          <p>This action is permanent. Related platform data may be affected.</p>
+          <div class="vc-modal-actions">
+            <button class="vc-btn ghost" (click)="cancelDelete()">Cancel</button>
+            <button class="vc-btn danger" (click)="confirmDelete()">Delete permanently</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ USERS ═══ -->
+    @if (activeTab === 'users') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div>
+            <h2 class="vc-h2">Members</h2>
+            <p class="vc-muted">Search, filter and moderate accounts.</p>
+          </div>
+          <div class="vc-filters">
+            <input type="text" placeholder="Search users" [(ngModel)]="searchQuery" (input)="onSearchChange()" class="vc-input" />
+            <select [(ngModel)]="selectedRole" (change)="onRoleFilterChange()" class="vc-input">
+              <option value="">All roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="USER">User</option>
+              <option value="PARTNER">Partner</option>
+            </select>
+            <select [(ngModel)]="usersPerPage" (change)="onPageSizeChange()" class="vc-input sm">
+              <option [ngValue]="10">10 / page</option>
+              <option [ngValue]="20">20 / page</option>
+              <option [ngValue]="30">30 / page</option>
+            </select>
+          </div>
+        </div>
+
+        @if (error) {
+          <p class="vc-empty">{{ error }}</p>
+        } @else if (!loading && users.length === 0) {
+          <p class="vc-empty">No users match the current filters.</p>
+        } @else if (users.length > 0 || loading) {
+          <table class="vc-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of users; track user.id) {
+                <tr [class.suspended]="user.banned">
+                  <td>
+                    <div class="vc-person">
+                      <div class="vc-avatar" [attr.data-role]="user.role">{{ initials(user.fullName) }}</div>
+                      <div>
+                        <strong>{{ user.fullName }}</strong>
+                        <small>{{ user.email }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="vc-tag">{{ user.role }}</span>
+                  </td>
+                  <td>
+                    <div class="vc-tag-stack">
+                      <span class="vc-tag" [class.ok]="user.verified" [class.warn]="!user.verified">
+                        {{ user.verified ? 'Verified' : 'Pending' }}
+                      </span>
+                      <span class="vc-tag" [class.bad]="user.banned">
+                        {{ user.banned ? 'Suspended' : 'Active' }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="right">
+                    <div class="vc-row-actions">
+                      <button class="vc-link-btn" (click)="startEdit(user)">Edit</button>
+                      <button class="vc-link-btn warn" (click)="toggleBan(user)">{{ user.banned ? 'Restore' : 'Suspend' }}</button>
+                      <button class="vc-link-btn danger" (click)="requestDelete(user.id)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <div class="vc-pager">
+            <button class="vc-link-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">← Previous</button>
+            <span class="vc-muted">Page {{ currentPage }} of {{ totalPages }}</span>
+            <button class="vc-link-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages">Next →</button>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ═══ ADD USER ═══ -->
+    @if (activeTab === 'add') {
+      <form class="vc-compose" (ngSubmit)="createUser()">
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">01 · Identity</span>
+            <h3>Who is joining</h3>
+            <p>Public profile information. Shown to other members across the platform.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-line">
+              <span>Full name</span>
+              <input type="text" [(ngModel)]="newUser.fullName" name="fullName" required placeholder="First &amp; last name" />
+            </label>
+            <label class="vc-line">
+              <span>Email address</span>
+              <input type="email" [(ngModel)]="newUser.email" name="email" required placeholder="name@company.com" />
+            </label>
+          </div>
+        </div>
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">02 · Access</span>
+            <h3>Credentials</h3>
+            <p>The initial password is shared with the member for first sign-in and can be rotated later.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-line">
+              <span>Initial password</span>
+              <input type="password" [(ngModel)]="newUser.password" name="password" required placeholder="At least 8 characters" />
+            </label>
+            <label class="vc-line">
+              <span>Role</span>
+              <select [(ngModel)]="newUser.role" name="role">
+                <option value="USER">Member — standard access</option>
+                <option value="ADMIN">Administrator — full platform access</option>
+                <option value="PARTNER">Partner — managed account</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">03 · Policy</span>
+            <h3>Initial state</h3>
+            <p>Control how the account behaves the moment it is created.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-switch">
+              <input type="checkbox" [(ngModel)]="newUser.verified" name="verified" />
+              <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+              <div>
+                <strong>Verified on creation</strong>
+                <small>Allow the member to sign in immediately, skipping email verification.</small>
+              </div>
+            </label>
+            <label class="vc-switch">
+              <input type="checkbox" [(ngModel)]="newUser.banned" name="banned" />
+              <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+              <div>
+                <strong>Start suspended</strong>
+                <small>Provision the account but block access until a manual review is complete.</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <footer class="vc-compose-foot">
+          <p class="vc-muted">Creating an account sends no automatic notification. Share the credentials securely.</p>
+          <div class="vc-form-actions">
+            <button class="vc-btn ghost" type="button" (click)="setTab('users')">Cancel</button>
+            <button class="vc-btn primary" type="submit">Create account</button>
+          </div>
+        </footer>
+      </form>
+    }
+
+    <!-- ═══ EDIT USER ═══ -->
+    @if (activeTab === 'edit' && editingUserId) {
+      <form class="vc-compose" (ngSubmit)="saveEdit(editingUserId)">
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">01 · Identity</span>
+            <h3>Profile</h3>
+            <p>Update the information shown to other members across the platform.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-line">
+              <span>Full name</span>
+              <input type="text" [(ngModel)]="editUserForm.fullName" name="editFullName" required />
+            </label>
+            <label class="vc-line">
+              <span>Email address</span>
+              <input type="email" [(ngModel)]="editUserForm.email" name="editEmail" required />
+            </label>
+          </div>
+        </div>
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">02 · Access</span>
+            <h3>Role</h3>
+            <p>Raising or lowering a role takes effect on the next sign-in.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-line">
+              <span>Role</span>
+              <select [(ngModel)]="editUserForm.role" name="editRole">
+                <option value="USER">Member — standard access</option>
+                <option value="ADMIN">Administrator — full platform access</option>
+                <option value="PARTNER">Partner — managed account</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="vc-group">
+          <aside class="vc-group-aside">
+            <span class="vc-group-kicker">03 · Policy</span>
+            <h3>Account state</h3>
+            <p>Toggle verification and suspension without leaving the directory.</p>
+          </aside>
+          <div class="vc-group-body">
+            <label class="vc-switch">
+              <input type="checkbox" [(ngModel)]="editUserForm.verified" name="editVerified" />
+              <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+              <div>
+                <strong>Verified</strong>
+                <small>Account passes the email verification requirement.</small>
+              </div>
+            </label>
+            <label class="vc-switch">
+              <input type="checkbox" [(ngModel)]="editUserForm.banned" name="editBanned" />
+              <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+              <div>
+                <strong>Suspended</strong>
+                <small>Block access until the account is restored.</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <footer class="vc-compose-foot">
+          <p class="vc-muted">Changes apply immediately. Email notifications are not sent automatically.</p>
+          <div class="vc-form-actions">
+            <button class="vc-btn ghost" type="button" (click)="cancelEdit()">Cancel</button>
+            <button class="vc-btn primary" type="submit">Save changes</button>
+          </div>
+        </footer>
+      </form>
+    }
+
+    <!-- ═══ CONVERSATIONS ═══ -->
+    @if (activeTab === 'messages') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div>
+            <h2 class="vc-h2">Conversation monitor</h2>
+            <p class="vc-muted">Compact split view of all private threads.</p>
+          </div>
+          <div class="vc-filters">
+            <input type="text" placeholder="Search by user or message" [(ngModel)]="conversationSearch" (input)="filterConversations()" class="vc-input" />
+          </div>
+        </div>
+
+        <div class="vc-monitor">
+          <div class="vc-monitor-list">
+            @if (!messagesLoading && adminConversations.length === 0) {
+              <p class="vc-empty slim">No conversations yet.</p>
+            } @else {
+              @for (conversation of adminConversations; track conversation.conversationKey) {
+                <button class="vc-conv" [class.active]="selectedConversation?.conversationKey === conversation.conversationKey"
+                        (pointerdown)="onAdminConversationPointerDown(conversation)" (click)="openAdminConversation(conversation)">
+                  <div class="vc-conv-avatars">
+                    <span>{{ initials(conversation.userA.fullName) }}</span>
+                    <span>{{ initials(conversation.userB.fullName) }}</span>
+                  </div>
+                  <div class="vc-conv-copy">
+                    <strong>{{ conversation.userA.fullName }} · {{ conversation.userB.fullName }}</strong>
+                    <small>{{ conversation.lastMessagePreview || 'No messages yet' }}</small>
+                    <time>{{ conversation.lastMessageTime | date:'short' }}</time>
+                  </div>
+                </button>
+              }
+            }
+          </div>
+
+          <div class="vc-monitor-thread">
+            @if (!selectedConversation) {
+              <p class="vc-empty">Select a conversation to review its history.</p>
+            } @else {
+              <div class="vc-thread-head">
+                <h3>{{ selectedConversation.userA.fullName }} &amp; {{ selectedConversation.userB.fullName }}</h3>
+                <small>{{ selectedConversation.userA.email }} · {{ selectedConversation.userB.email }}</small>
+              </div>
+
+              <div class="vc-thread-feed">
+                @if (!threadLoading && selectedConversationMessages.length === 0) {
+                  <p class="vc-empty slim">No messages in this thread.</p>
+                } @else {
+                  @for (msg of selectedConversationMessages; track msg.id || $index) {
+                    <div class="vc-msg" [class.outgoing]="msg.sender.id === selectedConversation.userA.id">
+                      <div class="vc-msg-bubble">
+                        <div class="vc-msg-head">
+                          <strong>{{ msg.sender.fullName }}</strong>
+                          @if (msg.topic) {
+                            <span class="vc-topic" [attr.data-topic]="msg.topic"
+                                  [title]="'AI confidence: ' + ((msg.topicConfidence ?? 0) * 100 | number:'1.0-0') + '%'">
+                              {{ msg.topic }}
+                            </span>
+                          }
+                        </div>
+                        <p>{{ msg.content }}</p>
+                        <time>{{ msg.timestamp | date:'medium' }}</time>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ═══ PRODUCTS ═══ -->
+    @if (activeTab === 'products') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div>
+            <h2 class="vc-h2">Products</h2>
+            <p class="vc-muted">{{ products.length }} items in the eco-store catalogue.</p>
+          </div>
+          <button class="vc-btn gold" (click)="openProductModal()">+ Add Product</button>
+        </div>
+        @if (productsLoading) {
+          <div class="vc-cards-grid">
+            @for (s of [1,2,3,4,5,6]; track s) {
+              <div class="vc-product-card vc-skeleton"></div>
+            }
+          </div>
+        } @else if (products.length === 0) {
+          <p class="vc-empty">No products found.</p>
+        } @else {
+          <div class="vc-cards-grid">
+            @for (p of products; track p.id) {
+              <div class="vc-product-card">
+                <div class="vc-product-img">
+                  @if (getProductImage(p)) {
+                    <img [src]="getProductImage(p)" [alt]="p.name" />
+                  } @else {
+                    <div class="vc-product-img-placeholder">🌿</div>
+                  }
+                  @if (p.isEcological) {
+                    <span class="vc-eco-badge">Eco</span>
+                  }
+                </div>
+                <div class="vc-product-body">
+                  <div class="vc-product-meta">
+                    <span class="vc-tag sm">{{ p.category.replace('_', ' ') }}</span>
+                    @if (p.origin) { <span class="vc-product-origin">📍 {{ p.origin }}</span> }
+                  </div>
+                  <h3 class="vc-product-name">{{ p.name }}</h3>
+                  <p class="vc-product-desc">{{ p.description }}</p>
+                  <div class="vc-product-footer">
+                    <div class="vc-product-price-row">
+                      <span class="vc-product-price">{{ p.price | number:'1.2-2' }} €</span>
+                      <span class="vc-product-stock" [class.low]="p.stock < 10">
+                        {{ p.stock }} in stock
+                      </span>
+                    </div>
+                    <div class="vc-row-actions">
+                      <button class="vc-link-btn" (click)="openProductModal(p)">Edit</button>
+                      <button class="vc-link-btn danger" (click)="deleteProduct(p.id)">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Product Modal -->
+      @if (showProductModal) {
+        <div class="vc-modal-overlay" (click)="closeProductModal()">
+          <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+            <div class="vc-modal-header">
+              <h3>{{ editingProduct ? 'Edit Product' : 'New Product' }}</h3>
+              <button class="vc-modal-close" (click)="closeProductModal()">✕</button>
+            </div>
+            <div class="vc-modal-body">
+              <div class="vc-modal-grid">
+                <label class="vc-line">
+                  <span>Name *</span>
+                  <input type="text" [(ngModel)]="productForm.name" placeholder="Product name" />
+                </label>
+                <label class="vc-line">
+                  <span>Category</span>
+                  <select [(ngModel)]="productForm.category">
+                    @for (cat of productCategories; track cat) {
+                      <option [value]="cat">{{ cat.replace(/_/g, ' ') }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="vc-line">
+                  <span>Price (€) *</span>
+                  <input type="number" [(ngModel)]="productForm.price" min="0" step="0.01" />
+                </label>
+                <label class="vc-line">
+                  <span>Stock</span>
+                  <input type="number" [(ngModel)]="productForm.stock" min="0" />
+                </label>
+                <label class="vc-line">
+                  <span>Country of Origin</span>
+                  <select [(ngModel)]="productForm.origin" class="vc-country-select">
+                    <option value="">— Select country —</option>
+                    @for (c of countries; track c.name) {
+                      <option [value]="c.name">{{ c.flag }} {{ c.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="vc-switch" style="align-self:center; margin-top:1.2rem;">
+                  <input type="checkbox" [(ngModel)]="productForm.isEcological" />
+                  <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+                  <div><strong>Ecological</strong></div>
+                </label>
+              </div>
+              <label class="vc-line" style="margin-top:.75rem;">
+                <span>Description</span>
+                <textarea [(ngModel)]="productForm.description" rows="3" placeholder="Product description"></textarea>
+              </label>
+              <label class="vc-line" style="margin-top:.75rem;">
+                <span>Image (max 500KB)</span>
+                <input type="file" accept="image/*" (change)="onProductImageSelected($event)" />
+              </label>
+              @if (productForm.image) {
+                <img [src]="productForm.image" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:.5rem;" />
+              }
+            </div>
+            <div class="vc-modal-actions">
+              <button class="vc-btn ghost" (click)="closeProductModal()">Cancel</button>
+              <button class="vc-btn primary" (click)="saveProduct()" [disabled]="productSaving">
+                {{ productSaving ? 'Saving…' : (editingProduct ? 'Save changes' : 'Create product') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ═══ FORMATIONS ═══ -->
+    @if (activeTab === 'formations') {
+      <div class="tab-section animate-fade-in">
+        @if (!selectedFormationForSessions) {
+
+          <!-- Section Header -->
+          <div class="fc-page-header">
+            <div>
+              <h2 class="fc-page-title">Catalogue des Formations</h2>
+              <p class="fc-page-subtitle">Gérez vos programmes d'apprentissage et certifiez vos collaborateurs.</p>
+            </div>
+            <button (click)="openFormationModal()" class="vc-btn gold">
+              + Créer une Formation
+            </button>
+          </div>
+
+          @if (formationsLoading) {
+            <div class="vc-cards-grid">
+              @for (s of [1,2,3]; track s) {
+                <div class="vc-formation-card vc-skeleton"></div>
+              }
+            </div>
+          } @else {
+            <!-- Formation Grid -->
+            <div class="formations-bento">
+              @for (formation of formations; track formation.id) {
+                <div class="formation-card-verdant">
+
+                  <!-- Header: icon + status + pin -->
+                  <div class="fc-header">
+                    <div class="fc-icon-box">🎓</div>
+                    <div class="fc-badges">
+                      @if (formation.pinned) {
+                        <span class="fc-pin-btn">📌</span>
+                      }
+                      <span class="verdant-status-badge" [ngClass]="getFormationStatusClass(formation.status)">
+                        <span class="status-dot-verdant"></span>{{ formation.status }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- ID + Title + Desc -->
+                  <div class="fc-body">
+                    <span class="fc-id-label">ID #{{ formation.id }}</span>
+                    <h3 class="fc-title-text">{{ formation.title }}</h3>
+                    <p class="fc-desc-text">{{ formation.description }}</p>
+                  </div>
+
+                  <!-- Metadata 2×2 -->
+                  <div class="fc-meta">
+                    <div class="fc-meta-item">
+                      <div class="fc-meta-text">
+                        <span class="fc-meta-label">Durée</span>
+                        <span class="fc-meta-val">{{ formation.duration }}h</span>
+                      </div>
+                    </div>
+                    <div class="fc-meta-item">
+                      <div class="fc-meta-text">
+                        <span class="fc-meta-label">Prix</span>
+                        <span class="fc-meta-val">{{ (formation.price ?? 0) > 0 ? formation.price + ' €' : 'Gratuit' }}</span>
+                      </div>
+                    </div>
+                    <div class="fc-meta-item">
+                      <div class="fc-meta-text">
+                        <span class="fc-meta-label">Inscrits</span>
+                        <span class="fc-meta-val">{{ formation.participantIds?.length || 0 }} / {{ formation.maxCapacity }}</span>
+                      </div>
+                    </div>
+                    <div class="fc-meta-item">
+                      <div class="fc-meta-text">
+                        <span class="fc-meta-label">Places libres</span>
+                        <span class="fc-meta-val">{{ formation.maxCapacity - (formation.participantIds?.length || 0) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Capacity bar -->
+                  <div class="fc-fill-row">
+                    <span class="fc-fill-label">Taux de remplissage</span>
+                    <span class="fc-fill-pct">{{ formation.maxCapacity > 0 ? (((formation.participantIds?.length || 0) / formation.maxCapacity) * 100).toFixed(0) : 0 }}%</span>
+                  </div>
+                  <div class="fc-capacity-bar">
+                    <div class="fc-capacity-fill"
+                      [style.width.%]="formation.maxCapacity > 0 ? ((formation.participantIds?.length || 0) / formation.maxCapacity) * 100 : 0"
+                      [class.fc-capacity-full]="(formation.participantIds?.length || 0) >= formation.maxCapacity">
+                    </div>
+                  </div>
+
+                  <!-- Participants toggle -->
+                  <button class="fc-participants-btn" (click)="toggleParticipantsPanel(formation.id!)">
+                    {{ expandedFormationId === formation.id ? '▲ Masquer la liste' : '👤 Voir les participants (' + (formation.participantIds?.length || 0) + ')' }}
+                  </button>
+
+                  <!-- Participants table -->
+                  @if (expandedFormationId === formation.id) {
+                    <div class="fc-participants-panel animate-fade-in">
+                      <div class="fc-participants-scroll">
+                        <table class="fc-participants-table">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Nom</th>
+                              <th>Prénom</th>
+                              <th>Email</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (p of getParticipantDetails(formation.participantIds || []); track p.id) {
+                              <tr>
+                                <td class="fc-participant-id">#{{ p.id }}</td>
+                                <td class="fc-participant-name">{{ p.lastName || p.fullName?.split(' ')[1] || '—' }}</td>
+                                <td class="fc-participant-name">{{ p.firstName || p.fullName?.split(' ')[0] || '—' }}</td>
+                                <td class="p-email-cell">{{ p.email }}</td>
+                              </tr>
+                            }
+                            @if ((formation.participantIds?.length || 0) === 0) {
+                              <tr><td colspan="4" class="fc-no-participants">Aucun inscrit pour le moment</td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Actions -->
+                  <div class="fc-actions">
+                    <button (click)="viewFormationSessions(formation)" class="fc-action-btn fc-action-btn--primary">
+                      📅 Sessions
+                    </button>
+                    <button (click)="openFormationModal(formation)" class="fc-action-btn fc-action-btn--ghost">
+                      ✏️
+                    </button>
+                    <button (click)="togglePin(formation)" class="fc-action-btn fc-action-btn--ghost" [class.fc-pinned]="formation.pinned">
+                      📌
+                    </button>
+                    <button (click)="deleteFormation(formation.id!)" class="fc-action-btn fc-action-btn--delete">
+                      🗑️
+                    </button>
+                  </div>
+
+                </div>
+              }
+
+              @if (formations.length === 0) {
+                <div class="fc-empty">
+                  <h3 class="fc-empty-title">Catalogue vide</h3>
+                  <p class="fc-empty-sub">Commencez par créer votre première formation.</p>
+                  <button (click)="openFormationModal()" class="vc-btn gold">+ Créer une formation</button>
+                </div>
+              }
+            </div>
+          }
+
+        } @else {
+          <!-- Sessions Details View -->
+          <div class="sessions-page-header">
+            <div class="sessions-header-left">
+              <nav class="sessions-breadcrumb">
+                <button (click)="closeSessionsView()" class="breadcrumb-back">← Formations</button>
+                <span class="breadcrumb-current">{{ selectedFormationForSessions.title }}</span>
+              </nav>
+              <h2 class="sessions-page-title">{{ selectedFormationForSessions.title }}</h2>
+            </div>
+            <div class="sessions-header-actions">
+              <button (click)="generateQuizFromResources()" class="vc-btn ghost" [disabled]="generatingQuiz">
+                {{ generatingQuiz ? 'Génération...' : '✨ Générer Quiz IA' }}
+              </button>
+              <button (click)="openSessionModal()" class="vc-btn gold">
+                + Add Session
+              </button>
+            </div>
+          </div>
+
+          <!-- Dashboard Grid: Resources + Sessions Table -->
+          <div class="sessions-dashboard-grid">
+
+            <!-- Resources Column -->
+            <div class="sessions-resources-col">
+              <div class="res-card">
+                <div class="res-card-header">
+                  <h3 class="res-card-title">Resources</h3>
+                </div>
+
+                <label for="resFile" class="res-upload-zone">
+                  <div>
+                    <p class="res-upload-text">Click to upload or drag and drop</p>
+                    <p class="res-upload-sub">PDF, DOCX, or ZIP (max 10MB)</p>
+                  </div>
+                </label>
+                <input type="file" (change)="onResourceFileSelected($event)" id="resFile" class="res-file-input">
+
+                @if (formationResources.length === 0) {
+                  <div class="res-empty-state">
+                    <p class="res-empty-title">No resources shared yet</p>
+                    <p class="res-empty-sub">Start by uploading the course materials for your trainees.</p>
+                  </div>
+                } @else {
+                  <div class="res-list">
+                    @for (res of formationResources; track res.id) {
+                      <div class="res-item">
+                        <div class="res-item-info">
+                          <p class="res-item-name">{{ res.originalFileName }}</p>
+                          <p class="res-item-size">{{ (res.fileSize / 1024 / 1024).toFixed(1) }} MB</p>
+                        </div>
+                        <div class="res-item-actions">
+                          <button (click)="downloadResource(selectedFormationForSessions!.id!, res.id!, res.originalFileName)" class="vc-link-btn" title="Download">⬇</button>
+                          <button (click)="deleteResource(selectedFormationForSessions!.id!, res.id!)" class="vc-link-btn danger" title="Delete">🗑</button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="res-card-actions">
+                  <button (click)="uploadResource(selectedFormationForSessions.id!)" class="vc-btn gold" [disabled]="resourceUploading">
+                    {{ resourceUploading ? 'Uploading...' : 'Upload' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sessions Table Column -->
+            <div class="sessions-table-col">
+              <div class="sessions-table-card">
+                <div class="sessions-table-card-header">
+                  <h3 class="sessions-table-title">Active Sessions</h3>
+                </div>
+
+                <div class="sessions-table-scroll">
+                  <table class="sessions-tbl">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Session Title</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Trainer</th>
+                        <th>Status</th>
+                        <th class="right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @if (sessionsLoading) {
+                        <tr><td colspan="7" class="vc-empty">Loading sessions…</td></tr>
+                      }
+                      @for (s of sessions; track s.id) {
+                        <tr class="sessions-tbl-row">
+                          <td class="session-id-cell">#SB-{{ s.id }}</td>
+                          <td>
+                            <div class="session-title-wrap">
+                              <span class="session-tbl-title">{{ s.title }}</span>
+                              @if (s.meetLink) {
+                                <a [href]="s.meetLink" target="_blank" class="meeting-link-modern">🎥 Join Meet</a>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                            <span class="session-date-range">{{ formatDate(s.startDate) }}</span>
+                          </td>
+                          <td>
+                            <span class="session-date-range">{{ formatDate(s.endDate) }}</span>
+                          </td>
+                          <td>
+                            <div class="session-trainer-cell">
+                              <div class="session-trainer-avatar">{{ getTrainerName(s.trainerId).charAt(0) }}</div>
+                              <span class="session-trainer-name">{{ getTrainerName(s.trainerId) }}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="sess-status-pill" [ngClass]="'sess-'+getComputedSessionStatus(s).toLowerCase()" style="display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;">
+                              {{ getComputedSessionStatusLabel(s) }}
+                            </span>
+                          </td>
+                          <td class="right">
+                            <div class="vc-row-actions">
+                              <button (click)="openSessionModal(s)" class="vc-link-btn">Edit</button>
+                              <button (click)="deleteSession(s.id!)" class="vc-link-btn danger">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                      @if (sessions.length === 0 && !sessionsLoading) {
+                        <tr><td colspan="7" class="vc-empty">No sessions yet. Add your first session.</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="sessions-table-footer">
+                  <p class="sessions-table-count">Showing {{ sessions.length }} active sessions</p>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end sessions-dashboard-grid -->
+        }
+      </div>
+    }
+
+  </main>
+
+  <!-- ═══ FORMATION MODAL ═══ -->
+  @if (showFormationModal) {
+    <div class="vc-modal-overlay" (click)="closeFormationModal()">
+      <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+        <div class="vc-modal-header">
+          <h3>{{ editingFormation ? 'Modifier la Formation' : 'Nouvelle Formation' }}</h3>
+          <button class="vc-modal-close" (click)="closeFormationModal()">✕</button>
+        </div>
+        <div class="vc-modal-body">
+          <div class="vc-modal-grid">
+            <label class="vc-line" style="grid-column:1/-1">
+              <span>Titre *</span>
+              <input type="text" [(ngModel)]="formationForm.title" placeholder="Ex: Formation Éco-conception" />
+            </label>
+            <label class="vc-line" style="grid-column:1/-1">
+              <span>Description *</span>
+              <textarea [(ngModel)]="formationForm.description" rows="4" placeholder="Décrivez le contenu et les objectifs..."></textarea>
+            </label>
+            <div style="grid-column:1/-1; display:flex; justify-content:flex-end; margin-top:-.5rem; margin-bottom:.5rem;">
+              <button type="button" class="vc-btn ghost" (click)="generateDescription()" [disabled]="generatingDescription">
+                {{ generatingDescription ? '⏳ Génération...' : '✨ Générer avec l\'IA' }}
+              </button>
+            </div>
+            <label class="vc-line">
+              <span>Durée (heures) *</span>
+              <input type="number" [(ngModel)]="formationForm.duration" min="1" placeholder="Ex: 8" />
+            </label>
+            <label class="vc-line">
+              <span>Capacité max *</span>
+              <input type="number" [(ngModel)]="formationForm.maxCapacity" min="1" placeholder="Ex: 20" />
+            </label>
+            <label class="vc-line">
+              <span>Prix (€) — 0 = Gratuit</span>
+              <input type="number" [(ngModel)]="formationForm.price" min="0" step="0.01" placeholder="0" />
+            </label>
+            <label class="vc-line">
+              <span>Statut</span>
+              <select [(ngModel)]="formationForm.status">
+                @for (s of formationStatuses; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="vc-modal-actions">
+          <button class="vc-btn ghost" (click)="closeFormationModal()">Annuler</button>
+          <button class="vc-btn gold" (click)="saveFormation()">
+            {{ editingFormation ? 'Enregistrer' : 'Créer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ SESSION MODAL ═══ -->
+  @if (showSessionModal) {
+    <div class="vc-modal-overlay" (click)="closeSessionModal()">
+      <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+        <div class="vc-modal-header">
+          <h3>{{ editingSession ? 'Modifier la Session' : 'Nouvelle Session' }}</h3>
+          <button class="vc-modal-close" (click)="closeSessionModal()">✕</button>
+        </div>
+        <div class="vc-modal-body">
+          <div class="vc-modal-grid">
+            <label class="vc-line" style="grid-column:1/-1">
+              <span>Titre *</span>
+              <input type="text" [(ngModel)]="sessionForm.title" placeholder="Ex: Session Introduction" />
+            </label>
+            <label class="vc-line">
+              <span>Date de début *</span>
+              <input type="datetime-local" [(ngModel)]="sessionForm.startDate" />
+            </label>
+            <label class="vc-line">
+              <span>Date de fin *</span>
+              <input type="datetime-local" [(ngModel)]="sessionForm.endDate" />
+            </label>
+            <label class="vc-line" style="grid-column:1/-1">
+              <span>Lien Meet (optionnel)</span>
+              <input type="text" [(ngModel)]="sessionForm.meetLink" placeholder="https://meet.google.com/..." />
+            </label>
+          </div>
+          <!-- Trainer selection -->
+          <div style="margin-top:.75rem;">
+            <label class="vc-line" style="margin-bottom:.5rem; display:block;">
+              <span>Trainer *</span>
+            </label>
+            @if (trainers.length === 0) {
+              <p class="vc-muted">Aucun trainer disponible.</p>
+            } @else {
+              <div class="trainer-scroll-list">
+                @for (trainer of trainers; track trainer.id) {
+                  <label class="trainer-option" [class.trainer-option--selected]="sessionForm.trainerId === trainer.id">
+                    <input type="radio" name="trainerSelect" [value]="trainer.id" [(ngModel)]="sessionForm.trainerId" class="trainer-radio">
+                    <div class="session-trainer-avatar">{{ trainer.fullName.charAt(0) }}</div>
+                    <div class="trainer-info">
+                      <span class="trainer-name">{{ trainer.fullName }}</span>
+                      <span class="trainer-email">{{ trainer.email }}</span>
+                    </div>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="vc-modal-actions">
+          <button class="vc-btn ghost" (click)="closeSessionModal()">Annuler</button>
+          <button class="vc-btn gold" (click)="saveSession()" style="min-width:80px;">
+            {{ editingSession ? 'Enregistrer' : 'Add' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ═══ QUIZ PREVIEW MODAL ═══ -->
+  @if (showQuizPreviewModal) {
+    <div class="vc-modal-overlay" (click)="closeQuizPreviewModal()">
+      <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+        <div class="vc-modal-header">
+          <h3>{{ quizPreview?.title || 'Quiz' }}</h3>
+          <button class="vc-modal-close" (click)="closeQuizPreviewModal()">✕</button>
+        </div>
+        <div class="vc-modal-body">
+          @if (quizPreviewLoading) {
+            <p class="vc-empty">Chargement du quiz...</p>
+          }
+          @if (quizPreviewResult && !quizPreviewLoading) {
+            <div style="text-align:center; padding:2rem;">
+              <div style="font-size:3rem;">{{ quizPreviewResult.passed ? '🏆' : '😔' }}</div>
+              <h3>{{ quizPreviewResult.passed ? 'Réussi !' : 'Échoué' }}</h3>
+              <p style="font-size:2rem; font-weight:700;">{{ quizPreviewResult.score }}%</p>
+              <p class="vc-muted">Score minimum requis : {{ quizPreview?.passingScore }}%</p>
+              <button class="vc-btn ghost" (click)="closeQuizPreviewModal()">Fermer</button>
+            </div>
+          }
+          @if (quizPreview && !quizPreviewLoading && !quizPreviewResult) {
+            <p class="vc-muted">{{ quizPreview.questions.length }} questions · Score min : {{ quizPreview.passingScore }}% · {{ quizPreviewAnswers.size }}/{{ quizPreview.questions.length }} répondues</p>
+            @for (q of quizPreview.questions; track q.id; let qi = $index) {
+              <div style="margin-bottom:1.5rem;">
+                <p style="font-weight:600; margin-bottom:.5rem;">Q{{ qi + 1 }}. {{ q.text }}</p>
+                @for (opt of q.options; track opt.id) {
+                  <label style="display:flex; align-items:center; gap:.5rem; padding:.4rem; cursor:pointer;"
+                         [style.background]="isQuizPreviewSelected(q.id, opt.id) ? '#e8f4e8' : ''"
+                         (click)="selectQuizPreviewOption(q.id, opt.id)">
+                    <input type="radio" [checked]="isQuizPreviewSelected(q.id, opt.id)" readonly />
+                    {{ opt.text }}
+                  </label>
+                }
+              </div>
+            }
+          }
+        </div>
+        @if (quizPreview && !quizPreviewLoading && !quizPreviewResult) {
+          <div class="vc-modal-actions">
+            <button class="vc-btn ghost" (click)="closeQuizPreviewModal()">Annuler</button>
+            <button class="vc-btn gold" (click)="submitQuizPreview()" [disabled]="!allQuizPreviewAnswered() || quizPreviewSubmitting">
+              {{ quizPreviewSubmitting ? 'Envoi...' : 'Soumettre' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>
+

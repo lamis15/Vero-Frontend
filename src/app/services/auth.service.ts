@@ -1,130 +1,218 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, of, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export interface UserProfile {
+export interface UserResponse {
   id: number;
   fullName: string;
   email: string;
-  role: 'ADMIN' | 'PARTNER' | 'USER';
+  role: string;
   verified: boolean;
   banned: boolean;
-  image: string | null;
-  createdAt: string;
+  image?: string | null;
+  createdAt?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: UserResponse;
+}
+
+export interface PasskeyRegisterOptionsResponse {
+  challenge: string;
+  rpId: string;
+  rpName: string;
+  userId: string;
+  userName: string;
+  displayName: string;
+}
+
+export interface PasskeyLoginOptionsResponse {
+  challenge: string;
+  rpId: string;
+  allowCredentialIds: string[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API   = `${environment.apiUrl}/api/auth`;
-  private readonly USERS = `${environment.apiUrl}/api/users`;
-  private tokenKey = 'vero_jwt_token';
-  private roleKey  = 'vero_user_role';
+
+  private readonly API = `${environment.apiUrl}/api/auth`;
+
+  private tokenKey = 'vero_access_token';
+  private refreshTokenKey = 'vero_refresh_token';
+  private roleKey = 'vero_user_role';
+  private userKey = 'vero_user';
 
   private loggedIn$ = new BehaviorSubject<boolean>(this.hasToken());
-  /** Reactive stream of the current user role (null = unknown / guest) */
-  private role$ = new BehaviorSubject<string | null>(localStorage.getItem(this.roleKey));
+  private role$ = new BehaviorSubject<string | null>(this.readRole());
 
   constructor(private http: HttpClient) {}
 
-  // ─── Auth state ─────────────────────────────────────────────────────────────
-  get isLoggedIn(): boolean              { return this.hasToken(); }
-  get isLoggedIn$(): Observable<boolean> { return this.loggedIn$.asObservable(); }
-  get roleStream$(): Observable<string | null> { return this.role$.asObservable(); }
+  get isLoggedIn(): boolean {
+    return this.hasToken();
+  }
 
-  // ─── Token helpers ──────────────────────────────────────────────────────────
+  get isLoggedIn$(): Observable<boolean> {
+    return this.loggedIn$.asObservable();
+  }
+
+  get roleStream$(): Observable<string | null> {
+    return this.role$.asObservable();
+  }
+
+  get currentUser(): UserResponse | null {
+    const raw = localStorage.getItem(this.userKey);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  get currentUserRole(): string | null {
+    return this.currentUser?.role || this.readRole();
+  }
+
+  get currentUserEmail(): string | null {
+    return this.currentUser?.email || this.getTokenPayload()?.sub || null;
+  }
+
+  get isAdmin(): boolean {
+    return this.currentUserRole === 'ADMIN';
+  }
+
+  get isPartner(): boolean {
+    return this.currentUserRole === 'PARTNER';
+  }
+
+  get canManageEvents(): boolean {
+    return this.isAdmin || this.isPartner;
+  }
+
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
 
-  private getDecodedToken(): any {
+  private getTokenPayload(): any | null {
     const token = this.getToken();
     if (!token) return null;
-    try   { return JSON.parse(atob(token.split('.')[1])); }
-    catch { return null; }
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch {
+      return null;
+    }
   }
 
-  // ─── User info ──────────────────────────────────────────────────────────────
-  get currentUserEmail(): string | null {
-    return this.getDecodedToken()?.sub ?? null;
+  private readRole(): string | null {
+    return localStorage.getItem(this.roleKey);
   }
 
-  /**
-   * The backend JWT does NOT include the role field.
-   * Role is stored separately in localStorage after being fetched from /api/users.
-   * We also check the BehaviorSubject value for reactivity.
-   */
-  get currentUserRole(): string | null {
-    return (
-      this.role$.value                      // reactive (just fetched)
-      ?? localStorage.getItem(this.roleKey) // persisted (page refresh)
-      ?? this.getDecodedToken()?.role       // fallback if backend adds it later
-      ?? null
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API}/login`, { email, password })
+      .pipe(tap(res => this.applyAuthResponse(res)));
+  }
+
+  register(user: any): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API}/register`, user)
+      .pipe(tap(res => this.applyAuthResponse(res)));
+  }
+
+  forgotPassword(email: string) {
+    return this.http.post(`${this.API}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string) {
+    return this.http.post(`${this.API}/reset-password`, { token, newPassword });
+  }
+
+  getMe(): Observable<UserResponse> {
+    return this.http.get<UserResponse>(`${this.API}/me`).pipe(
+      tap(user => localStorage.setItem(this.userKey, JSON.stringify(user))),
+      catchError(() => {
+        const cached = this.currentUser;
+        if (cached) return of(cached);
+        return throwError(() => new Error('Not authenticated'));
+      })
     );
   }
 
-  get isAdmin():         boolean { return this.currentUserRole === 'ADMIN'; }
-  get isPartner():       boolean { return this.currentUserRole === 'PARTNER'; }
-  get canManageEvents(): boolean { return this.isAdmin || this.isPartner; }
-
-  // ─── Login ──────────────────────────────────────────────────────────────────
-  login(email: string, password: string): Observable<{ token: string }> {
-    return this.http
-      .post<{ token: string }>(`${this.API}/login`, { email, password })
-      .pipe(
-        tap(res => {
-          localStorage.setItem(this.tokenKey, res.token);
-          this.loggedIn$.next(true);
-          // JWT has no role → fetch it from /api/users
-          this.fetchAndStoreRole(res.token, email);
-        })
-      );
+  getCurrentUser(): Observable<any> {
+    return this.http.get(`${this.API}/me`);
   }
 
-  // ─── Fetch & cache role ─────────────────────────────────────────────────────
-  fetchAndStoreRole(token: string, email: string): void {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    this.http.get<UserProfile[]>(this.USERS, { headers }).subscribe({
-      next: users => {
-        const me = users.find(u => u.email === email);
-        if (me?.role) {
-          localStorage.setItem(this.roleKey, me.role);
-          this.role$.next(me.role);        // ← notify components immediately
-        }
-      },
-      error: () => {
-        // /api/users not accessible → clear cached role
-        localStorage.removeItem(this.roleKey);
-        this.role$.next(null);
-      }
-    });
+  passkeyRegisterOptions(email: string) {
+    return this.http.post<PasskeyRegisterOptionsResponse>(`${this.API}/passkey/register/options`, { email });
   }
 
-  /**
-   * Called on app start (app.ts ngOnInit).
-   * If a JWT already exists but the role is not cached, re-fetch it.
-   */
+  passkeyRegisterVerify(email: string, credentialId: string, challenge: string) {
+    return this.http.post(`${this.API}/passkey/register/verify`, { email, credentialId, challenge });
+  }
+
+  passkeyLoginOptions(email: string) {
+    return this.http.post<PasskeyLoginOptionsResponse>(`${this.API}/passkey/login/options`, { email });
+  }
+
+  passkeyLoginVerify(email: string, credentialId: string, challenge: string) {
+    return this.http.post<AuthResponse>(`${this.API}/passkey/login/verify`, { email, credentialId, challenge })
+      .pipe(tap(res => this.applyAuthResponse(res)));
+  }
+
+  applySocialSession(params: URLSearchParams): boolean {
+    const accessToken = params.get('accessToken');
+    const refreshToken = params.get('refreshToken');
+    const email = params.get('email');
+    const fullName = params.get('fullName');
+    const role = params.get('role');
+
+    if (!accessToken || !refreshToken || !email || !fullName || !role) return false;
+
+    const user: UserResponse = { id: 0, fullName, email, role, verified: true, banned: false, image: null };
+    this.storeSession(accessToken, refreshToken, user);
+    return true;
+  }
+
+  getSocialAuthUrl(provider: 'google' | 'github' | 'facebook'): string {
+    return `${environment.apiUrl}/oauth2/authorization/${provider}`;
+  }
+
+  private applyAuthResponse(res: AuthResponse): void {
+    this.storeSession(res.accessToken, res.refreshToken, res.user);
+  }
+
+  private storeSession(accessToken: string, refreshToken: string, user: UserResponse): void {
+    localStorage.setItem(this.tokenKey, accessToken);
+    localStorage.setItem(this.refreshTokenKey, refreshToken);
+    localStorage.setItem(this.roleKey, user.role);
+    localStorage.setItem(this.userKey, JSON.stringify(user));
+    this.loggedIn$.next(true);
+    this.role$.next(user.role);
+  }
+
   restoreSession(): void {
-    const token = this.getToken();
-    const email = this.currentUserEmail;
-    const cached = localStorage.getItem(this.roleKey);
-
-    if (cached) {
-      this.role$.next(cached);   // push cached role to the stream
-      return;
-    }
-
-    if (token && email) {
-      this.fetchAndStoreRole(token, email);
-    }
+    this.loggedIn$.next(this.hasToken());
+    this.role$.next(this.readRole());
   }
 
-  // ─── Logout ─────────────────────────────────────────────────────────────────
-  logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.roleKey);
-    this.role$.next(null);
+  logout(): Observable<any> {
+    return this.http.post<any>(`${this.API}/logout`, {}).pipe(
+      tap(() => {
+        this.clearUserData();
+        this.loggedIn$.next(false);
+        this.role$.next(null);
+      })
+    );
+  }
+
+  logoutLocal(): void {
+    this.clearUserData();
     this.loggedIn$.next(false);
+    this.role$.next(null);
+  }
+
+  private clearUserData(): void {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(this.roleKey);
+    localStorage.removeItem(this.userKey);
+    localStorage.removeItem('vero_cart');
   }
 
   private hasToken(): boolean {

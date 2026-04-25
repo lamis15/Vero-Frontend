@@ -1,0 +1,180 @@
+<div class="fco-root">
+
+  <!-- ambient glows -->
+  <div class="fco-glow fco-glow--1"></div>
+  <div class="fco-glow fco-glow--2"></div>
+
+  <!-- ░░ LOADING ░░ -->
+  @if (loading) {
+    <div class="fco-state">
+      <div class="fco-spinner"></div>
+      <span>Chargement…</span>
+    </div>
+  }
+
+  <!-- ░░ SUCCESS ░░ -->
+  @if (success) {
+    <div class="fco-success">
+      <div class="fco-success__ring">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 class="fco-success__title">Inscription confirmée !</h2>
+      <p class="fco-success__sub">Vous êtes maintenant inscrit à cette formation. Redirection en cours…</p>
+    </div>
+  }
+
+  <!-- ░░ MAIN ░░ -->
+  @if (formation && !loading && !success) {
+    <div class="fco-layout">
+
+      <!-- LEFT — formation summary -->
+      <aside class="fco-summary">
+        <div class="fco-summary__inner">
+          <p class="fco-eyebrow">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            Récapitulatif
+          </p>
+          <h2 class="fco-summary__title">{{ formation.title }}</h2>
+
+          <div class="fco-summary__stats">
+            <div class="fco-stat">
+              <div class="fco-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <span class="fco-stat__label">Durée</span>
+                <strong class="fco-stat__val">{{ formation.duration }}h</strong>
+              </div>
+            </div>
+            <div class="fco-stat">
+              <div class="fco-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <span class="fco-stat__label">Inscrits</span>
+                <strong class="fco-stat__val">{{ formation.participantIds?.length || 0 }}/{{ formation.maxCapacity }}</strong>
+              </div>
+            </div>
+            <div class="fco-stat">
+              <div class="fco-stat__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <span class="fco-stat__label">Prix</span>
+                <strong class="fco-stat__val fco-stat__val--price">
+                  {{ isPaid() ? '€' + formation.price!.toFixed(2) : 'Gratuit' }}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- total -->
+          <div class="fco-total">
+            <span class="fco-total__label">Total à payer</span>
+            <span class="fco-total__amount">
+              {{ isPaid() ? '€' + formation.price!.toFixed(2) : 'Gratuit' }}
+            </span>
+          </div>
+
+          <button class="fco-btn-back" (click)="goBack()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Retour à la formation
+          </button>
+        </div>
+      </aside>
+
+      <!-- RIGHT — payment / registration -->
+      <main class="fco-main">
+
+        @if (isAlreadyRegistered()) {
+          <!-- Already registered -->
+          <div class="fco-card fco-card--enrolled">
+            <div class="fco-enrolled__shine"></div>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <div>
+              <strong>Vous êtes déjà inscrit !</strong>
+              <span>Votre place est confirmée pour cette formation.</span>
+            </div>
+            <button class="fco-btn-secondary" (click)="goBack()">Voir la formation</button>
+          </div>
+
+        } @else if (isPaid()) {
+          <!-- Paid registration -->
+          <div class="fco-card">
+            <div class="fco-card__head">
+              <div class="fco-card__head-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              </div>
+              <h2 class="fco-card__title">Informations de paiement</h2>
+            </div>
+
+            <div class="fco-form-group">
+              <label class="fco-label">Carte bancaire</label>
+              <div id="card-element" class="fco-card-element"></div>
+            </div>
+
+            @if (error) {
+              <div class="fco-error">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ error }}
+              </div>
+            }
+
+            <button class="fco-btn-pay" (click)="payAndRegister()" [disabled]="processing">
+              @if (processing) {
+                <div class="fco-btn-spinner"></div>
+                Traitement en cours…
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Payer €{{ formation.price!.toFixed(2) }}
+              }
+            </button>
+
+            <div class="fco-secure">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Paiement sécurisé par Stripe
+            </div>
+          </div>
+
+        } @else {
+          <!-- Free registration -->
+          <div class="fco-card">
+            <div class="fco-card__head">
+              <div class="fco-card__head-icon fco-card__head-icon--free">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <h2 class="fco-card__title">Inscription gratuite</h2>
+            </div>
+
+            <p class="fco-free-note">
+              Cette formation est entièrement gratuite. Confirmez votre inscription en un clic.
+            </p>
+
+            @if (error) {
+              <div class="fco-error">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ error }}
+              </div>
+            }
+
+            <button class="fco-btn-pay fco-btn-pay--free" (click)="registerFree()" [disabled]="processing">
+              @if (processing) {
+                <div class="fco-btn-spinner"></div>
+                Inscription en cours…
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Confirmer l'inscription
+              }
+            </button>
+          </div>
+        }
+
+      </main>
+    </div>
+  }
+
+</div>

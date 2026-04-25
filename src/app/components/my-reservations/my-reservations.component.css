@@ -468,3 +468,141 @@
   .stat-bubble { width: 84px; height: 84px; }
   .rcard-header { padding: 16px; gap: 12px; }
 }
+/* QR absent si PENDING */
+.rcard-body-grid.no-qr {
+  grid-template-columns: 1fr;
+}
+
+.pending-qr-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-card2);
+  border: 1.5px dashed var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+.pending-qr-icon { font-size: 28px; }
+/* ── History card ── */
+.hist-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.hist-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.hist-date {
+  font-size: 12px;
+  color: var(--text-lt);
+  font-weight: 600;
+}
+
+.hist-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+/* Message event pas encore terminé */
+.not-completed-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-lt);
+  font-style: italic;
+  background: var(--bg-card2);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+/* QR absent si PENDING */
+.rcard-body-grid.no-qr {
+  grid-template-columns: 1fr;
+}
+
+.pending-qr-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-card2);
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.pending-qr-icon { font-size: 24px; }
+/* ── Pagination History & Ratings ── */
+.hist-pag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hist-pag-info {
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 600;
+}
+.hist-pag-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hist-page-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-mid);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.hist-page-btn:hover:not(:disabled) {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-pale);
+}
+.hist-page-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.hist-page-dots { display: flex; gap: 6px; align-items: center; }
+.hist-page-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: all .25s;
+}
+.hist-page-dot:hover { background: var(--green-lt); }
+.hist-page-dot.active {
+  background: var(--green);
+  width: 24px;
+  border-radius: 4px;
+}

@@ -1,0 +1,244 @@
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-page {
+  padding: calc(var(--nav-h) + 24px) 24px 40px;
+}
+
+.chat-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  min-height: 70vh;
+}
+
+.chat-sessions, .chat-main {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid rgba(44, 44, 40, 0.1);
+  padding: 14px;
+}
+
+.chat-intro {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(44, 44, 40, 0.08);
+}
+
+.chat-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--forest);
+  margin: 0 0 8px;
+}
+
+.chat-sub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--smoke);
+  max-width: 52rem;
+}
+
+.ws-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ws-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.ws-reconnect {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(44, 44, 40, 0.25);
+  background: var(--white);
+  color: var(--forest);
+  cursor: pointer;
+}
+
+.ws-reconnect:hover {
+  border-color: var(--fern);
+  background: rgba(106, 170, 106, 0.12);
+}
+
+.composer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ws-status.ws-live {
+  background: rgba(106, 170, 106, 0.2);
+  color: var(--forest);
+}
+
+.ws-status.ws-off {
+  background: rgba(44, 44, 40, 0.08);
+  color: var(--smoke);
+}
+
+.sessions-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.session-item.active {
+  background: rgba(106, 170, 106, 0.15);
+}
+
+.delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #ad2e2e;
+}
+
+.messages {
+  min-height: 55vh;
+  max-height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg {
+  max-width: 70%;
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: var(--forest);
+  color: var(--cream);
+}
+
+.msg.bot {
+  align-self: flex-start;
+  background: var(--parchment);
+  max-width: 92%;
+}
+
+.msg-body {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.msg.bot .msg-body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--charcoal);
+}
+
+.composer {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.composer input {
+  border: 1px solid rgba(44, 44, 40, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.composer button, .sessions-head button {
+  border: none;
+  border-radius: 999px;
+  background: var(--forest);
+  color: var(--cream);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.error {
+  background: #ffe8e0;
+  color: #612716;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Eco redesign v2 */
+.chat-page {
+  background:
+    radial-gradient(circle at 9% 14%, rgba(133, 193, 133, 0.18), transparent 36%),
+    radial-gradient(circle at 89% 84%, rgba(50, 109, 71, 0.12), transparent 42%),
+    linear-gradient(180deg, #f3f8f2 0%, #edf4ec 100%);
+}
+
+.chat-sessions,
+.chat-main {
+  border: 1px solid rgba(31, 69, 45, 0.13);
+  border-radius: 20px;
+  box-shadow: 0 18px 46px rgba(23, 46, 31, 0.08);
+}
+
+.sessions-head button,
+.composer button {
+  background: linear-gradient(135deg, #173725 0%, #2f6a46 100%);
+  box-shadow: 0 10px 20px rgba(21, 53, 34, 0.24);
+}
+
+.messages {
+  background: linear-gradient(180deg, #f8fbf7 0%, #f3f8f2 100%);
+  border: 1px solid rgba(28, 62, 40, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.msg {
+  border: 1px solid rgba(30, 60, 41, 0.1);
+}
+
+.msg.user {
+  background: linear-gradient(135deg, #173c27 0%, #24573a 100%);
+}
+
+.msg.bot {
+  background: #ffffff;
+}
+
+.composer input {
+  border-radius: 14px;
+  background: #ffffff;
+}

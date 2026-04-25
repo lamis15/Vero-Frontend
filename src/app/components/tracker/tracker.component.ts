@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, NgZone, ElementRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { CarbonActivityService } from '../../services/carbon-activity.service';
 import { CarbonGoalService } from '../../services/carbon-goal.service';
 import { CarbonAIService } from '../../services/carbon-ai.service';
+import { CarbonTipService } from '../../services/carbon-tip.service';
 import { AuthService } from '../../services/auth.service';
 import { EcoDashboardDTO, DailyCarbon } from '../../services/dashboard.models';
 import {
@@ -21,7 +22,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './tracker.component.html',
-  styleUrl: './tracker.component.css'
+  styleUrl: './tracker.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('trendCanvas', { static: false }) trendCanvas!: ElementRef<HTMLCanvasElement>;
@@ -112,11 +114,12 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     private activityService: CarbonActivityService,
     private goalService: CarbonGoalService,
     private aiService: CarbonAIService,
+    private tipService: CarbonTipService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (this.authService.isLoggedIn) {
@@ -320,11 +323,8 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     return Array.from({ length: total }, (_, i) => i < filled);
   }
 
-  // ─── Trend Chart (Pure Canvas) ───
-
-  
   // ─── Animation Engines ───
-  
+
   private MathPow = Math.pow;
 
   private easeOutQuart(t: number): number {
@@ -333,7 +333,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private animateValues(): void {
     if (!this.dashboard) return;
-    
+
     this.displayMetrics = { score: 0, carbon: 0, water: 0, energy: 0, waste: 0 };
     if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
 
@@ -368,7 +368,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.animFrameId = requestAnimationFrame(animate);
       }
     };
-    
+
     this.animFrameId = requestAnimationFrame(animate);
   }
 
@@ -405,34 +405,32 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       y: padTop + chartH - (v / maxVal) * chartH
     }));
 
-    const duration = 1800; // 1.8s drawing
+    const duration = 1800;
     const start = performance.now();
 
     const draw = (timestamp: number) => {
       const elapsed = timestamp - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = this.easeOutQuart(progress);
-      
+
       ctx.clearRect(0, 0, W, H);
-      
+
       const currentSegments = Math.max(1, Math.floor(eased * points.length));
-      
-      // Draw organic trailing line
+
       ctx.beginPath();
       for (let i = 0; i < currentSegments; i++) {
         const p = points[i];
         if (i === 0) ctx.moveTo(p.x, p.y);
         else ctx.lineTo(p.x, p.y);
       }
-      
-      // If we are between points, interpolate
+
       if (currentSegments < points.length && currentSegments > 0) {
         const prev = points[currentSegments - 1];
         const next = points[currentSegments];
         const segDist = 1 / (points.length - 1);
         const startRawProgress = (currentSegments - 1) * segDist;
         const localProgress = (eased - startRawProgress) / segDist;
-        
+
         ctx.lineTo(
           prev.x + (next.x - prev.x) * localProgress,
           prev.y + (next.y - prev.y) * localProgress
@@ -444,26 +442,23 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       ctx.lineJoin = 'round';
       ctx.stroke();
 
-      // Glowing dots revealing
       for (let i = 0; i < currentSegments; i++) {
         const p = points[i];
-        
-        // Scale dot based on how long it's been alive
+
         const dotAge = (eased - (i / points.length)) * 5;
         const dotScale = Math.min(Math.max(dotAge, 0), 1);
-        
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, 8 * dotScale, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
         ctx.fill();
-        
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4 * dotScale, 0, Math.PI * 2);
         ctx.fillStyle = '#00E5FF';
         ctx.fill();
       }
 
-      // X-axis labels
       const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.font = '10px "DM Mono", monospace';
@@ -478,9 +473,10 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.chartAnimId = requestAnimationFrame(draw);
       }
     };
-    
+
     this.chartAnimId = requestAnimationFrame(draw);
   }
+
   // ─── EcoScore helpers ───
 
   get scoreColor(): string {
