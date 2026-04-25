@@ -1,156 +1,247 @@
-<div class="login-layout">
-  <div class="login-left">
+<div class="login-wrapper">
+
+  <!-- Left Side: Hero Text -->
+  <div class="hero-section">
     <div class="back-nav" (click)="goBack()">⟵ Back</div>
-    <h1 class="login-brand">Vero <em>Intelligence</em></h1>
-    <div class="login-metric">
-      <span class="login-zero">0.0</span>
-      <span class="login-unit">kg CO₂</span>
-      <span class="eco-indicator">🌍</span>
+    <div class="hero-content">
+      <h1 class="hero-title">Welcome</h1>
+      <p class="hero-subtitle">Have a great journey ahead...</p>
     </div>
-    <p class="login-manifesto">
-      Measure smarter. Act faster. Join the eco platform with your email, social account, or your device biometrics.
-    </p>
   </div>
 
-  <div class="login-right">
-    <div class="login-form-card">
+  <!-- Right Side: Glass Card -->
+  <div class="glass-section">
+    <div class="glass-card">
+
+      <!-- Tab Switcher -->
       <div class="auth-tabs">
-        <button class="auth-tab" [class.active]="mode === 'login'" (click)="setMode('login')">Login</button>
-        <button class="auth-tab" [class.active]="mode === 'register'" (click)="setMode('register')">Register</button>
-      </div>
-
-      <h2 class="login-form-title">{{ mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create your account' :
-        'Reset your password' }}</h2>
-      @if (loginError) { <div class="login-error">{{ loginError }}</div> }
-      @if (passkeyInfo && mode === 'login') { <div class="login-note">{{ passkeyInfo }}</div> }
-
-      @if (mode === 'login' || mode === 'register') {
-      <div class="social-auth-block">
-        <button type="button" class="social-btn passkey" (click)="signInWithPasskey()"
-          [disabled]="socialBusy || loginLoading || mode !== 'login'">
-          <span class="social-mark">􀣺</span>
-          <span>Use Face ID / Passkey</span>
+        <button
+          class="auth-tab"
+          [class.active]="mode === 'login'"
+          (click)="setMode('login')">
+          Login
         </button>
-        <button class="social-btn google" (click)="continueWith('google')" [disabled]="socialBusy || loginLoading">
-          <span class="social-mark">G</span>
-          <span>{{ mode === 'login' ? 'Continue with Google' : 'Sign up with Google' }}</span>
-        </button>
-        <button class="social-btn github" (click)="continueWith('github')" [disabled]="socialBusy || loginLoading">
-          <span class="social-mark">⌘</span>
-          <span>{{ mode === 'login' ? 'Continue with GitHub' : 'Sign up with GitHub' }}</span>
-        </button>
-        <button class="social-btn facebook" (click)="continueWith('facebook')" [disabled]="socialBusy || loginLoading">
-          <span class="social-mark">f</span>
-          <span>{{ mode === 'login' ? 'Continue with Facebook' : 'Sign up with Facebook' }}</span>
+        <button
+          class="auth-tab"
+          [class.active]="mode === 'register'"
+          (click)="setMode('register')">
+          Register
         </button>
       </div>
 
-      <div class="divider"><span>or use your email</span></div>
-      }
+      <!-- Sliding Form Container -->
+      <div class="form-container">
+        <div class="form-slider" [@slideAnimation]="mode">
 
-      @if (mode === 'login') {
-      <form class="auth-form" (ngSubmit)="login()">
-        <div class="input-group" [class.has-error]="errEmail">
-          <label>Email</label>
-          <input type="email" [(ngModel)]="loginEmail" name="loginEmail" placeholder="name@domain.com"
-            class="login-input" />
-          @if (errEmail) { <span class="field-error">{{ errEmail }}</span> }
+          <!-- ───────── LOGIN ───────── -->
+          @if (mode === 'login') {
+            <div class="form-panel">
+              <h2 class="form-title">Welcome back</h2>
+
+              @if (loginError) {
+                <div class="alert alert-error">{{ loginError }}</div>
+              }
+              @if (passkeyInfo) {
+                <div class="alert alert-info">{{ passkeyInfo }}</div>
+              }
+
+              <div class="social-auth-block">
+                <button
+                  type="button"
+                  class="social-btn passkey-btn"
+                  (click)="signInWithPasskey()"
+                  [disabled]="socialBusy || loginLoading">
+                  <span class="social-icon"></span>
+                  <span>Use Face ID / Passkey</span>
+                </button>
+                <div class="social-row">
+                  <button class="social-icon-btn google" (click)="continueWith('google')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with Google">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                  </button>
+                  <button class="social-icon-btn github" (click)="continueWith('github')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with GitHub">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                  </button>
+                  <button class="social-icon-btn facebook" (click)="continueWith('facebook')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with Facebook">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="divider"><span>or use your email</span></div>
+
+              <form class="auth-form" (ngSubmit)="login()">
+                <div class="input-group" [class.has-error]="errEmail">
+                  <input type="email" [(ngModel)]="loginEmail" name="loginEmail"
+                    placeholder="Email" class="glass-input" />
+                  @if (errEmail) {
+                    <span class="field-error">{{ errEmail }}</span>
+                  }
+                </div>
+
+                <div class="input-group" [class.has-error]="errPassword">
+                  <input type="password" [(ngModel)]="loginPassword" name="loginPassword"
+                    placeholder="Password" class="glass-input" />
+                  @if (errPassword) {
+                    <span class="field-error">{{ errPassword }}</span>
+                  }
+                </div>
+
+                <div class="forgot-link-wrapper">
+                  <button type="button" class="link-btn" (click)="setMode('forgot-password')">
+                    Forgot Password?
+                  </button>
+                </div>
+
+                <button class="gradient-btn" type="submit" [disabled]="socialBusy || loginLoading">
+                  {{ loginLoading ? 'Signing in...' : 'Sign In' }}
+                </button>
+              </form>
+            </div>
+          }
+
+          <!-- ───────── REGISTER ───────── -->
+          @if (mode === 'register') {
+            <div class="form-panel">
+              <h2 class="form-title">Create your account</h2>
+
+              @if (loginError) {
+                <div class="alert alert-error">{{ loginError }}</div>
+              }
+
+              <div class="social-auth-block">
+                <button type="button" class="social-btn passkey-btn" disabled>
+                  <span class="social-icon"></span>
+                  <span>Use Face ID / Passkey</span>
+                </button>
+                <div class="social-row">
+                  <button class="social-icon-btn google" (click)="continueWith('google')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with Google">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                  </button>
+                  <button class="social-icon-btn github" (click)="continueWith('github')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with GitHub">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                  </button>
+                  <button class="social-icon-btn facebook" (click)="continueWith('facebook')"
+                    [disabled]="socialBusy || loginLoading" title="Continue with Facebook">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="divider"><span>or use your email</span></div>
+
+              @if (registrationSuccess) {
+                <div class="success-card">
+                  <div class="success-icon">✨</div>
+                  <h3>Check your inbox</h3>
+                  <p>Account created. We sent a verification link to
+                    <strong>{{ registerEmail }}</strong>.
+                  </p>
+                  <button class="gradient-btn mt-4" (click)="setMode('login')">
+                    Return to Login
+                  </button>
+                </div>
+              } @else {
+                <form class="auth-form" (ngSubmit)="register()">
+                  <div class="input-group" [class.has-error]="errFullName">
+                    <input type="text" [(ngModel)]="registerFullName" name="registerFullName"
+                      placeholder="Full Name" class="glass-input" />
+                    @if (errFullName) {
+                      <span class="field-error">{{ errFullName }}</span>
+                    }
+                  </div>
+
+                  <div class="input-group" [class.has-error]="errEmail">
+                    <input type="email" [(ngModel)]="registerEmail" name="registerEmail"
+                      placeholder="Email address" class="glass-input" />
+                    @if (errEmail) {
+                      <span class="field-error">{{ errEmail }}</span>
+                    }
+                  </div>
+
+                  <div class="input-group" [class.has-error]="errPassword">
+                    <input type="password" [(ngModel)]="registerPassword" name="registerPassword"
+                      placeholder="Password (min 6 chars)" class="glass-input" />
+                    @if (errPassword) {
+                      <span class="field-error">{{ errPassword }}</span>
+                    }
+                  </div>
+
+                  <div class="input-group file-group" [class.has-error]="errImage">
+                    <div class="glass-file-upload" (click)="fileInput.click()">
+                      <input type="file" #fileInput (change)="onFileSelected($event)"
+                        accept="image/*" style="display: none;" />
+                      @if (registerImage) {
+                        <img [src]="registerImage" class="preview-avatar" alt="Preview" />
+                        <span class="file-label">Change Image</span>
+                      } @else {
+                        <span class="icon">📷</span>
+                        <span class="file-label">Profile Image (optional)</span>
+                      }
+                    </div>
+                    @if (errImage) {
+                      <span class="field-error">{{ errImage }}</span>
+                    }
+                  </div>
+
+                  <button class="gradient-btn" type="submit" [disabled]="loginLoading || socialBusy">
+                    {{ loginLoading ? 'Creating...' : 'Sign Up' }}
+                  </button>
+                </form>
+              }
+            </div>
+          }
+
+          <!-- ───────── FORGOT PASSWORD ───────── -->
+          @if (mode === 'forgot-password') {
+            <div class="form-panel">
+              <h2 class="form-title">Reset your password</h2>
+
+              @if (loginError) {
+                <div class="alert alert-error">{{ loginError }}</div>
+              }
+
+              @if (forgotPasswordSuccess) {
+                <div class="success-card">
+                  <div class="success-icon">✨</div>
+                  <h3>Check your inbox</h3>
+                  <p>We sent a reset link to <strong>{{ forgotPasswordEmail }}</strong>.</p>
+                  <button class="gradient-btn mt-4" (click)="setMode('login')">
+                    Return to Login
+                  </button>
+                </div>
+              } @else {
+                <form class="auth-form" (ngSubmit)="forgotPassword()">
+                  <div class="input-group" [class.has-error]="errForgotEmail">
+                    <input type="email" [(ngModel)]="forgotPasswordEmail" name="forgotPasswordEmail"
+                      placeholder="Email address" class="glass-input" />
+                    @if (errForgotEmail) {
+                      <span class="field-error">{{ errForgotEmail }}</span>
+                    }
+                  </div>
+
+                  <button class="gradient-btn" type="submit" [disabled]="loginLoading">
+                    {{ loginLoading ? 'Sending...' : 'Send reset link' }}
+                  </button>
+                </form>
+
+                <div class="back-link-wrapper">
+                  <button type="button" class="link-btn" (click)="setMode('login')">
+                    Back to Login
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
         </div>
-
-        <div class="input-group" [class.has-error]="errPassword">
-          <label>Password</label>
-          <input type="password" [(ngModel)]="loginPassword" name="loginPassword" placeholder="••••••••"
-            class="login-input" />
-          @if (errPassword) { <span class="field-error">{{ errPassword }}</span> }
-        </div>
-
-        <button class="login-btn" type="submit" [disabled]="socialBusy">
-          Sign in
-        </button>
-      </form>
-
-      <div class="forgot-password-link">
-        <button class="link-btn" (click)="setMode('forgot-password')">Forgot your password?</button>
       </div>
-      } @else if (mode === 'forgot-password') {
-      @if (forgotPasswordSuccess) {
-      <div class="success-message-card">
-        <div class="success-icon">📧</div>
-        <h3>Check your inbox</h3>
-        <p>We sent a password reset link to <strong>{{ forgotPasswordEmail }}</strong>.</p>
-        <button class="login-btn mt-4" (click)="setMode('login')">Return to Login</button>
-      </div>
-      } @else {
-      <form class="auth-form" (ngSubmit)="forgotPassword()">
-        <div class="input-group" [class.has-error]="errForgotEmail">
-          <label>Email address</label>
-          <input type="email" [(ngModel)]="forgotPasswordEmail" name="forgotPasswordEmail" placeholder="name@domain.com"
-            class="login-input" />
-          @if (errForgotEmail) { <span class="field-error">{{ errForgotEmail }}</span> }
-        </div>
 
-        <button class="login-btn" type="submit" [disabled]="loginLoading">
-          {{ loginLoading ? 'Sending...' : 'Send reset link' }}
-        </button>
-      </form>
-
-      <div class="forgot-password-link">
-        <button class="link-btn" (click)="setMode('login')">Back to Login</button>
-      </div>
-      }
-      } @else {
-      @if (registrationSuccess) {
-      <div class="success-message-card">
-        <div class="success-icon">✉️</div>
-        <h3>Check your inbox</h3>
-        <p>Your account has been created successfully. We sent a verification link to <strong>{{ registerEmail
-            }}</strong>.</p>
-        <button class="login-btn mt-4" (click)="setMode('login')">Return to Login</button>
-      </div>
-      } @else {
-      <form class="auth-form" (ngSubmit)="register()">
-        <div class="input-group" [class.has-error]="errFullName">
-          <label>Full name</label>
-          <input type="text" [(ngModel)]="registerFullName" name="registerFullName" placeholder="John Doe"
-            class="login-input" />
-          @if (errFullName) { <span class="field-error">{{ errFullName }}</span> }
-        </div>
-
-        <div class="input-group" [class.has-error]="errEmail">
-          <label>Email</label>
-          <input type="email" [(ngModel)]="registerEmail" name="registerEmail" placeholder="name@domain.com"
-            class="login-input" />
-          @if (errEmail) { <span class="field-error">{{ errEmail }}</span> }
-        </div>
-
-        <div class="input-group" [class.has-error]="errPassword">
-          <label>Password</label>
-          <input type="password" [(ngModel)]="registerPassword" name="registerPassword"
-            placeholder="At least 6 characters" class="login-input" />
-          @if (errPassword) { <span class="field-error">{{ errPassword }}</span> }
-        </div>
-
-        <div class="input-group" [class.has-error]="errImage">
-          <label>Profile image (optional)</label>
-          <div class="file-upload-design" (click)="fileInput.click()">
-            <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
-            @if (registerImage) {
-            <img [src]="registerImage" class="preview-avatar" />
-            <span class="file-label">✓ Image selected (click to change)</span>
-            } @else {
-            <span class="icon">📷</span>
-            <span class="file-label">Click to browse image (Max 500KB)</span>
-            }
-          </div>
-          @if (errImage) { <span class="field-error">{{ errImage }}</span> }
-        </div>
-
-        <button class="login-btn" type="submit" [disabled]="loginLoading || socialBusy">
-          {{ loginLoading ? 'Creating account...' : 'Create account' }}
-        </button>
-      </form>
-      }
-      }
     </div>
   </div>
+
 </div>

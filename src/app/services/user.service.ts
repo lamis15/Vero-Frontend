@@ -4,6 +4,17 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { UserResponse } from './auth.service';
 
+export interface EcoProfileResult {
+  profile: string;
+  transportKg: number;
+  foodKg: number;
+  energyKwh: number;
+  wasteKg: number;
+  postsCount: number;
+  goalsAchieved: number;
+  reportsCount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly API = `${environment.apiUrl}/api/users`;
@@ -20,5 +31,9 @@ export class UserService {
 
   changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.API}/me/password`, payload);
+  }
+
+  getEcoProfile(): Observable<EcoProfileResult> {
+    return this.http.get<EcoProfileResult>(`${environment.apiUrl}/api/eco/profile/me`);
   }
 }

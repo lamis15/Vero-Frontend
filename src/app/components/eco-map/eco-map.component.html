@@ -73,6 +73,17 @@
       </div>
     </div>
 
+    <!-- Location Sharing Toggle -->
+    <div class="loc-share-row">
+      <div class="loc-share-text">
+        <span class="loc-share-title">Nearby Alerts</span>
+        <span class="loc-share-desc">{{ isSharingLocation ? 'Sharing location (5km radius)' : 'Share location for alerts' }}</span>
+      </div>
+      <button class="loc-toggle" [class.active]="isSharingLocation" (click)="toggleLocationSharing()">
+        <div class="loc-knob"></div>
+      </button>
+    </div>
+
     <!-- Filter Pills -->
     <div class="filters">
       @for (f of filters; track f.key) {
@@ -103,7 +114,7 @@
       <div class="spot-card" [class.active]="selectedSpot?.id === spot.id" [style.animation-delay]="(i * 50) + 'ms'"
         (click)="selectSpot(spot)">
         <div class="spot-icon" [style.background]="spot.pinColor + '15'" [style.color]="spot.pinColor">
-          {{ spot.emoji }}
+          {{ spot.sidebarIcon }}
         </div>
         <div class="spot-body">
           <h4>{{ spot.name }}</h4>
@@ -145,12 +156,21 @@
       }
     </button>
 
+    <!-- FAB: Report Alert -->
+    <button class="fab alert-fab" (click)="toggleReportAlert()" title="Report an Eco Alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="22" height="22">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </button>
+
     <!-- Popup Card -->
     @if (selectedSpot) {
     <div class="popup-card">
       <button class="popup-x" (click)="closePopup()">✕</button>
       <div class="popup-icon" [style.background]="selectedSpot.pinColor + '12'">
-        <span>{{ selectedSpot.emoji }}</span>
+        <span>{{ selectedSpot.sidebarIcon }}</span>
       </div>
       <div class="popup-info">
         <div class="popup-row1">
@@ -169,10 +189,22 @@
         <p class="popup-desc">{{ selectedSpot.description }}</p>
         <div class="popup-btns">
           <button class="btn-dir" (click)="getDirections(selectedSpot)">Get Directions →</button>
-          <button class="btn-ci-lg" [class.done]="isCheckedIn(selectedSpot.id)"
-            [disabled]="isCheckedIn(selectedSpot.id)" (click)="checkIn(selectedSpot)">
-            {{ isCheckedIn(selectedSpot.id) ? 'Checked In ✓' : 'Check In' }}
-          </button>
+          
+          @if (selectedSpot.source === 'ALERT') {
+            <button class="btn-ci-lg btn-confirm-alert" (click)="confirmAlert(selectedSpot)">
+              Confirm Alert
+            </button>
+            @if (authService.currentUser?.role === 'ADMIN') {
+              <button class="btn-ci-lg btn-resolve-alert" (click)="resolveAlert(selectedSpot)">
+                Resolve
+              </button>
+            }
+          } @else {
+            <button class="btn-ci-lg" [class.done]="isCheckedIn(selectedSpot.id)"
+              [disabled]="isCheckedIn(selectedSpot.id)" (click)="checkIn(selectedSpot)">
+              {{ isCheckedIn(selectedSpot.id) ? 'Checked In ✓' : 'Check In' }}
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -188,11 +220,31 @@
       <textarea [(ngModel)]="newPinDesc" placeholder="Description (optional)"></textarea>
       <select [(ngModel)]="newPinType">
         @for (f of filters; track f.key) {
-        <option [value]="f.key">{{ f.emoji }} {{ f.label }}</option>
+          @if (f.key !== 'ALERT') {
+            <option [value]="f.key">{{ f.emoji }} {{ f.label }}</option>
+          }
         }
       </select>
       <button class="btn-submit" (click)="submitNewPin()" [disabled]="!newPinName.trim()">
         Submit for Verification
+      </button>
+    </div>
+    }
+
+    <!-- Report Alert Modal -->
+    @if (showReportAlert) {
+    <div class="modal-bg" (click)="toggleReportAlert()"></div>
+    <div class="modal-card alert-modal-card">
+      <h3 style="color: #e63946;">🚨 Report Eco Alert</h3>
+      <p>Alert will be placed at current map center</p>
+      <select [(ngModel)]="newAlert.type">
+        @for (t of alertTypesList; track t.key) {
+        <option [value]="t.key">{{ t.emoji }} {{ t.label }}</option>
+        }
+      </select>
+      <textarea [(ngModel)]="newAlert.desc" placeholder="Describe the hazard (e.g. visible smoke, location details)"></textarea>
+      <button class="btn-submit btn-alert-submit" (click)="submitAlert()">
+        Report Alert
       </button>
     </div>
     }

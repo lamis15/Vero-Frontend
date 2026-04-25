@@ -13,8 +13,20 @@ export interface MapPin {
   latitude: number;
   longitude: number;
   address: string;
-  source: 'COMMUNITY' | 'OSM' | 'EVENT';
+  source: 'COMMUNITY' | 'OSM' | 'EVENT' | 'ALERT';
   status?: string;
+}
+
+export interface EcoAlert {
+  id: number;
+  alertType: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+  status: 'OPEN' | 'CONFIRMED' | 'RESOLVED';
+  confirmations: number;
+  createdAt?: string;
 }
 
 export interface AirQuality {
@@ -33,6 +45,7 @@ export interface EcoMapDTO {
   communityPins: MapPin[];
   osmPins: MapPin[];
   airQuality: AirQuality;
+  alertPins: EcoAlert[];
 }
 
 export interface EcoPlaceSubmit {
@@ -72,5 +85,31 @@ export class EcoMapService {
 
   getMyPins(): Observable<MapPin[]> {
     return this.http.get<MapPin[]>(`${this.base}/pins/mine`);
+  }
+
+  // ─── ECO ALERTS ───
+  private readonly alertBase = `${environment.apiUrl}/api/eco/alerts`;
+
+  reportAlert(alert: Partial<EcoAlert>): Observable<EcoAlert> {
+    return this.http.post<EcoAlert>(this.alertBase, alert);
+  }
+
+  confirmAlert(id: number): Observable<any> {
+    return this.http.put(`${this.alertBase}/${id}/confirm`, {});
+  }
+
+  resolveAlert(id: number): Observable<any> {
+    return this.http.put(`${this.alertBase}/${id}/status?status=RESOLVED`, {});
+  }
+
+  // ─── LOCATION SHARING ───
+  private readonly locBase = `${environment.apiUrl}/api/eco/location`;
+
+  updateLocation(lat: number, lng: number): Observable<any> {
+    return this.http.put(this.locBase, { latitude: lat, longitude: lng });
+  }
+
+  stopLocationSharing(): Observable<any> {
+    return this.http.delete(this.locBase);
   }
 }

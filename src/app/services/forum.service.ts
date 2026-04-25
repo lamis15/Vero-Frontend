@@ -4,6 +4,8 @@ import { Observable, Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Post, Comment, Notification } from './forum.models';
 import { Client, IMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class ForumService {
@@ -13,7 +15,10 @@ export class ForumService {
   private notificationSubject = new Subject<Notification>();
   private notificationStompClient: Client | null = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   // ─── POSTS ───
   getAllPosts(): Observable<Post[]> {
@@ -89,11 +94,19 @@ export class ForumService {
   }
 
   private connectNotificationStomp(userId: number): void {
-    const wsUrl = `${environment.apiUrl}/ws`;
+    const wsUrl = this.API_NOTIFICATIONS.replace('/api/notifications', '/ws');
+    const token = this.authService.getToken();
+
+    if (!token) return;
 
     this.notificationStompClient = new Client({
-      brokerURL: wsUrl.replace('http', 'ws') + '/websocket',
+      webSocketFactory: () => new SockJS(wsUrl),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
       reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
         this.notificationStompClient!.subscribe(
           `/topic/notifications/${userId}`,

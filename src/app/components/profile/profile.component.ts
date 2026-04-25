@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserResponse } from '../../services/auth.service';
-import { UserService } from '../../services/user.service';
+import { UserService, EcoProfileResult } from '../../services/user.service';
 import { MessagerieService, TopicCounts } from '../../services/messagerie.service';
 
 @Component({
@@ -32,6 +32,8 @@ export class ProfileComponent implements OnInit {
   }
 
   ecoStats: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
+  ecoProfile: EcoProfileResult | null = null;
+  ecoProfileLoading = false;
 
   constructor(
     private userService: UserService,
@@ -41,6 +43,20 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadEcoStats();
+    this.loadEcoProfile();
+  }
+
+  loadEcoProfile(): void {
+    this.ecoProfileLoading = true;
+    this.userService.getEcoProfile().subscribe({
+      next: (res) => {
+        this.ecoProfile = res;
+        this.ecoProfileLoading = false;
+      },
+      error: () => {
+        this.ecoProfileLoading = false;
+      }
+    });
   }
 
   loadEcoStats(): void {
