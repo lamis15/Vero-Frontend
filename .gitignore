@@ -29,6 +29,9 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Kiro IDE
+.agent/
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/
@@ -42,10 +45,18 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
-<<<<<<< HEAD
-=======
 
-# Python
-**/__pycache__/
-*.pyc
->>>>>>> origin/gestion-rania
+# Large media files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+public/videos/
+src/assets/videos/
+src/assets/hero.mp4
+
+# Environment variables (sensitive)
+.env
+.env.local
+.env.production

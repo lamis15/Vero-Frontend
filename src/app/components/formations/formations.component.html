@@ -1,0 +1,167 @@
+<section class="fp-root">
+
+  <!-- ░░ HERO ░░ -->
+  <div class="fp-hero">
+    <div class="fp-hero__bg">
+      <div class="fp-hero__orb fp-hero__orb--1"></div>
+      <div class="fp-hero__orb fp-hero__orb--2"></div>
+      <div class="fp-hero__orb fp-hero__orb--3"></div>
+    </div>
+    <div class="fp-hero__inner">
+      <span class="fp-pill">
+        <span class="fp-pill__dot"></span>
+        {{ formations.length }} formations disponibles
+      </span>
+      <h1 class="fp-hero__title">
+        Élevez vos<br>
+        <em>compétences</em><br>
+        au niveau supérieur.
+      </h1>
+      <p class="fp-hero__sub">
+        Des programmes d'excellence conçus par des experts certifiés pour transformer votre carrière.
+      </p>
+      <div class="fp-hero__badges">
+        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Certifié</div>
+        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Flexible</div>
+        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 2.4k+ apprenants</div>
+      </div>
+    </div>
+    <div class="fp-hero__scroll-hint">
+      <span>Découvrir</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+
+  <!-- ░░ MENTORS ░░ -->
+  <div class="fp-mentors">
+    <div class="fp-section-head">
+      <h2 class="fp-section-title">Vos formateurs</h2>
+      <div class="fp-scroll-btns">
+        <button class="fp-scroll-btn" (click)="scrollTrainers('left')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="fp-scroll-btn" (click)="scrollTrainers('right')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fp-mentors__track" #trainersScroll>
+      @for (trainer of trainers; track trainer.id) {
+        <div class="fp-mentor">
+          <div class="fp-mentor__avatar">
+            <img [src]="trainer.imageUrl" [alt]="trainer.name" />
+            <span class="fp-mentor__online"></span>
+          </div>
+          <div class="fp-mentor__body">
+            <p class="fp-mentor__name">{{ trainer.name }}</p>
+            <p class="fp-mentor__role">{{ trainer.role }}</p>
+            <span class="fp-mentor__tag">{{ trainer.specialty }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ░░ FILTERS ░░ -->
+  <div class="fp-filters">
+    <div class="fp-filters__chips">
+      <button class="fp-chip" [class.fp-chip--on]="filter==='all'"         (click)="filter='all'">Tout voir</button>
+      <button class="fp-chip" [class.fp-chip--on]="filter==='PLANNED'"     (click)="filter='PLANNED'">Planifiée</button>
+      <button class="fp-chip" [class.fp-chip--on]="filter==='IN_PROGRESS'" (click)="filter='IN_PROGRESS'">En cours</button>
+      <button class="fp-chip" [class.fp-chip--on]="filter==='COMPLETED'"   (click)="filter='COMPLETED'">Terminée</button>
+    </div>
+    <span class="fp-count">{{ filteredFormations().length }} résultat{{ filteredFormations().length > 1 ? 's' : '' }}</span>
+  </div>
+
+  <!-- ░░ STATES ░░ -->
+  @if (loading) {
+    <div class="fp-state">
+      <div class="fp-spinner"></div>
+      <span>Chargement des formations…</span>
+    </div>
+  } @else if (error) {
+    <div class="fp-state fp-state--err">{{ error }}</div>
+  } @else if (filteredFormations().length === 0) {
+    <div class="fp-state">Aucune formation pour ce filtre.</div>
+  } @else {
+
+    <!-- ░░ GRID ░░ -->
+    <div class="fp-grid">
+      @for (f of filteredFormations(); track f.id; let i = $index) {
+        <article class="fp-card" (click)="viewDetails(f.id!)">
+
+          <!-- image -->
+          <div class="fp-card__media">
+            <img [src]="getFormationImage(f)" [alt]="f.title" class="fp-card__img" />
+            <div class="fp-card__media-overlay"></div>
+
+            <!-- top badges -->
+            <div class="fp-card__top">
+              <span class="fp-card__status" [ngClass]="'status--'+f.status.toLowerCase()">
+                {{ badgeLabel(f.status) }}
+              </span>
+              <button class="fp-card__pin" [class.fp-card__pin--on]="isPinned(f)"
+                      (click)="$event.stopPropagation(); togglePin(f)"
+                      [title]="isPinned(f) ? 'Désépingler' : 'Épingler'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- price -->
+            <div class="fp-card__price" [class.fp-card__price--free]="!hasPrice(f)">
+              {{ hasPrice(f) ? '€' + f.price!.toFixed(2) : 'Gratuit' }}
+            </div>
+          </div>
+
+          <!-- body -->
+          <div class="fp-card__body">
+            <h3 class="fp-card__title">{{ f.title }}</h3>
+            <p class="fp-card__desc">{{ f.description }}</p>
+
+            <!-- progress -->
+            <div class="fp-card__prog">
+              <div class="fp-card__prog-head">
+                <span>Progression</span>
+                <strong [ngClass]="'prog-val--'+getProgressClass(f)">{{ getProgress(f) }}%</strong>
+              </div>
+              <div class="fp-card__prog-track">
+                <div class="fp-card__prog-fill"
+                     [ngClass]="'prog-fill--'+getProgressClass(f)"
+                     [style.width.%]="getProgress(f)">
+                </div>
+              </div>
+            </div>
+
+            <!-- footer -->
+            <div class="fp-card__foot">
+              <div class="fp-card__meta">
+                <span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {{ f.duration }}h
+                </span>
+                <span [class.fp-card__meta--full]="getAvailableSpots(f)===0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  {{ getAvailableSpots(f) === 0 ? 'Complet' : getAvailableSpots(f) + ' places' }}
+                </span>
+              </div>
+              <button class="fp-card__cta" (click)="$event.stopPropagation(); viewDetails(f.id!)">
+                Voir
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              @if (canTakeQuiz(f)) {
+                <button class="fp-card__quiz" (click)="$event.stopPropagation(); goToQuiz(f.id!)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+                  Quiz
+                </button>
+              }
+            </div>
+          </div>
+
+        </article>
+      }
+    </div>
+  }
+
+</section>

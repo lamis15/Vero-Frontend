@@ -1,0 +1,179 @@
+<div class="quiz-page">
+
+  <!-- Top Bar -->
+  <header class="quiz-topbar">
+    <button class="quiz-back-btn" (click)="goBack()">
+      <span class="material-symbols-outlined">arrow_back</span>
+      {{ fromAdmin ? 'Retour Admin' : 'Retour à la formation' }}
+    </button>
+    @if (quiz && !result) {
+      <div class="quiz-topbar-info">
+        <span class="material-symbols-outlined" style="color:#3e6a00">quiz</span>
+        <span class="quiz-topbar-title">{{ quiz.title }}</span>
+      </div>
+      <span class="quiz-topbar-progress">{{ answers.size }} / {{ quiz.questions.length }}</span>
+    }
+  </header>
+
+  <div class="quiz-body">
+
+    <!-- Loading -->
+    @if (loading) {
+      <div class="quiz-center-state">
+        <div class="quiz-spinner"></div>
+        <p>Chargement du quiz...</p>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (error && !loading) {
+      <div class="quiz-center-state quiz-error-state">
+        <span class="material-symbols-outlined" style="font-size:3rem;color:#c0392b">error_outline</span>
+        <p>{{ error }}</p>
+        <button class="quiz-btn-secondary" (click)="goBack()">Retour</button>
+      </div>
+    }
+
+    <!-- ── RESULT SCREEN ── -->
+    @if (result && !loading) {
+      <div class="quiz-result-page">
+        <div class="quiz-result-card" [class.quiz-result-card--pass]="result.passed" [class.quiz-result-card--fail]="!result.passed">
+
+          <div class="quiz-result-emoji">{{ result.passed ? '🏆' : '😔' }}</div>
+
+          <h2 class="quiz-result-heading">
+            {{ result.passed ? 'Félicitations !' : 'Dommage...' }}
+          </h2>
+
+          <div class="quiz-score-ring" [class.quiz-score-ring--pass]="result.passed" [class.quiz-score-ring--fail]="!result.passed">
+            <svg viewBox="0 0 120 120" class="quiz-score-svg">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e8e0" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none"
+                [attr.stroke]="result.passed ? '#3e6a00' : '#c0392b'"
+                stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="314"
+                [attr.stroke-dashoffset]="314 - (314 * result.score / 100)"
+                transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="quiz-score-inner">
+              <span class="quiz-score-pct">{{ result.score }}%</span>
+              <span class="quiz-score-sub">Score</span>
+            </div>
+          </div>
+
+          <p class="quiz-result-detail">
+            Score minimum requis : <strong>{{ quiz?.passingScore }}%</strong>
+          </p>
+
+          <p class="quiz-result-msg">
+            @if (result.passed) {
+              Vous avez validé ce quiz. Votre certificat a été généré et envoyé par email.
+            } @else {
+              Vous n'avez pas atteint le score minimum. Réessayez après avoir revu les ressources.
+            }
+          </p>
+
+          @if (result.passed) {
+            <button class="quiz-btn-cert" (click)="downloadCertificate()">
+              <span class="material-symbols-outlined">workspace_premium</span>
+              Télécharger mon certificat
+            </button>
+          }
+
+          <button class="quiz-btn-secondary" (click)="goBack()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            {{ fromAdmin ? 'Retour Admin' : 'Retour à la formation' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ── QUIZ QUESTIONS ── -->
+    @if (quiz && !loading && !result) {
+      <div class="quiz-content">
+
+        <!-- Quiz Header -->
+        <div class="quiz-header-card">
+          <div class="quiz-header-left">
+            <h1 class="quiz-title">{{ quiz.title }}</h1>
+            <div class="quiz-chips">
+              <span class="quiz-chip"><span class="material-symbols-outlined">help_outline</span>{{ quiz.questions.length }} questions</span>
+              <span class="quiz-chip"><span class="material-symbols-outlined">grade</span>Score min : {{ quiz.passingScore }}%</span>
+              @if (isPreviewMode) {
+                <span class="quiz-chip quiz-chip--admin"><span class="material-symbols-outlined">admin_panel_settings</span>Mode Admin</span>
+              }
+            </div>
+          </div>
+          <div class="quiz-header-right">
+            <div class="quiz-donut">
+              <svg viewBox="0 0 60 60">
+                <circle cx="30" cy="30" r="24" fill="none" stroke="#e8e8e0" stroke-width="6"/>
+                <circle cx="30" cy="30" r="24" fill="none" stroke="#3e6a00" stroke-width="6"
+                  stroke-linecap="round"
+                  stroke-dasharray="150.8"
+                  [attr.stroke-dashoffset]="150.8 - (150.8 * answers.size / quiz.questions.length)"
+                  transform="rotate(-90 30 30)"
+                  style="transition: stroke-dashoffset 0.3s ease"/>
+              </svg>
+              <span class="quiz-donut-label">{{ answers.size }}/{{ quiz.questions.length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="quiz-progress">
+          <div class="quiz-progress-fill" [style.width.%]="(answers.size / quiz.questions.length) * 100"></div>
+        </div>
+
+        <!-- Questions -->
+        <div class="quiz-questions">
+          @for (q of quiz.questions; track q.id; let qi = $index) {
+            <div class="quiz-q-card" [class.quiz-q-card--done]="answers.has(q.id)">
+              <div class="quiz-q-top">
+                <span class="quiz-q-badge">{{ qi + 1 }}</span>
+                <p class="quiz-q-text">{{ q.text }}</p>
+                @if (answers.has(q.id)) {
+                  <span class="material-symbols-outlined quiz-q-check">check_circle</span>
+                }
+              </div>
+              <div class="quiz-opts">
+                @for (opt of q.options; track opt.id; let oi = $index) {
+                  <button class="quiz-opt" [class.quiz-opt--selected]="isSelected(q.id, opt.id)" (click)="selectOption(q.id, opt.id)">
+                    <span class="quiz-opt-letter">{{ ['A','B','C','D'][oi] }}</span>
+                    <span class="quiz-opt-text">{{ opt.text }}</span>
+                    @if (isSelected(q.id, opt.id)) {
+                      <span class="material-symbols-outlined quiz-opt-icon">radio_button_checked</span>
+                    } @else {
+                      <span class="material-symbols-outlined quiz-opt-icon quiz-opt-icon--empty">radio_button_unchecked</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Submit -->
+        <div class="quiz-submit-bar">
+          @if (!allAnswered()) {
+            <p class="quiz-submit-hint">
+              <span class="material-symbols-outlined">info</span>
+              Répondez à toutes les questions pour soumettre ({{ quiz.questions.length - answers.size }} restante(s))
+            </p>
+          }
+          <button class="quiz-btn-submit" (click)="submitQuiz()" [disabled]="!allAnswered() || submitting">
+            @if (submitting) {
+              <span class="quiz-spinner-sm"></span> Envoi en cours...
+            } @else {
+              <span class="material-symbols-outlined">send</span>
+              Soumettre mes réponses
+            }
+          </button>
+        </div>
+
+      </div>
+    }
+
+  </div>
+</div>

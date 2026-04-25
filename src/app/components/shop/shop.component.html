@@ -1,39 +1,245 @@
-<div class="page-header bg-parchment">
-  <div class="page-header-content">
-    <div class="section-tag">Eco Shop</div>
-    <h1 class="page-h1">Verified <em>sustainable</em> products</h1>
+<!-- Hero / Promotional Video Section -->
+<section class="hero-section">
+  <div class="hero-media">
+    <video #heroVideo class="hero-img" autoplay muted loop playsinline preload="auto">
+      <source src="videos/hero.mp4" type="video/mp4">
+    </video>
+    <div class="hero-gradient"></div>
   </div>
-</div>
-<section id="shop">
-  <div class="shop-header">
-    <div>
-    </div>
-    <div class="shop-filters">
-      <button class="filter-pill" [class.active]="currentCategory === 'all'" (click)="filterProducts('all')">All</button>
-      <button class="filter-pill" [class.active]="currentCategory === 'home'" (click)="filterProducts('home')">Home</button>
-      <button class="filter-pill" [class.active]="currentCategory === 'beauty'" (click)="filterProducts('beauty')">Beauty</button>
-      <button class="filter-pill" [class.active]="currentCategory === 'food'" (click)="filterProducts('food')">Food</button>
-      <button class="filter-pill" [class.active]="currentCategory === 'fashion'" (click)="filterProducts('fashion')">Fashion</button>
-    </div>
-  </div>
-  <div class="product-grid" id="product-grid">
-    @for (product of filteredProducts; track product.name) {
-    <div class="product-card fade-in">
-      <div class="product-img" [style.background]="product.bg">{{ product.emoji }}
-        <div class="product-badge">{{ product.badge }}</div>
+  <div class="hero-content">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">
+        <span class="hero-dot"></span>
+        <span class="hero-eyebrow-text">Eco · Luxury · Sustainable</span>
+        <span class="hero-dot"></span>
       </div>
-      <div class="product-body">
-        <div class="product-brand">{{ product.brand }}</div>
-        <div class="product-name">{{ product.name }}</div>
-        <div class="product-impact" [innerHTML]="product.impact"></div>
-        <div class="product-footer">
-          <div class="product-price">{{ product.price }}</div>
-          <button class="btn-add" [ngStyle]="{'background': product.added ? 'var(--sage)' : 'var(--forest)'}" (click)="addToCart(product)">
-            {{ product.added ? '✓' : '+' }}
-          </button>
-        </div>
+      <h2 class="hero-title">
+        Live <em>consciously.</em><br>
+        Shop <em>beautifully.</em>
+      </h2>
+      <p class="hero-desc">Only at <strong>Vero</strong> — where green meets gorgeous.</p>
+      <div class="hero-actions">
+        <button class="btn-shop-now" (click)="filterProducts('all')">
+          Shop Now
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn-explore" (click)="filterProducts('natural_cosmetics')">
+          Explore Collection
+        </button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="stat-num">100%</span><span class="stat-label">Eco Certified</span></div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat"><span class="stat-num">500+</span><span class="stat-label">Green Products</span></div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat"><span class="stat-num">0</span><span class="stat-label">Carbon Guilt</span></div>
       </div>
     </div>
-    }
   </div>
 </section>
+
+<!-- Categories -->
+<section class="categories-section">
+  <div class="categories-header">
+    <h3 class="categories-title">Collections</h3>
+    <button class="btn-filter-text" (click)="resetFilters()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+      Filter
+    </button>
+  </div>
+  <div class="categories-scroll">
+    <button class="cat-pill" [class.active]="currentCategory === 'all'" (click)="filterProducts('all')">All</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'natural_cosmetics'" (click)="filterProducts('natural_cosmetics')">🌿 Cosmetics</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'eco_friendly_home'" (click)="filterProducts('eco_friendly_home')">🏠 Eco Home</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'sustainable_fashion'" (click)="filterProducts('sustainable_fashion')">👕 Fashion</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'kitchen_and_dining'" (click)="filterProducts('kitchen_and_dining')">🍽️ Kitchen</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'eco_gardening'" (click)="filterProducts('eco_gardening')">🌱 Gardening</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'eco_pet_products'" (click)="filterProducts('eco_pet_products')">🐾 Pets</button>
+    <button class="cat-pill" [class.active]="currentCategory === 'eco_gift_sets'" (click)="filterProducts('eco_gift_sets')">🎁 Gifts</button>
+  </div>
+</section>
+
+<!-- Search & Sort Bar -->
+<section class="search-bar-section">
+  <input type="text" class="search-input" [(ngModel)]="searchKeyword" (ngModelChange)="onSearchChange()" placeholder="Search products...">
+  <select class="sort-select" [(ngModel)]="sortOrder" (ngModelChange)="onSortChange()">
+    <option value="none">Sort</option>
+    <option value="asc">Price ↑</option>
+    <option value="desc">Price ↓</option>
+  </select>
+  <button class="btn-for-you" (click)="getRecommendations()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>
+    For You
+  </button>
+  <button class="btn-currency" (click)="toggleCurrency()">
+    {{ currency === 'EUR' ? '€ → DT' : 'DT → €' }}
+  </button>
+</section>
+
+<!-- Price Range -->
+<section class="price-range-section">
+  <div class="price-range-header">
+    <span class="price-range-label">Price Range</span>
+    <span class="price-range-values">€{{ minPrice }} — €{{ maxPrice }}</span>
+  </div>
+  <div class="price-sliders">
+    <input type="range" class="price-slider" [(ngModel)]="minPrice" (ngModelChange)="onPriceChange()"
+           [min]="priceMin" [max]="priceMax" step="1">
+    <input type="range" class="price-slider" [(ngModel)]="maxPrice" (ngModelChange)="onPriceChange()"
+           [min]="priceMin" [max]="priceMax" step="1">
+  </div>
+  <div class="price-inputs-row">
+    <input type="number" class="price-input-box" [(ngModel)]="minPrice" (ngModelChange)="onPriceChange()" placeholder="Min">
+    <div class="price-dash">—</div>
+    <input type="number" class="price-input-box" [(ngModel)]="maxPrice" (ngModelChange)="onPriceChange()" placeholder="Max">
+  </div>
+</section>
+
+<!-- Impact Card -->
+<section class="impact-section">
+  <div class="impact-card">
+    <div class="impact-top">
+      <div>
+        <p class="impact-label">Your Monthly Impact</p>
+        <h4 class="impact-value">84% Carbon Neutral</h4>
+      </div>
+      <span class="impact-icon">🌿</span>
+    </div>
+    <div class="impact-bar-bg">
+      <div class="impact-bar" style="width: 84%"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Product Grid -->
+<section class="products-section">
+  <div class="results-count">{{ filteredProducts.length }} product{{ filteredProducts.length !== 1 ? 's' : '' }}</div>
+
+  @if (loading) {
+    <div class="state-box"><p>Loading products...</p></div>
+  }
+  @if (error) {
+    <div class="state-box error">
+      <p>{{ error }}</p>
+      <button (click)="loadProducts()">Retry</button>
+    </div>
+  }
+
+  @if (!loading && !error) {
+    <div class="product-grid" id="product-grid">
+      @for (product of filteredProducts; track product.id) {
+        <div class="product-card">
+          <div class="product-img-wrap">
+            @if (getImage(product)) {
+              <img [src]="getImage(product)" [alt]="product.name" class="product-img">
+            } @else {
+              <div class="product-emoji-box">{{ getProductEmoji(product.category) }}</div>
+            }
+            @if (product.stock > 0) {
+              <div class="badge-available">Available</div>
+            } @else {
+              <div class="badge-oos">Out of Stock</div>
+            }
+            <button class="btn-add-circle"
+                    [class.added]="product.added"
+                    [disabled]="product.stock <= 0"
+                    (click)="addToCart(product)">
+              @if (product.added) {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              }
+            </button>
+            <button class="btn-qr-circle" (click)="openProductDetails(product)" title="Voir les détails">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </button>
+          </div>
+          <div class="product-info">
+            <h5 class="product-name">{{ product.name }}</h5>
+            <p class="product-price">{{ formatPrice(product.price) }}</p>
+          </div>
+        </div>
+      }
+
+      @if (filteredProducts.length === 0) {
+        <div class="state-box">
+          <p>No products found.</p>
+          <button (click)="resetFilters()">Reset Filters</button>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<!-- Product Details Modal -->
+@if (showProductDetails && selectedProduct) {
+  <div class="modal-overlay" (click)="closeProductDetails()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>Product Details</h2>
+        <button class="modal-close" (click)="closeProductDetails()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="qr-col">
+            <h3>QR Code</h3>
+            @if (selectedProduct.qrCodeUrl) {
+              <div class="qr-wrap"><img [src]="selectedProduct.qrCodeUrl" alt="QR" class="qr-img"></div>
+              <button class="btn-dl-qr" (click)="downloadQRCode(selectedProduct)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download
+              </button>
+            }
+          </div>
+          <div class="info-col">
+            <div class="modal-product-head">
+              @if (getImage(selectedProduct)) {
+                <img [src]="getImage(selectedProduct)" [alt]="selectedProduct.name" class="modal-thumb">
+              } @else {
+                <div class="modal-emoji" [style.background]="getProductColor(selectedProduct.category)">{{ getProductEmoji(selectedProduct.category) }}</div>
+              }
+              <div>
+                <h3>{{ selectedProduct.name }}</h3>
+                <span class="cat-tag">{{ selectedProduct.category }}</span>
+              </div>
+            </div>
+            <div class="detail-row"><span class="dl">Price</span><span class="dv price-v">{{ formatPrice(selectedProduct.price) }}</span></div>
+            <div class="detail-row"><span class="dl">Stock</span><span class="dv" [class.low]="selectedProduct.stock < 10">{{ selectedProduct.stock }} units</span></div>
+            <div class="detail-row"><span class="dl">Origin</span><span class="dv">{{ selectedProduct.origin || 'N/A' }}</span></div>
+            <div class="detail-row">
+              <span class="dl">Eco</span>
+              <span class="dv">
+                @if (selectedProduct.isEcological) { <span class="eco-tag">✓ Eco-Friendly</span> }
+                @else { <span class="std-tag">Standard</span> }
+              </span>
+            </div>
+            <div class="desc-block">
+              <span class="dl">Description</span>
+              <p>{{ selectedProduct.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-sec" (click)="closeProductDetails()">Close</button>
+        <button class="btn-pri" [disabled]="selectedProduct.stock <= 0" (click)="addToCart(selectedProduct); closeProductDetails()">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+}

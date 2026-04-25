@@ -2,7 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { UserResponse } from './auth.service';
+
+export interface User {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  verified: boolean;
+  banned: boolean;
+  image?: string | null;
+}
 
 export interface EcoProfileResult {
   profile: string;
@@ -21,16 +30,28 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
-  getMe(): Observable<UserResponse> {
-    return this.http.get<UserResponse>(`${this.API}/me`);
+  getAll(): Observable<User[]> {
+    return this.http.get<User[]>(this.API);
   }
 
-  updateMe(payload: { fullName: string; email: string; image?: string }): Observable<UserResponse> {
-    return this.http.put<UserResponse>(`${this.API}/me`, payload);
+  getById(id: number): Observable<User> {
+    return this.http.get<User>(`${this.API}/${id}`);
   }
 
-  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(`${this.API}/me/password`, payload);
+  getMe(): Observable<User> {
+    return this.http.get<User>(`${this.API}/me`);
+  }
+
+  updateMe(data: Partial<User>): Observable<User> {
+    return this.http.put<User>(`${this.API}/me`, data);
+  }
+
+  changePassword(data: { currentPassword: string; newPassword: string }): Observable<any> {
+    return this.http.put(`${this.API}/me/password`, data);
+  }
+
+  getUsersByRole(role: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API}/role/${role}`);
   }
 
   getEcoProfile(): Observable<EcoProfileResult> {

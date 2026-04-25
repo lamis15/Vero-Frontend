@@ -1,0 +1,86 @@
+<div class="page-header bg-parchment">
+  <div class="page-header-content">
+    <div class="section-tag">Checkout</div>
+    <h1 class="page-h1">Complete your <em>order</em></h1>
+  </div>
+</div>
+
+<section class="checkout-section">
+  <div class="checkout-container">
+    <div class="checkout-main">
+      <!-- Order Summary -->
+      <div class="checkout-card">
+        <h2 class="card-title">Order Summary</h2>
+        <div class="order-items">
+          @for (item of cartItems; track item.product.id) {
+            <div class="order-item">
+              <div class="item-info">
+                <span class="item-name">{{ item.product.name }}</span>
+                <span class="item-qty">x{{ item.quantity }}</span>
+              </div>
+              <span class="item-price">€{{ (item.product.price * item.quantity).toFixed(2) }}</span>
+            </div>
+          }
+        </div>
+        <div class="order-total">
+          <span>Total</span>
+          <span class="total-amount">€{{ getTotal().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Delivery Information -->
+      <div class="checkout-card">
+        <h2 class="card-title">Delivery Information</h2>
+        <div class="form-group">
+          <label for="address">Delivery Address</label>
+          <textarea 
+            id="address" 
+            [(ngModel)]="deliveryAddress" 
+            placeholder="Enter your full delivery address"
+            rows="3"
+            required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="notes">Order Notes (Optional)</label>
+          <textarea 
+            id="notes" 
+            [(ngModel)]="notes" 
+            placeholder="Any special instructions?"
+            rows="2"></textarea>
+        </div>
+      </div>
+
+      <!-- Payment Information -->
+      <div class="checkout-card">
+        <h2 class="card-title">Payment Information</h2>
+        <div class="form-group">
+          <label>Card Details</label>
+          <div id="card-element" class="card-element"></div>
+        </div>
+
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
+
+        <button 
+          class="btn-pay" 
+          (click)="handlePayment()" 
+          [disabled]="loading">
+          @if (loading) {
+            <span>Processing...</span>
+          } @else {
+            <span>Pay €{{ getTotal().toFixed(2) }}</span>
+          }
+        </button>
+
+        <div class="secure-notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Secure payment powered by Stripe</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

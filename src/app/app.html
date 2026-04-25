@@ -1,11 +1,10 @@
 @if (!isAdminRoute()) {
-<app-nav></app-nav>
+  <app-nav></app-nav>
+  <app-notification></app-notification>
 }
-
-<main class="w-full">
+<main>
   <router-outlet></router-outlet>
 </main>
-
 @if (!isAdminRoute()) {
-<app-footer></app-footer>
+  <app-footer></app-footer>
 }
