@@ -1,0 +1,125 @@
+<!-- ═══ PRODUCTS ═══ -->
+@if (activeTab === 'products') {
+  <section class="vc-section">
+    <div class="vc-section-head">
+      <div>
+        <h2 class="vc-h2">Products</h2>
+        <p class="vc-muted">{{ products.length }} items in the eco-store catalogue.</p>
+      </div>
+      <button class="vc-btn gold" (click)="openProductModal()">+ Add Product</button>
+    </div>
+    @if (productsLoading) {
+      <div class="vc-cards-grid">
+        @for (s of [1,2,3,4,5,6]; track s) {
+          <div class="vc-product-card vc-skeleton"></div>
+        }
+      </div>
+    } @else if (products.length === 0) {
+      <p class="vc-empty">No products found.</p>
+    } @else {
+      <div class="vc-cards-grid">
+        @for (p of products; track p.id) {
+          <div class="vc-product-card">
+            <div class="vc-product-img">
+              @if (getProductImage(p)) {
+                <img [src]="getProductImage(p)" [alt]="p.name" />
+              } @else {
+                <div class="vc-product-img-placeholder">🌿</div>
+              }
+              @if (p.isEcological) {
+                <span class="vc-eco-badge">Eco</span>
+              }
+            </div>
+            <div class="vc-product-body">
+              <div class="vc-product-meta">
+                <span class="vc-tag sm">{{ p.category.replace('_', ' ') }}</span>
+                @if (p.origin) { <span class="vc-product-origin">📍 {{ p.origin }}</span> }
+              </div>
+              <h3 class="vc-product-name">{{ p.name }}</h3>
+              <p class="vc-product-desc">{{ p.description }}</p>
+              <div class="vc-product-footer">
+                <div class="vc-product-price-row">
+                  <span class="vc-product-price">{{ p.price | number:'1.2-2' }} €</span>
+                  <span class="vc-product-stock" [class.low]="p.stock < 10">
+                    {{ p.stock }} in stock
+                  </span>
+                </div>
+                <div class="vc-row-actions">
+                  <button class="vc-link-btn" (click)="openProductModal(p)">Edit</button>
+                  <button class="vc-link-btn danger" (click)="deleteProduct(p.id)">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Product Modal -->
+  @if (showProductModal) {
+    <div class="vc-modal-overlay" (click)="closeProductModal()">
+      <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+        <div class="vc-modal-header">
+          <h3>{{ editingProduct ? 'Edit Product' : 'New Product' }}</h3>
+          <button class="vc-modal-close" (click)="closeProductModal()">✕</button>
+        </div>
+        <div class="vc-modal-body">
+          <div class="vc-modal-grid">
+            <label class="vc-line">
+              <span>Name *</span>
+              <input type="text" [(ngModel)]="productForm.name" placeholder="Product name" />
+            </label>
+            <label class="vc-line">
+              <span>Category</span>
+              <select [(ngModel)]="productForm.category">
+                @for (cat of productCategories; track cat) {
+                  <option [value]="cat">{{ cat.replace('_', ' ') }}</option>
+                }
+              </select>
+            </label>
+            <label class="vc-line">
+              <span>Price (€) *</span>
+              <input type="number" [(ngModel)]="productForm.price" min="0" step="0.01" />
+            </label>
+            <label class="vc-line">
+              <span>Stock</span>
+              <input type="number" [(ngModel)]="productForm.stock" min="0" />
+            </label>
+            <label class="vc-line">
+              <span>Country of Origin</span>
+              <select [(ngModel)]="productForm.origin" class="vc-country-select">
+                <option value="">— Select country —</option>
+                @for (c of countries; track c.name) {
+                  <option [value]="c.name">{{ c.flag }} {{ c.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="vc-switch" style="align-self:center; margin-top:1.2rem;">
+              <input type="checkbox" [(ngModel)]="productForm.isEcological" />
+              <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+              <div><strong>Ecological</strong></div>
+            </label>
+          </div>
+          <label class="vc-line" style="margin-top:.75rem;">
+            <span>Description</span>
+            <textarea [(ngModel)]="productForm.description" rows="3" placeholder="Product description"></textarea>
+          </label>
+          <label class="vc-line" style="margin-top:.75rem;">
+            <span>Image (max 500KB)</span>
+            <input type="file" accept="image/*" (change)="onProductImageSelected($event)" />
+          </label>
+          @if (productForm.image) {
+            <img [src]="productForm.image" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:.5rem;" />
+          }
+        </div>
+        <div class="vc-modal-actions">
+          <button class="vc-btn ghost" (click)="closeProductModal()">Cancel</button>
+          <button class="vc-btn primary" (click)="saveProduct()" [disabled]="productSaving">
+            {{ productSaving ? 'Saving…' : (editingProduct ? 'Save changes' : 'Create product') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

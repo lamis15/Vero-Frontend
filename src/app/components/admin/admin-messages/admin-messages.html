@@ -1,0 +1,72 @@
+<!-- ═══ CONVERSATIONS ═══ -->
+@if (activeTab === 'messages') {
+  <section class="vc-section">
+    <div class="vc-section-head">
+      <div>
+        <h2 class="vc-h2">Conversation monitor</h2>
+        <p class="vc-muted">Compact split view of all private threads.</p>
+      </div>
+      <div class="vc-filters">
+        <input type="text" placeholder="Search by user or message" [(ngModel)]="conversationSearch" (input)="filterConversations()" class="vc-input" />
+      </div>
+    </div>
+
+    <div class="vc-monitor">
+      <div class="vc-monitor-list">
+        @if (!messagesLoading && adminConversations.length === 0) {
+          <p class="vc-empty slim">No conversations yet.</p>
+        } @else {
+          @for (conversation of adminConversations; track conversation.conversationKey) {
+            <button class="vc-conv" [class.active]="selectedConversation?.conversationKey === conversation.conversationKey"
+                    (pointerdown)="onAdminConversationPointerDown(conversation)" (click)="openAdminConversation(conversation)">
+              <div class="vc-conv-avatars">
+                <span>{{ initials(conversation.userA.fullName) }}</span>
+                <span>{{ initials(conversation.userB.fullName) }}</span>
+              </div>
+              <div class="vc-conv-copy">
+                <strong>{{ conversation.userA.fullName }} · {{ conversation.userB.fullName }}</strong>
+                <small>{{ conversation.lastMessagePreview || 'No messages yet' }}</small>
+                <time>{{ conversation.lastMessageTime | date:'short' }}</time>
+              </div>
+            </button>
+          }
+        }
+      </div>
+
+      <div class="vc-monitor-thread">
+        @if (!selectedConversation) {
+          <p class="vc-empty">Select a conversation to review its history.</p>
+        } @else {
+          <div class="vc-thread-head">
+            <h3>{{ selectedConversation.userA.fullName }} &amp; {{ selectedConversation.userB.fullName }}</h3>
+            <small>{{ selectedConversation.userA.email }} · {{ selectedConversation.userB.email }}</small>
+          </div>
+
+          <div class="vc-thread-feed">
+            @if (!threadLoading && selectedConversationMessages.length === 0) {
+              <p class="vc-empty slim">No messages in this thread.</p>
+            } @else {
+              @for (msg of selectedConversationMessages; track msg.id || $index) {
+                <div class="vc-msg" [class.outgoing]="msg.sender.id === selectedConversation.userA.id">
+                  <div class="vc-msg-bubble">
+                    <div class="vc-msg-head">
+                      <strong>{{ msg.sender.fullName }}</strong>
+                      @if (msg.topic) {
+                        <span class="vc-topic" [attr.data-topic]="msg.topic"
+                              [title]="'AI confidence: ' + ((msg.topicConfidence ?? 0) * 100 | number:'1.0-0') + '%'">
+                          {{ msg.topic }}
+                        </span>
+                      }
+                    </div>
+                    <p>{{ msg.content }}</p>
+                    <time>{{ msg.timestamp | date:'medium' }}</time>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}
