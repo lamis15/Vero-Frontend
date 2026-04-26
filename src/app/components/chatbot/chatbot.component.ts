@@ -22,6 +22,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   loading = false;
   /** STOMP / SockJS connected to backend /ws */
   wsConnected = false;
+  thinking = false;
 
   constructor(
     private chatbotService: ChatbotService,
@@ -102,6 +103,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   }
 
   private onChatEvent(ev: ChatEvent): void {
+    this.thinking = false;
     if (ev.error) {
       this.error = ev.errorMessage || 'Chatbot request failed.';
       this.cdr.markForCheck();
@@ -201,6 +203,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
         return;
       }
+      this.thinking = true;
+      this.cdr.markForCheck();
     };
 
     if (this.activeSessionId != null) {

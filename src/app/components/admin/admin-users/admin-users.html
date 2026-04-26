@@ -1,5 +1,25 @@
-<!-- ═══ USERS ═══ -->
+<!-- ═══ STATS CARDS ═══ -->
 @if (activeTab === 'users') {
+  <div class="vc-stats">
+    <div class="vc-stat">
+      <span class="vc-stat-lbl">Total Users</span>
+      <span class="vc-stat-val">{{ totalUsers }}</span>
+    </div>
+    <div class="vc-stat">
+      <span class="vc-stat-lbl">Active</span>
+      <span class="vc-stat-val">{{ totalUsers - suspendedOnPage }}</span>
+    </div>
+    <div class="vc-stat">
+      <span class="vc-stat-lbl">Suspended</span>
+      <span class="vc-stat-val">{{ suspendedOnPage }}</span>
+    </div>
+    <div class="vc-stat">
+      <span class="vc-stat-lbl">Pages</span>
+      <span class="vc-stat-val">{{ totalPages }}</span>
+    </div>
+  </div>
+
+  <!-- ═══ MEMBERS TABLE ═══ -->
   <section class="vc-section">
     <div class="vc-section-head">
       <div>
@@ -169,7 +189,7 @@
     <footer class="vc-compose-foot">
       <p class="vc-muted">Creating an account sends no automatic notification. Share the credentials securely.</p>
       <div class="vc-form-actions">
-        <button class="vc-btn ghost" type="button" (click)="setTab('users')">Cancel</button>
+        <button class="vc-btn ghost" type="button" (click)="navigateTo('/admin/users')">Cancel</button>
         <button class="vc-btn primary" type="submit">Create account</button>
       </div>
     </footer>

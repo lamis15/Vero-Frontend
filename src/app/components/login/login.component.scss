@@ -11,6 +11,7 @@
   background-repeat: no-repeat;
   position: relative;
   overflow: hidden;
+  padding-top: 80px;
 
   &::before {
     content: '';
@@ -39,7 +40,7 @@
 
 .back-nav {
   position: absolute;
-  top: 3rem;
+  top: 1rem;
   left: 4rem;
   cursor: pointer;
   font-size: 1rem;

@@ -177,22 +177,33 @@ export class LoginComponent implements OnInit {
     const queryParams = new URLSearchParams(window.location.search);
     const social = queryParams.get('social');
     const socialError = queryParams.get('socialError');
-    const reason = queryParams.get('reason');
 
-    if (social === 'success' && this.authService.applySocialSession(queryParams)) {
+    if (social === 'success') {
       window.history.replaceState({}, document.title, '/login');
-      if (this.authService.currentUserRole === 'ADMIN') {
-        void this.router.navigateByUrl('/admin');
-      } else {
-        this.goAfterAuth();
-      }
+      this.socialBusy = true;
+      this.authService.applySocialSession(queryParams).subscribe({
+        next: (success) => {
+          this.socialBusy = false;
+          if (success) {
+            if (this.authService.currentUserRole === 'ADMIN') {
+              void this.router.navigateByUrl('/admin');
+            } else {
+              this.goAfterAuth();
+            }
+          } else {
+            this.loginError = 'Social sign-in failed. Please try again.';
+          }
+        },
+        error: () => {
+          this.socialBusy = false;
+          this.loginError = 'Social sign-in failed. Please try again.';
+        }
+      });
       return;
     }
 
     if (socialError) {
-      this.loginError = reason
-        ? `Social sign-in failed: ${reason}`
-        : 'Social sign-in failed. Check your provider keys on the backend, then try again.';
+      this.loginError = 'Social sign-in failed. Check your provider keys on the backend, then try again.';
       window.history.replaceState({}, document.title, '/login');
     }
   }
@@ -429,7 +440,7 @@ export class LoginComponent implements OnInit {
 
       if (error?.status === 0) {
         this.passkeyInfo =
-          'Connection failed. Please ensure the backend is running on port 9090.';
+          'Connection failed. Please ensure the backend is running.';
         return;
       }
       if (error?.name === 'NotAllowedError') {

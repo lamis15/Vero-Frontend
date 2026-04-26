@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService, AdminCreateUserRequest, AdminUpdateUserRequest, AdminUserListItem } from '../../../services/admin.service';
 import { NotificationService } from '../../../services/notification.service';
@@ -13,8 +14,7 @@ import { NotificationService } from '../../../services/notification.service';
   styleUrls: ['./admin-users.css']
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
-  @Input() activeTab: 'users' | 'add' | 'edit' = 'users';
-  @Output() tabChange = new EventEmitter<'users' | 'add' | 'edit' | 'settings' | 'messages' | 'products' | 'formations'>();
+  activeTab: 'users' | 'add' | 'edit' = 'users';
 
   private static readonly USERS_CACHE_KEY = 'vero_admin_users_cache';
 
@@ -46,10 +46,13 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   private search$ = new Subject<string>();
   private usersLoadRequestId = 0;
   private usersLiveSyncInterval: ReturnType<typeof setInterval> | null = null;
+  private routeSub?: Subscription;
 
   constructor(
     private adminService: AdminService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   private static readCache<T>(key: string): T | null {
@@ -68,6 +71,10 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.routeSub = this.route.data.subscribe(data => {
+      this.activeTab = (data['mode'] as 'add' | 'edit') || 'users';
+    });
+
     this.search$.pipe(
       debounceTime(300),
       distinctUntilChanged()
@@ -76,19 +83,18 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
       this.loadUsers();
     });
 
-    if (this.activeTab === 'users') {
-      this.loadUsers();
-      this.startUsersLiveSync();
-    }
+    this.loadUsers();
+    this.startUsersLiveSync();
   }
 
   ngOnDestroy(): void {
     this.search$.complete();
     this.stopUsersLiveSync();
+    this.routeSub?.unsubscribe();
   }
 
-  setTab(tab: 'users' | 'add' | 'edit' | 'settings' | 'messages' | 'products' | 'formations'): void {
-    this.tabChange.emit(tab);
+  navigateTo(path: string): void {
+    this.router.navigate([path]);
   }
 
   startUsersLiveSync(): void {
@@ -131,7 +137,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
         this.totalPages = Math.max(data.totalPages ?? 0, 1);
         this.currentPage = (data.number ?? 0) + 1;
         this.loading = false;
-        
+
         if (!this.searchQuery && !this.selectedRole && this.currentPage === 1) {
           AdminUsersComponent.writeCache(AdminUsersComponent.USERS_CACHE_KEY, {
             users: this.users,
@@ -178,12 +184,12 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
       verified: user.verified,
       banned: user.banned
     };
-    this.setTab('edit');
+    this.router.navigate(['/admin/users', user.id, 'edit']);
   }
 
   cancelEdit(): void {
     this.editingUserId = null;
-    this.setTab('users');
+    this.router.navigate(['/admin/users']);
   }
 
   saveEdit(id: number): void {
@@ -193,7 +199,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
       this.users[index] = { ...this.users[index], ...payload, id } as AdminUserListItem;
     }
     this.editingUserId = null;
-    this.setTab('users');
+    this.router.navigate(['/admin/users']);
     this.adminService.updateUser(id, payload).subscribe({
       next: () => this.notificationService.success('User profile updated.'),
       error: () => {
@@ -257,7 +263,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
   createUser(): void {
     const payload = { ...this.newUser };
     this.newUser = { fullName: '', email: '', password: '', role: 'USER', verified: true, banned: false };
-    this.setTab('users');
+    this.router.navigate(['/admin/users']);
     this.adminService.createUser(payload).subscribe({
       next: () => {
         this.loadUsers();
