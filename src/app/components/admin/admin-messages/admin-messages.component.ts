@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessagerieService, ConversationSummary, DirectMessage, TopicCounts } from '../../../services/messagerie.service';
@@ -13,8 +13,6 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./admin-messages.css']
 })
 export class AdminMessagesComponent implements OnInit, OnDestroy {
-  @Input() activeTab: 'messages' = 'messages';
-  @Output() tabChange = new EventEmitter<string>();
 
   private static readonly CONVS_CACHE_KEY = 'vero_admin_convs_cache';
 
@@ -68,13 +66,13 @@ export class AdminMessagesComponent implements OnInit, OnDestroy {
       if (label && this.topicHeatmap[label] != null) {
         this.topicHeatmap = { ...this.topicHeatmap, [label]: this.topicHeatmap[label] + 1 };
       }
-      if (!this.selectedConversation && this.activeTab === 'messages' && this.adminConversations.length > 0) {
+      if (!this.selectedConversation && this.adminConversations.length > 0) {
         this.openAdminConversation(this.adminConversations[0]);
         return;
       }
       if (this.selectedConversation && this.belongsToSelectedConversation(message, this.selectedConversation)) {
         this.selectedConversationMessages = [...this.selectedConversationMessages, message];
-      } else if (this.activeTab === 'messages') {
+      } else {
         this.loadAdminConversations();
       }
     });
@@ -147,7 +145,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy {
   startAdminLiveSync(): void {
     if (this.adminLiveSyncInterval) return;
     this.adminLiveSyncInterval = setInterval(() => {
-      if (this.activeTab === 'messages' && !this.conversationSearch) {
+      if (!this.conversationSearch) {
         this.messagerieService.loadAdminConversations('').subscribe({
           next: (conversations) => {
             if (this.conversationSearch) return;

@@ -1,137 +1,126 @@
-<div class="chat-page">
-  <div class="chat-shell" style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;height:100%;width:100%;">
-    <aside class="conversations-sidebar" style="flex:0 0 300px;min-width:300px;">
-      <div class="sidebar-header">
+<div class="ms-page">
+  <div class="ms-shell">
+
+    <!-- LEFT — Conversations -->
+    <aside class="ms-sidebar ms-convos">
+      <div class="ms-side-head">
         <h2>Conversations</h2>
-        <span class="count-pill">{{ conversations.length }}</span>
       </div>
 
       @if (conversationsLoading) {
-        <div class="sidebar-empty">Loading conversations...</div>
+        <div class="ms-notice">Loading...</div>
       } @else if (conversationsError) {
-        <div class="sidebar-empty error">{{ conversationsError }}</div>
+        <div class="ms-notice err">{{ conversationsError }}</div>
       } @else if (conversations.length === 0) {
-        <div class="sidebar-empty">No conversation yet.</div>
+        <div class="ms-notice">No conversations yet.</div>
       } @else {
-        <div class="conversation-list">
+        <div class="ms-list">
           @for (conversation of conversations; track conversation.conversationKey) {
-            <button class="conversation-row" [class.active]="activeContact?.id === conversationTargetId(conversation)" (pointerdown)="onConversationPointerDown(conversation)" (click)="openConversation(conversation)">
-              <div class="avatar-wrap">
-                <div class="avatar-circle primary">{{ initials(previewName(conversation)) }}</div>
-                <span class="online-dot"></span>
+            <button class="ms-row" [class.active]="activeContact?.id === conversationTargetId(conversation)" (pointerdown)="onConversationPointerDown(conversation)" (click)="openConversation(conversation)">
+              <div class="ms-av-wrap">
+                <div class="ms-av">{{ initials(previewName(conversation)) }}</div>
+                <i class="ms-online"></i>
               </div>
-              <div class="row-content">
-                <div class="row-head">
-                  <strong>{{ previewName(conversation) }}</strong>
-                  <span>{{ conversation.lastMessageTime | date:'shortTime' }}</span>
-                </div>
-                <p>{{ conversation.lastMessagePreview || 'Open the conversation' }}</p>
+              <div class="ms-row-body">
+                <strong>{{ previewName(conversation) }}</strong>
+                <p>{{ conversation.lastMessagePreview || 'Start chatting' }}</p>
               </div>
+              <span class="ms-ts">{{ conversation.lastMessageTime | date:'shortTime' }}</span>
             </button>
           }
         </div>
       }
     </aside>
 
-    <section class="chat-panel" *ngIf="activeContact; else emptyState" style="flex:1 1 auto;min-width:0;">
-      <header class="chat-panel-header">
-        <div class="header-user">
-          <div class="avatar-wrap">
-            <div class="avatar-circle panel">{{ initials(activeContact.fullName) }}</div>
-            <span class="online-dot"></span>
-          </div>
-          <div>
-            <h3>{{ activeContact.fullName }}</h3>
-            <p>Active now</p>
-          </div>
+    <!-- CENTER — Chat -->
+    <section class="ms-center" *ngIf="activeContact; else emptyState">
+      <header class="ms-center-head">
+        <div class="ms-av-wrap">
+          <div class="ms-av sm">{{ initials(activeContact.fullName) }}</div>
+          <i class="ms-online"></i>
         </div>
-        <div class="chat-meta-pill">Messenger style</div>
+        <div class="ms-center-head-info">
+          <strong>{{ activeContact.fullName }}</strong>
+          <span>Active now</span>
+        </div>
       </header>
 
-      <div class="chat-thread" #chatScroll>
+      <div class="ms-thread" #chatScroll>
         @if (messages.length === 0) {
-          <div class="thread-empty">
-            <h4>Start the conversation</h4>
-            <p>Send the first message to begin this thread.</p>
+          <div class="ms-thread-empty">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <strong>Start the conversation</strong>
+            <p>Send the first message to {{ activeContact.fullName }}.</p>
           </div>
         }
         @for (msg of messages; track msg.id || $index) {
-          <div class="message-row" [class.mine]="isMine(msg)">
-            <div class="message-meta" *ngIf="!isMine(msg)">{{ msg.sender.fullName }}</div>
-            <div class="message-bubble">
+          <div class="ms-bubble-row" [class.mine]="isMine(msg)">
+            @if (!isMine(msg)) {
+              <div class="ms-av xs">{{ initials(msg.sender.fullName) }}</div>
+            }
+            <div class="ms-bubble">
               <p>{{ msg.content }}</p>
-              <span>{{ msg.timestamp | date:'short' }}</span>
+              <time>{{ msg.timestamp | date:'shortTime' }}</time>
             </div>
           </div>
         }
       </div>
 
-      <footer class="chat-composer">
+      <footer class="ms-composer">
         <form (ngSubmit)="sendMessage()">
-          <input type="text" placeholder="Type a message" [(ngModel)]="currentMessage" name="currentMessage" autocomplete="off" [disabled]="sending">
-          <button type="submit" [disabled]="!currentMessage.trim() || sending">{{ sending ? 'Sending…' : 'Send' }}</button>
+          <input type="text" placeholder="Type a message..." [(ngModel)]="currentMessage" name="currentMessage" autocomplete="off" [disabled]="sending" />
+          <button type="submit" [disabled]="!currentMessage.trim() || sending">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
         </form>
         @if (sendError) {
-          <div class="composer-error">{{ sendError }}</div>
+          <p class="ms-send-err">{{ sendError }}</p>
         }
       </footer>
     </section>
 
     <ng-template #emptyState>
-      <section class="chat-panel empty-panel">
-        <div class="empty-hero">
-          <div class="empty-icon">✉</div>
-          <h3>Your messages</h3>
-          <p>Select a conversation from the left panel.</p>
-        </div>
+      <section class="ms-center ms-center-empty">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <strong>Your messages</strong>
+        <p>Select a conversation or pick a user to start chatting.</p>
       </section>
     </ng-template>
 
-    <aside class="users-sidebar" style="flex:0 0 320px;min-width:320px;">
-      <div class="sidebar-header">
-        <div class="sidebar-header-top">
-          <h2>Users</h2>
-          <div class="header-actions">
-            <button type="button" aria-label="New chat">✎</button>
-            <button type="button" aria-label="Options">⋯</button>
-          </div>
-        </div>
-        <div class="chat-search-box top-search">
-          <input type="text" [(ngModel)]="contactSearch" placeholder="Search users" autocomplete="off" />
+    <!-- RIGHT — People -->
+    <aside class="ms-sidebar ms-people">
+      <div class="ms-side-head">
+        <h2>People</h2>
+        <div class="ms-search">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" [(ngModel)]="contactSearch" placeholder="Search users..." autocomplete="off" />
         </div>
       </div>
 
-      <div class="sidebar-block contacts-block">
-        <div class="section-title-row">
-          <h3>People</h3>
-          <span>{{ filteredContacts.length }}</span>
+      @if (contactsLoading) {
+        <div class="ms-notice">Loading...</div>
+      } @else if (contactsError) {
+        <div class="ms-notice err">{{ contactsError }}</div>
+      } @else if (filteredContacts.length === 0) {
+        <div class="ms-notice">No users found.</div>
+      } @else {
+        <div class="ms-list">
+          @for (contact of filteredContacts; track contact.id) {
+            <button class="ms-row" [class.active]="activeContact?.id === contact.id" (pointerdown)="onContactPointerDown(contact)" (click)="selectContact(contact)">
+              <div class="ms-av-wrap">
+                <div class="ms-av">{{ initials(contact.fullName) }}</div>
+                <i class="ms-online"></i>
+              </div>
+              <div class="ms-row-body">
+                <strong>{{ contact.fullName }}</strong>
+                <p>Tap to start conversation</p>
+              </div>
+              <span class="ms-role-chip">{{ contact.role }}</span>
+            </button>
+          }
         </div>
-        @if (contactsLoading) {
-          <div class="sidebar-empty">Loading users...</div>
-        } @else if (contactsError) {
-          <div class="sidebar-empty error">{{ contactsError }}</div>
-        } @else if (filteredContacts.length === 0) {
-          <div class="sidebar-empty">No users match your search.</div>
-        } @else {
-          <div class="contact-list">
-            @for (contact of filteredContacts; track contact.id) {
-              <button class="contact-row" [class.active]="activeContact?.id === contact.id" (pointerdown)="onContactPointerDown(contact)" (click)="selectContact(contact)">
-                <div class="avatar-wrap">
-                  <div class="avatar-circle secondary">{{ initials(contact.fullName) }}</div>
-                  <span class="online-dot"></span>
-                </div>
-                <div class="row-content compact">
-                  <div class="row-head">
-                    <strong>{{ contact.fullName }}</strong>
-                    <span class="role-chip">{{ contact.role }}</span>
-                  </div>
-                  <p>Tap to start conversation</p>
-                </div>
-              </button>
-            }
-          </div>
-        }
-      </div>
+      }
     </aside>
+
   </div>
 </div>

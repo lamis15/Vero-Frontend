@@ -62,7 +62,46 @@ export const routes: Routes = [
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () =>
-      import('./components/admin/admin').then(m => m.Admin)
+      import('./components/admin/admin').then(m => m.Admin),
+    children: [
+      {
+        path: '',
+        redirectTo: 'users',
+        pathMatch: 'full'
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: 'users/new',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
+        data: { mode: 'add' }
+      },
+      {
+        path: 'users/:id/edit',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
+        data: { mode: 'edit' }
+      },
+      {
+        path: 'messages',
+        loadComponent: () =>
+          import('./components/messagerie/messagerie.component').then(m => m.MessagerieComponent)
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./components/admin/admin-products/admin-products.component').then(m => m.AdminProductsComponent)
+      },
+      {
+        path: 'formations',
+        loadComponent: () =>
+          import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
+      }
+    ]
   },
   {
     path: 'chat',
@@ -113,10 +152,6 @@ export const routes: Routes = [
   {
     path: 'orders',
     loadComponent: () => import('./components/orders/orders.component').then(m => m.OrdersComponent)
-  },
-  {
-    path: 'admin',
-    loadComponent: () => import('./components/admin/admin').then(m => m.Admin)
   },
   {
     path: 'my-reservations',

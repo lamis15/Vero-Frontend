@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { timeout, catchError, of } from 'rxjs';
@@ -14,8 +14,6 @@ import { Product } from '../../../services/product.models';
   styleUrls: ['./admin-products.css']
 })
 export class AdminProductsComponent implements OnInit {
-  @Input() activeTab: 'products' = 'products';
-  @Output() tabChange = new EventEmitter<string>();
 
   products: Product[] = [];
   productsLoading = false;
@@ -65,9 +63,7 @@ export class AdminProductsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadImageCache();
-    if (this.activeTab === 'products') {
-      this.loadProducts();
-    }
+    this.loadProducts();
   }
 
   private loadImageCache(): void {

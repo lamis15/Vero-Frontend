@@ -1,56 +1,29 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService, UserResponse } from '../../services/auth.service';
 import { MessagerieService } from '../../services/messagerie.service';
 import { NotificationService } from '../../services/notification.service';
 
-import { AdminUsersComponent } from './admin-users/admin-users.component';
-import { AdminMessagesComponent } from './admin-messages/admin-messages.component';
-import { AdminProductsComponent } from './admin-products/admin-products.component';
-import { AdminFormationsComponent } from './admin-formations/admin-formations.component';
-
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule, 
-    AdminUsersComponent, 
-    AdminMessagesComponent, 
-    AdminProductsComponent, 
-    AdminFormationsComponent
-  ],
+  imports: [CommonModule, RouterModule],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css'],
   encapsulation: ViewEncapsulation.None
 })
 export class Admin implements OnInit {
-  activeTab: 'users' | 'add' | 'settings' | 'edit' | 'messages' | 'products' | 'formations' = 'users';
   adminMe: UserResponse | null = null;
-  topicHeatmapTotal = 0; // We can ignore or mock this if the sidebar needs it, or load it from a service.
-  suspendedCount = 0;
-  monitoredCount = 0;
 
   constructor(
     private authService: AuthService,
     private messagerieService: MessagerieService,
     private notificationService: NotificationService,
-    private route: ActivatedRoute,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    // Read ?tab= from navbar links
-    this.route.queryParams.subscribe(params => {
-      if (params['tab'] === 'products') {
-        this.setTab('products');
-      } else if (params['tab'] === 'formations') {
-        this.setTab('formations');
-      }
-    });
-
     this.authService.getMe().subscribe({
       next: (me) => {
         this.adminMe = me;
@@ -66,8 +39,54 @@ export class Admin implements OnInit {
     });
   }
 
-  setTab(tab: 'users' | 'add' | 'settings' | 'edit' | 'messages' | 'products' | 'formations' | string): void {
-    this.activeTab = tab as any;
+  isActive(segment: string): boolean {
+    return this.router.url.includes('/admin/' + segment);
+  }
+
+  get currentSection(): string {
+    const url = this.router.url;
+    if (url.includes('/admin/messages')) return 'messages';
+    if (url.includes('/admin/products')) return 'products';
+    if (url.includes('/admin/formations')) return 'formations';
+    if (url.includes('/admin/users/new')) return 'add';
+    if (url.includes('/edit')) return 'edit';
+    return 'users';
+  }
+
+  get heroTitle(): string {
+    switch (this.currentSection) {
+      case 'users': return 'The <em>Directory</em>';
+      case 'messages': return 'Conversations';
+      case 'add': return 'A <em>new</em> member';
+      case 'edit': return 'Editing a <em>member</em>';
+      case 'products': return 'Eco <em>Catalogue</em>';
+      case 'formations': return 'Green <em>Academy</em>';
+      default: return 'Admin <em>Dashboard</em>';
+    }
+  }
+
+  get heroSub(): string {
+    switch (this.currentSection) {
+      case 'users': return 'Manage accounts, roles and moderation actions across the Vero platform.';
+      case 'messages': return 'Send and receive messages with your team.';
+      case 'add': return 'Provision a new account with the correct role and initial access policy.';
+      case 'edit': return 'Update the selected account in place without leaving the directory.';
+      case 'products': return 'Manage your eco-store products, stock, and sustainability metrics.';
+      case 'formations': return 'Manage educational formations, sessions, and training resources.';
+      default: return '';
+    }
+  }
+
+  get heroCrumb(): string {
+    switch (this.currentSection) {
+      case 'users': return 'Directory';
+      case 'messages': return 'Messages';
+      case 'add': return 'New user';
+      case 'edit': return 'Edit user';
+      case 'products': return 'Eco Store';
+      case 'formations': return 'Academy';
+      default: return '';
+    }
   }
 
   initials(name?: string): string {

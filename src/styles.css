@@ -129,8 +129,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  /* Remove the default white — this is what bleeds through glass */
-  background: transparent;
+  background: #04161B;
 }
 
 /* ── Leaflet container must always fill its host ── */

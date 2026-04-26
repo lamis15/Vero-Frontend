@@ -1,50 +1,116 @@
-<div class="chat-page">
-  <div class="chat-layout">
-    <aside class="chat-sessions">
-      <div class="sessions-head">
-        <h2>Chat Sessions</h2>
-        <button type="button" (click)="newSession()">+ New</button>
+<div class="cb-page">
+  <div class="cb-layout">
+
+    <!-- Sidebar — sessions -->
+    <aside class="cb-sidebar">
+      <div class="cb-sidebar-head">
+        <h2>Chats</h2>
+        <button type="button" class="cb-new-btn" (click)="newSession()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New
+        </button>
       </div>
-      @for (s of sessions; track s.id) {
-        <div class="session-item" [class.active]="activeSessionId === s.id" (click)="selectSession(s.id)">
-          <span>Session #{{ s.id }}</span>
-          <button type="button" class="delete" (click)="deleteSession(s.id); $event.stopPropagation()">x</button>
-        </div>
-      }
+
+      <div class="cb-session-list">
+        @for (s of sessions; track s.id) {
+          <div class="cb-session" [class.active]="activeSessionId === s.id" (click)="selectSession(s.id)">
+            <div class="cb-session-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span class="cb-session-label">Session #{{ s.id }}</span>
+            <button type="button" class="cb-session-del" (click)="deleteSession(s.id); $event.stopPropagation()" title="Delete">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        }
+
+        @if (sessions.length === 0) {
+          <p class="cb-empty">No sessions yet. Start a new chat.</p>
+        }
+      </div>
     </aside>
 
-    <div class="chat-main">
-      <div class="chat-intro">
-        <h1 class="chat-title">Eco assistant</h1>
-    
-      </div>
-      
+    <!-- Main chat area -->
+    <div class="cb-main">
+
+      <!-- Header bar -->
+      <header class="cb-header">
+        <div class="cb-header-left">
+          <div class="cb-header-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </div>
+          <div>
+            <h1>Eco Assistant</h1>
+            <span class="cb-status" [class.live]="wsConnected">{{ wsConnected ? 'Online' : 'Offline' }}</span>
+          </div>
+        </div>
+        @if (!wsConnected) {
+          <button type="button" class="cb-reconnect" (click)="reconnectWebSocket()">Reconnect</button>
+        }
+      </header>
+
       @if (error) {
-        <div class="error">{{ error }}</div>
+        <div class="cb-error">{{ error }}</div>
       }
-      <div class="messages">
+
+      <!-- Messages -->
+      <div class="cb-messages">
         @if (loading) {
-          <p>Loading messages...</p>
+          <div class="cb-placeholder">
+            <div class="cb-typing">
+              <span></span><span></span><span></span>
+            </div>
+            <p>Loading messages...</p>
+          </div>
         } @else if (!activeSessionId) {
-          <p>Create or select a session to start chatting.</p>
+          <div class="cb-placeholder">
+            <div class="cb-placeholder-icon">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <p>Select a session or start a new chat</p>
+            <small>Ask anything about sustainability, carbon tracking, or eco tips.</small>
+          </div>
         } @else {
           @for (m of messages; track m.id) {
-            <div class="msg" [class.bot]="m.sender === 'BOT'" [class.user]="m.sender === 'USER'">
-              <span class="msg-body">{{ m.content }}</span>
+            <div class="cb-msg cb-msg-enter" [class.bot]="m.sender === 'BOT'" [class.user]="m.sender === 'USER'">
+              @if (m.sender === 'BOT') {
+                <div class="cb-msg-avatar">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                </div>
+              }
+              <div class="cb-msg-bubble">{{ m.content }}</div>
+            </div>
+          }
+
+          @if (thinking) {
+            <div class="cb-msg bot cb-msg-enter">
+              <div class="cb-msg-avatar">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              </div>
+              <div class="cb-msg-bubble cb-thinking-bubble">
+                <div class="cb-thinking">
+                  <span></span><span></span><span></span>
+                </div>
+                <span class="cb-thinking-label">Thinking...</span>
+              </div>
             </div>
           }
         }
       </div>
 
-      <div class="composer">
+      <!-- Composer -->
+      <div class="cb-composer">
         <input
           type="text"
           [(ngModel)]="messageText"
-          placeholder="Type your message..."
+          placeholder="Ask the eco assistant..."
           (keyup.enter)="sendMessage()"
         />
-        <button type="button" (click)="sendMessage()" [disabled]="!wsConnected || loading">Send</button>
+        <button type="button" (click)="sendMessage()" [disabled]="!wsConnected || loading" title="Send">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
       </div>
+
     </div>
   </div>
 </div>

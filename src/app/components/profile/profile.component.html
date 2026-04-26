@@ -1,22 +1,8 @@
-<!-- ═══ VERO PROFILE — META-STYLE + ECOLOGICAL PALETTE ═══ -->
 <div class="pf-page">
 
-  <!-- Cover photo + overlay -->
-  <header class="pf-cover">
-    <img class="pf-cover-img" src="assets/images/hero-forest2.png" alt="" />
-    <div class="pf-cover-veil"></div>
-    <div class="pf-cover-edit-btn">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
-      <span>Edit cover</span>
-    </div>
-  </header>
-
-  <!-- Avatar + headline -->
+  <!-- Profile Header — compact dashboard style -->
   <section class="pf-header">
-    <div class="pf-header-inner">
+    <div class="pf-header-top">
       <div class="pf-avatar-wrap">
         <div class="pf-avatar">
           @if (image || user?.image) {
@@ -27,7 +13,7 @@
         </div>
         <label class="pf-avatar-edit" title="Change photo">
           <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
@@ -38,53 +24,53 @@
         <h1 class="pf-name">{{ user?.fullName || '—' }}</h1>
         <p class="pf-tagline">
           <span class="pf-role-chip">{{ user?.role }}</span>
-          <span>Member of the Vero ecological platform</span>
+          <span class="pf-sep">·</span>
+          <span>{{ user?.email }}</span>
         </p>
       </div>
 
       <div class="pf-header-actions">
-        <button class="pf-btn primary">✎ Edit profile</button>
-        <button class="pf-btn ghost">⋯</button>
+        <button class="pf-btn primary" (click)="setTab('profile')">Edit profile</button>
       </div>
     </div>
 
-    <!-- quick stat strip -->
+    <!-- Stat cards row -->
     <div class="pf-stats">
-      <div>
+      <div class="pf-stat-card">
         <span class="pf-stat-v">{{ user?.verified ? 'Verified' : 'Pending' }}</span>
         <span class="pf-stat-l">Status</span>
       </div>
-      <div>
+      <div class="pf-stat-card">
         <span class="pf-stat-v">#{{ user?.id ?? '—' }}</span>
         <span class="pf-stat-l">Member ID</span>
       </div>
-      <div>
+      <div class="pf-stat-card">
         <span class="pf-stat-v">{{ user?.createdAt ? (user!.createdAt | date:'MMM yyyy') : '—' }}</span>
         <span class="pf-stat-l">Joined</span>
       </div>
-      <div>
-        <span class="pf-stat-v">Active</span>
-        <span class="pf-stat-l">Session</span>
+      <div class="pf-stat-card">
+        <span class="pf-stat-v">{{ ecoScore }}%</span>
+        <span class="pf-stat-l">Eco Score</span>
       </div>
     </div>
   </section>
 
-  <!-- Tabs -->
+  <!-- Tabs — pill style -->
   <nav class="pf-tabs">
     <button [class.active]="activeTab === 'profile'" (click)="setTab('profile')">Profile</button>
     <button [class.active]="activeTab === 'security'" (click)="setTab('security')">Security</button>
     <button disabled>Posts</button>
     <button disabled>Activity</button>
-    <button disabled>Reservations</button>
   </nav>
 
-  <!-- Main body: left aside + right feed -->
+  <!-- Main body -->
   <main class="pf-body">
 
-    <!-- LEFT — intro + contact snapshot -->
+    <!-- LEFT sidebar -->
     <aside class="pf-aside">
-      <section class="pf-card pf-intro-card">
-        <h3 class="pf-card-title">Intro</h3>
+
+      <section class="pf-card">
+        <h3 class="pf-card-title">About</h3>
         <p class="pf-intro">
           Committed to a lighter footprint.<br>
           Tracking what counts — carbon, community, impact.
@@ -95,10 +81,6 @@
             <span>{{ user?.email }}</span>
           </li>
           <li>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <span>Earth · platform member</span>
-          </li>
-          <li>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span>Session active now</span>
           </li>
@@ -107,70 +89,67 @@
 
       <section class="pf-card pf-eco">
         <div class="pf-eco-head">
-          <span class="pf-eco-kicker">— AI eco score</span>
-          <h3 class="pf-card-title">Your <em>eco</em> voice</h3>
+          <span class="pf-eco-kicker">AI Eco Score</span>
+          <h3 class="pf-card-title">Your Eco Voice</h3>
         </div>
         <div class="pf-eco-ring" [style.--pf-score]="ecoScore">
           <div class="pf-eco-ring-val">
             <strong>{{ ecoScore }}<span>%</span></strong>
-            <small>{{ ecoStats.eco }}/{{ ecoTotal || '0' }} messages</small>
+            <small>{{ ecoStats.eco }}/{{ ecoTotal || '0' }} msgs</small>
           </div>
         </div>
         <p class="pf-eco-copy">
           @if (ecoTotal === 0) {
-            Send a few messages — once the AI tags them, your eco score shows up here.
+            Send a few messages — your eco score will appear here.
           } @else if (ecoScore >= 40) {
-            You speak sustainability often. Keep shaping the conversation.
+            You speak sustainability often. Keep it up.
           } @else if (ecoScore >= 15) {
             A steady voice on eco topics, with room to grow.
           } @else {
-            Your conversations lean lifestyle &amp; product. Try a climate note next.
+            Your conversations lean lifestyle &amp; product.
           }
         </p>
         <ul class="pf-eco-breakdown">
-          <li><span class="pf-eco-dot pf-eco-eco"></span>       Eco <em>{{ ecoStats.eco }}</em></li>
-          <li><span class="pf-eco-dot pf-eco-lifestyle"></span> Lifestyle <em>{{ ecoStats.lifestyle }}</em></li>
-          <li><span class="pf-eco-dot pf-eco-product"></span>   Product <em>{{ ecoStats.product }}</em></li>
-          <li><span class="pf-eco-dot pf-eco-other"></span>     Other <em>{{ ecoStats.other }}</em></li>
+          <li><span class="pf-eco-dot eco"></span> Eco <em>{{ ecoStats.eco }}</em></li>
+          <li><span class="pf-eco-dot lifestyle"></span> Lifestyle <em>{{ ecoStats.lifestyle }}</em></li>
+          <li><span class="pf-eco-dot product"></span> Product <em>{{ ecoStats.product }}</em></li>
+          <li><span class="pf-eco-dot other"></span> Other <em>{{ ecoStats.other }}</em></li>
         </ul>
       </section>
 
       <section class="pf-card">
         <div class="pf-eco-head">
-          <span class="pf-eco-kicker">— AI Eco Profile</span>
-          <h3 class="pf-card-title">Your <em>Impact</em> Persona</h3>
+          <span class="pf-eco-kicker">AI Eco Profile</span>
+          <h3 class="pf-card-title">Impact Persona</h3>
         </div>
-
         @if (ecoProfileLoading) {
-          <div style="height: 120px; border-radius: 8px; background: rgba(0,0,0,0.03); margin-top: 1rem;"></div>
+          <div class="pf-skeleton"></div>
         } @else if (ecoProfile) {
-          <div style="text-align: center; margin: 1.5rem 0; padding: 1.5rem; background: linear-gradient(135deg, #EAF0ED 0%, #E4EFF2 100%); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);">
-            <h2 style="margin: 0; font-size: 1.8rem; color: #1F4D3F; font-weight: 700; letter-spacing: -0.02em;">{{ ecoProfile.profile }}</h2>
+          <div class="pf-persona-label">
+            <h2>{{ ecoProfile.profile }}</h2>
           </div>
-          
-          <ul class="pf-eco-breakdown" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-            <li><span class="pf-eco-dot" style="background: #1F4D3F"></span> Transport <em>{{ ecoProfile.transportKg | number:'1.0-1' }}kg</em></li>
-            <li><span class="pf-eco-dot" style="background: #8a6a1c"></span> Food <em>{{ ecoProfile.foodKg | number:'1.0-1' }}kg</em></li>
-            <li><span class="pf-eco-dot" style="background: #1F5463"></span> Energy <em>{{ ecoProfile.energyKwh | number:'1.0-1' }}kWh</em></li>
-            <li><span class="pf-eco-dot" style="background: #d46b53"></span> Waste <em>{{ ecoProfile.wasteKg | number:'1.0-1' }}kg</em></li>
+          <ul class="pf-eco-breakdown pf-eco-grid">
+            <li><span class="pf-eco-dot" style="background:#0D98BA"></span> Transport <em>{{ ecoProfile.transportKg | number:'1.0-1' }}kg</em></li>
+            <li><span class="pf-eco-dot" style="background:#008080"></span> Food <em>{{ ecoProfile.foodKg | number:'1.0-1' }}kg</em></li>
+            <li><span class="pf-eco-dot" style="background:#15A3C7"></span> Energy <em>{{ ecoProfile.energyKwh | number:'1.0-1' }}kWh</em></li>
+            <li><span class="pf-eco-dot" style="background:#3AB09E"></span> Waste <em>{{ ecoProfile.wasteKg | number:'1.0-1' }}kg</em></li>
           </ul>
-          
-          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; text-align: center;">
+          <div class="pf-persona-stats">
             <div>
-              <strong style="display: block; font-size: 1.25rem; color: #1F4D3F;">{{ ecoProfile.postsCount }}</strong>
-              <small class="pf-muted">Posts</small>
+              <strong>{{ ecoProfile.postsCount }}</strong>
+              <small>Posts</small>
             </div>
             <div>
-              <strong style="display: block; font-size: 1.25rem; color: #1F4D3F;">{{ ecoProfile.goalsAchieved }}</strong>
-              <small class="pf-muted">Goals</small>
+              <strong>{{ ecoProfile.goalsAchieved }}</strong>
+              <small>Goals</small>
             </div>
             <div>
-              <strong style="display: block; font-size: 1.25rem; color: #1F4D3F;">{{ ecoProfile.reportsCount }}</strong>
-              <small class="pf-muted">Alerts</small>
+              <strong>{{ ecoProfile.reportsCount }}</strong>
+              <small>Alerts</small>
             </div>
           </div>
         } @else {
-          <p class="pf-eco-copy" style="margin-top: 1rem;">
+          <p class="pf-eco-copy" style="margin-top: 0.75rem;">
             Keep tracking your footprint to generate your AI persona.
           </p>
         }
@@ -180,21 +159,21 @@
         <h3 class="pf-card-title">Highlights</h3>
         <div class="pf-badges">
           <div class="pf-badge">
-            <div class="pf-badge-icon" style="background:#EAF0ED;color:#1F4D3F;">♺</div>
+            <div class="pf-badge-icon">&#9854;</div>
             <div>
               <strong>Eco tracker</strong>
               <small>Active</small>
             </div>
           </div>
           <div class="pf-badge">
-            <div class="pf-badge-icon" style="background:#FAF1D7;color:#8a6a1c;">★</div>
+            <div class="pf-badge-icon accent">&#9733;</div>
             <div>
               <strong>Early supporter</strong>
               <small>Founding member</small>
             </div>
           </div>
           <div class="pf-badge">
-            <div class="pf-badge-icon" style="background:#E4EFF2;color:#1F5463;">✦</div>
+            <div class="pf-badge-icon alt">&#10022;</div>
             <div>
               <strong>Community</strong>
               <small>Positive reputation</small>
@@ -204,18 +183,17 @@
       </section>
     </aside>
 
-    <!-- RIGHT — edit forms as a feed of composable panels -->
+    <!-- RIGHT feed -->
     <section class="pf-feed">
 
       @if (success) { <div class="pf-banner ok">{{ success }}</div> }
       @if (error) { <div class="pf-banner err">{{ error }}</div> }
 
       @if (activeTab === 'profile') {
-        <!-- Public profile -->
         <article class="pf-card pf-compose">
           <header class="pf-card-head">
-            <h2>Edit your public profile</h2>
-            <p>This is how other members see you across Vero — your name, your email, your face.</p>
+            <h2>Edit your profile</h2>
+            <p>This is how other members see you across Vero.</p>
           </header>
 
           <div class="pf-form">
@@ -232,54 +210,51 @@
               <div class="pf-upload">
                 <input id="pf-file" type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
                 <label for="pf-file" class="pf-upload-btn">Upload new photo</label>
-                <small>PNG or JPG · max 2MB</small>
+                <small>PNG or JPG, max 2 MB</small>
               </div>
             </label>
           </div>
 
           <footer class="pf-card-foot">
-            <span class="pf-muted">Your profile is visible to all platform members.</span>
+            <span class="pf-muted">Visible to all platform members.</span>
             <button class="pf-btn primary" (click)="updateProfile()">Save profile</button>
           </footer>
         </article>
 
-        <!-- Quick link to Security tab -->
         <article class="pf-card pf-quicklink" (click)="setTab('security')">
           <div class="pf-quicklink-icon">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
               <rect x="3" y="11" width="18" height="11" rx="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
           <div class="pf-quicklink-body">
             <strong>Security &amp; password</strong>
-            <p>Change your password, review your session, manage access.</p>
+            <p>Change your password and manage access.</p>
           </div>
-          <span class="pf-quicklink-chevron">→</span>
+          <span class="pf-quicklink-chevron">&rarr;</span>
         </article>
       }
 
       @if (activeTab === 'security') {
-        <!-- Security hero -->
         <article class="pf-card pf-security-hero">
           <div class="pf-security-hero-art">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6">
               <rect x="3" y="11" width="18" height="11" rx="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
           <div>
-            <div class="pf-security-kicker">— Account security</div>
+            <span class="pf-eco-kicker">Account Security</span>
             <h2>Keep your account yours.</h2>
-            <p>Rotate your password regularly. Vero never stores passwords in plain text and will never email them back to you.</p>
+            <p>Rotate your password regularly. Vero never stores passwords in plain text.</p>
           </div>
         </article>
 
-        <!-- Password -->
         <article class="pf-card pf-compose">
           <header class="pf-card-head">
             <h2>Change your password</h2>
-            <p>Enter your current password, then pick a new one with at least 8 characters.</p>
+            <p>Enter your current password, then pick a new one.</p>
           </header>
 
           <div class="pf-form">
@@ -294,22 +269,20 @@
           </div>
 
           <footer class="pf-card-foot">
-            <span class="pf-muted">You'll stay signed in on this device after the change.</span>
+            <span class="pf-muted">You'll stay signed in after the change.</span>
             <button class="pf-btn primary" (click)="updatePassword()">Update password</button>
           </footer>
         </article>
 
-        <!-- Advice strip -->
         <article class="pf-card pf-advice">
-          <h3>Good password habits</h3>
+          <h3 class="pf-card-title">Good password habits</h3>
           <ul>
-            <li><span class="pf-advice-bullet" style="background:#EAF0ED;color:#1F4D3F;">✓</span> Use at least 12 characters mixing upper, lower, numbers.</li>
-            <li><span class="pf-advice-bullet" style="background:#FAF1D7;color:#8a6a1c;">✓</span> Never reuse a password you use on another site.</li>
-            <li><span class="pf-advice-bullet" style="background:#E4EFF2;color:#1F5463;">✓</span> A password manager makes this effortless.</li>
+            <li><span class="pf-advice-dot"></span> Use at least 12 characters mixing upper, lower, numbers.</li>
+            <li><span class="pf-advice-dot accent"></span> Never reuse a password from another site.</li>
+            <li><span class="pf-advice-dot alt"></span> A password manager makes this effortless.</li>
           </ul>
         </article>
       }
-
     </section>
   </main>
 </div>
