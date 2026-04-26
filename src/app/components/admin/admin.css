@@ -2749,11 +2749,7 @@ app-admin-messages,
 app-admin-products,
 app-admin-formations {
   display: block;
-  animation: tabIn .35s cubic-bezier(.22, 1, .36, 1) forwards;
-}
-
-.tab-entering {
-  animation: tabIn .35s cubic-bezier(.22, 1, .36, 1) forwards;
+  animation: fadeIn .35s ease forwards;
 }
 
 /* ─────────────────────────────────────────────
