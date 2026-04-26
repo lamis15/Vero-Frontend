@@ -1,0 +1,8 @@
+/* ── Admin Users (dark theme overrides) ── */
+.vc-table tbody tr:hover td {
+  background: rgba(255,255,255,.03);
+}
+select option {
+  background: var(--vc-surface, #1e2235);
+  color: var(--vc-text-primary, #fff);
+}

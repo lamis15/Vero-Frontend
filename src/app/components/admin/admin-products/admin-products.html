@@ -1,53 +1,66 @@
-<!-- ═══ PRODUCTS ═══ -->
+<!-- ═══ PRODUCTS — Dark Premium Redesign ═══ -->
 @if (activeTab === 'products') {
-  <section class="vc-section">
-    <div class="vc-section-head">
+  <section class="vc-section prod-section">
+    <div class="prod-section-head">
       <div>
-        <h2 class="vc-h2">Products</h2>
-        <p class="vc-muted">{{ products.length }} items in the eco-store catalogue.</p>
+        <span class="prod-kicker">ECO CATALOGUE</span>
+        <h2 class="prod-title">Products</h2>
+        <p class="prod-subtitle">{{ products.length }} items in the eco-store catalogue.</p>
       </div>
-      <button class="vc-btn gold" (click)="openProductModal()">+ Add Product</button>
+      <button class="prod-add-btn" (click)="openProductModal()">+ Add Product</button>
     </div>
+
     @if (productsLoading) {
-      <div class="vc-cards-grid">
+      <div class="prod-grid">
         @for (s of [1,2,3,4,5,6]; track s) {
-          <div class="vc-product-card vc-skeleton"></div>
+          <div class="prod-card prod-skeleton"></div>
         }
       </div>
     } @else if (products.length === 0) {
-      <p class="vc-empty">No products found.</p>
+      <div class="prod-empty">
+        <span class="prod-empty-icon">🌿</span>
+        <h3>No products found</h3>
+        <p>Start by adding your first eco product.</p>
+        <button class="prod-add-btn" (click)="openProductModal()">+ Add Product</button>
+      </div>
     } @else {
-      <div class="vc-cards-grid">
-        @for (p of products; track p.id) {
-          <div class="vc-product-card">
-            <div class="vc-product-img">
+      <div class="prod-grid">
+        @for (p of products; track p.id; let i = $index) {
+          <div class="prod-card" [style.animation-delay.ms]="i * 60">
+            <!-- Image area -->
+            <div class="prod-img-area">
               @if (getProductImage(p)) {
-                <img [src]="getProductImage(p)" [alt]="p.name" />
+                <img [src]="getProductImage(p)" [alt]="p.name" class="prod-img" />
               } @else {
-                <div class="vc-product-img-placeholder">🌿</div>
+                <div class="prod-img-placeholder">🌿</div>
               }
+              <!-- Bottom gradient overlay -->
+              <div class="prod-img-overlay"></div>
               @if (p.isEcological) {
-                <span class="vc-eco-badge">Eco</span>
+                <span class="prod-eco-badge">♻ ECO</span>
               }
             </div>
-            <div class="vc-product-body">
-              <div class="vc-product-meta">
-                <span class="vc-tag sm">{{ p.category.replace('_', ' ') }}</span>
-                @if (p.origin) { <span class="vc-product-origin">📍 {{ p.origin }}</span> }
+
+            <!-- Body -->
+            <div class="prod-body">
+              <div class="prod-meta-row">
+                <span class="prod-category">{{ p.category.replace('_', ' ') }}</span>
+                @if (p.origin) { <span class="prod-origin">📍 {{ p.origin }}</span> }
               </div>
-              <h3 class="vc-product-name">{{ p.name }}</h3>
-              <p class="vc-product-desc">{{ p.description }}</p>
-              <div class="vc-product-footer">
-                <div class="vc-product-price-row">
-                  <span class="vc-product-price">{{ p.price | number:'1.2-2' }} €</span>
-                  <span class="vc-product-stock" [class.low]="p.stock < 10">
-                    {{ p.stock }} in stock
-                  </span>
-                </div>
-                <div class="vc-row-actions">
-                  <button class="vc-link-btn" (click)="openProductModal(p)">Edit</button>
-                  <button class="vc-link-btn danger" (click)="deleteProduct(p.id)">Delete</button>
-                </div>
+
+              <h3 class="prod-name">{{ p.name }}</h3>
+              <p class="prod-desc">{{ p.description }}</p>
+
+              <div class="prod-price-row">
+                <span class="prod-price">{{ p.price | number:'1.2-2' }} €</span>
+                <span class="prod-stock" [class.low]="p.stock < 10">{{ p.stock }} in stock</span>
+              </div>
+
+              <div class="prod-divider"></div>
+
+              <div class="prod-actions">
+                <button class="prod-edit-btn" (click)="openProductModal(p)">✏️ Edit</button>
+                <button class="prod-delete-btn" (click)="deleteProduct(p.id)">🗑️</button>
               </div>
             </div>
           </div>
