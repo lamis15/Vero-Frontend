@@ -165,6 +165,20 @@
         </div>
         <!-- FIN SHARE -->
 
+        <!-- REPORT (utilisateurs seulement) -->
+        <div class="pd-section" *ngIf="!isAdmin">
+          <div class="pd-report-row">
+            <!-- Badge de confirmation -->
+            <div class="pd-report-done" *ngIf="reportDone">
+              ✅ Signalement envoyé, merci !
+            </div>
+            <button class="pd-report-btn" *ngIf="!reportDone"
+                    (click)="showReportModal = true">
+              ⚠️ Report this petition
+            </button>
+          </div>
+        </div>
+
         <!-- ── SIGNATURES MAP ────────────────────────────── -->
         <div class="pd-section">
           <h2 class="pd-section-title">🗺️ Signatures map</h2>
@@ -213,4 +227,40 @@
     <!-- FIN CORPS -->
 
   </div>
+
+  <!-- ── REPORT MODAL ────────────────────────────────── -->
+  <div class="pd-report-overlay" *ngIf="showReportModal" (click)="showReportModal = false">
+    <div class="pd-report-modal" (click)="$event.stopPropagation()">
+      <button class="pd-close" style="top:12px;right:12px" (click)="showReportModal = false">✕</button>
+      <h3 style="margin:0 0 16px;font-size:17px;font-weight:700">⚠️ Report this petition</h3>
+
+      <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;opacity:.6;display:block;margin-bottom:6px">
+        Reason
+      </label>
+      <select [(ngModel)]="reportReason"
+              style="width:100%;padding:10px;border:1px solid #e3dfd2;border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:14px;background:#fff;outline:none">
+        <option value="SPAM">📢 Spam</option>
+        <option value="INAPPROPRIATE">🚫 Inappropriate content</option>
+        <option value="MISLEADING">🤔 Misleading information</option>
+        <option value="OTHER">❓ Other</option>
+      </select>
+
+      <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;opacity:.6;display:block;margin-bottom:6px">
+        Details <span style="font-weight:400;opacity:.7">(optional)</span>
+      </label>
+      <textarea [(ngModel)]="reportDetails" rows="3"
+                placeholder="Describe the issue..."
+                style="width:100%;padding:10px;border:1px solid #e3dfd2;border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box">
+      </textarea>
+
+      <button
+        style="width:100%;margin-top:14px;padding:12px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer"
+        (click)="report()"
+        [disabled]="reportSubmitting">
+        <span *ngIf="!reportSubmitting">⚠️ Submit report</span>
+        <span *ngIf="reportSubmitting">Sending...</span>
+      </button>
+    </div>
+  </div>
+
 </div>

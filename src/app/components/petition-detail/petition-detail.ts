@@ -26,6 +26,13 @@ export class PetitionDetail implements OnInit {
   signError = '';
   signSuccess = false;
 
+  // ── Report ─────────────────────────────────────────────────
+  showReportModal = false;
+  reportReason: 'SPAM' | 'INAPPROPRIATE' | 'MISLEADING' | 'OTHER' = 'SPAM';
+  reportDetails = '';
+  reportSubmitting = false;
+  reportDone = false;
+
   mapLoading = false;
   mapPoints: any[] = [];
 
@@ -108,8 +115,36 @@ export class PetitionDetail implements OnInit {
       - (this.petition?.currentSignatures || 0));
   }
 
+  report(): void {
+    if (this.reportSubmitting || !this.petition?.id) return;
+
+    // ✔ Optimistic : fermer le modal et confirmer immédiatement
+    this.showReportModal  = false;
+    this.reportDone       = true;
+    const savedDetails    = this.reportDetails;
+    const savedReason     = this.reportReason;
+    this.reportDetails    = '';
+    setTimeout(() => this.reportDone = false, 4000);
+
+    // Appel API en arrière-plan (silencieux)
+    this.reportSubmitting = true;
+    this.petitionService.report(
+      this.petition.id,
+      savedReason,
+      savedDetails || undefined
+    ).subscribe({
+      next: () => { this.reportSubmitting = false; },
+      error: () => {
+        // Rollback silencieux (l'utilisateur a déjà vu la confirmation)
+        this.reportSubmitting = false;
+      }
+    });
+  }
+
   sign() {
     if (this.signing || this.hasSigned || !this.petition?.id) return;
+    if (this.isAdmin) return; // L'admin ne peut pas signer
+    if (this.petition.status !== 'ACTIVE') return; // Uniquement si ACTIVE
 
     this.signError = '';
 

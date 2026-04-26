@@ -18,6 +18,7 @@ export interface Petition {
   createdAt?: string;
   adminResponse?: string;
   isOwner?: boolean;
+  _hasSigned?: boolean; // Frontend state only
 }
 
 export interface PetitionSignature {
@@ -47,7 +48,7 @@ export class PetitionService {
   constructor(private http: HttpClient) { }
 
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('vero_jwt_token');
+    const token = localStorage.getItem('vero_access_token');
     return new HttpHeaders({
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })

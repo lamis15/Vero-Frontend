@@ -17,6 +17,7 @@ export interface Donation {
   userName?: string;
   donationDate?: string;
   status?: string;
+  fraudScore?: number;
 }
 
 @Injectable({
@@ -29,7 +30,7 @@ export class DonationService {
   constructor(private http: HttpClient) { }
 
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('vero_jwt_token');
+    const token = localStorage.getItem('vero_access_token'); // clé JWT correcte
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`

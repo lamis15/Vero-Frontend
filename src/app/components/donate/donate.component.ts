@@ -42,7 +42,8 @@ export class DonateComponent implements OnInit, OnDestroy {
   volunteerHours: number | null = null;
 
   // ── Donations history ─────────────────────────────────────────
-  donations: Donation[] = [];
+  allDonations: Donation[] = [];  // liste complète reçue du serveur
+  donations: Donation[] = [];     // liste filtrée affichée
   donationsLoading = false;
   totalDonated = 0;
 
@@ -58,6 +59,7 @@ export class DonateComponent implements OnInit, OnDestroy {
   // ── Auth ──────────────────────────────────────────────────────
   currentRole: string | null = null;
   currentUserEmail: string | null = null;
+  currentUserId: number | null = null; // ← identifiant pour isOwner()
   private roleSub!: Subscription;
 
   // ── UI state ──────────────────────────────────────────────────
@@ -88,8 +90,11 @@ export class DonateComponent implements OnInit, OnDestroy {
   // ── Lifecycle ─────────────────────────────────────────────────
   ngOnInit(): void {
     this.currentUserEmail = this.authService.currentUserEmail;
+    this.currentUserId = this.authService.currentUser?.id ?? null; // ← userId depuis le token
     this.roleSub = this.authService.roleStream$.subscribe(role => {
       this.currentRole = role;
+      // Recharger l'userId si le rôle change (ex. après refresh)
+      this.currentUserId = this.authService.currentUser?.id ?? null;
       this.cdr.markForCheck();
     });
     this.startHeroAnimation();
@@ -104,6 +109,19 @@ export class DonateComponent implements OnInit, OnDestroy {
   // ── Getters ───────────────────────────────────────────────────
   get isAdmin(): boolean { return this.currentRole === 'ADMIN'; }
   get isLoggedIn(): boolean { return this.authService.isLoggedIn; }
+
+  /**
+   * Filtre les donations selon les droits de visibilité :
+   * - ADMIN         : voit tout (tous statuts)
+   * - Propriétaire  : voit ses propres donations (tous statuts)
+   * - Autres        : voit uniquement les donations VALIDATED
+   */
+  get visibleDonations(): Donation[] {
+    if (this.isAdmin) return this.allDonations;
+    return this.allDonations.filter(d =>
+      d.status === 'VALIDATED' || this.isOwner(d)
+    );
+  }
 
   get selectedEvent(): Event | null {
     return this.selectedEventIndex >= 0 ? this.events[this.selectedEventIndex] : null;
@@ -178,8 +196,12 @@ export class DonateComponent implements OnInit, OnDestroy {
     if (!ev?.id) return;
     this.donationsLoading = true;
     this.donationService.getDonationsByEvent(ev.id).subscribe({
-      next: (data) => { this.donations = data; this.donationsLoading = false; },
-      error: () => { this.donations = []; this.donationsLoading = false; }
+      next: (data) => {
+        this.allDonations = data;            // stocker la liste complète
+        this.donations = this.visibleDonations; // appliquer le filtre de visibilité
+        this.donationsLoading = false;
+      },
+      error: () => { this.allDonations = []; this.donations = []; this.donationsLoading = false; }
     });
     this.donationService.getTotalByEvent(ev.id).subscribe({
       next: (total) => this.totalDonated = total,
@@ -286,12 +308,13 @@ export class DonateComponent implements OnInit, OnDestroy {
     // ── MATERIAL / TIME : sauvegarde directe ──────────────────
     this.donationService.createDonationForEvent(snapshot, ev.id).subscribe({
       next: (donation) => {
-        this.donations = [donation, ...this.donations];
+        // Ajouter dans la liste brute et recalculer la vue filtrée
+        this.allDonations = [donation, ...this.allDonations];
+        this.donations = this.visibleDonations;
         this.donateState = 'confirmed';
         this.showSuccessModal = true;
         this.successMessage = 'Donation confirmed! Thank you 💚';
         this.resetForm();
-        this.loadDonationsForEvent();
         setTimeout(() => {
           this.donateState = 'idle';
           this.successMessage = '';
@@ -365,26 +388,39 @@ export class DonateComponent implements OnInit, OnDestroy {
     }
     this.errorMessage = '';
     this.editState = 'processing';
-    this.donationService.update(this.editingDonation.id, {
+
+    const id = this.editingDonation.id;
+    const patch = {
       amount: this.editAmount,
       message: this.editMessage,
       anonymous: this.editAnonymous,
       type: this.editType,
       quantity: this.editType === 'MATERIAL' ? this.editQuantity : undefined
-    }).subscribe({
-      next: () => {
-        this.editState = 'confirmed';
-        this.successMessage = 'Donation updated!';
-        setTimeout(() => {
-          this.editState = 'idle';
-          this.successMessage = '';
-          this.editingDonation = null;
-          this.loadDonationsForEvent();
-        }, 1500);
+    };
+
+    // ✔ Optimistic update : appliquer immédiatement dans les deux tableaux
+    this.allDonations = this.allDonations.map(d =>
+      d.id === id ? { ...d, ...patch } : d
+    );
+    this.donations = this.visibleDonations; // recalcule le filtre de visibilité
+    this.editState = 'confirmed';
+    this.editingDonation = null;
+    this.successMessage = 'Donation updated! ✅';
+    setTimeout(() => this.successMessage = '', 3000);
+
+    // Appel API en arrière-plan
+    this.donationService.update(id, patch).subscribe({
+      next: (updated) => {
+        // Sync avec la réponse réelle du serveur
+        this.allDonations = this.allDonations.map(d => d.id === id ? { ...d, ...updated } : d);
+        this.donations = this.visibleDonations;
+        this.editState = 'idle';
       },
       error: (err: any) => {
+        // Rollback en cas d'échec
         this.editState = 'idle';
         this.errorMessage = err.error?.message || 'Update failed.';
+        this.loadDonationsForEvent();
       }
     });
   }
@@ -393,15 +429,21 @@ export class DonateComponent implements OnInit, OnDestroy {
     if (!donation.id || this.deletingId === donation.id) return;
     if (!confirm('Delete this donation?')) return;
     this.deletingId = donation.id;
-    this.donations = this.donations.filter(d => d.id !== donation.id);
+
+    // ✔ Optimistic delete : retirer immédiatement des deux tableaux
+    this.allDonations = this.allDonations.filter(d => d.id !== donation.id);
+    this.donations = this.visibleDonations; // recalcule le filtre
+    // Mettre à jour le total localement
+    if (donation.type === 'MONEY') {
+      this.totalDonated = Math.max(0, this.totalDonated - (donation.amount || 0));
+    }
+    this.successMessage = 'Donation deleted! 🗑️';
+    setTimeout(() => this.successMessage = '', 3000);
+
     this.donationService.delete(donation.id).subscribe({
-      next: () => {
-        this.deletingId = null;
-        this.successMessage = 'Donation deleted!';
-        setTimeout(() => this.successMessage = '', 3000);
-        this.loadDonationsForEvent();
-      },
+      next: () => { this.deletingId = null; },
       error: () => {
+        // Rollback : rechargement complet
         this.deletingId = null;
         this.loadDonationsForEvent();
       }
@@ -411,15 +453,24 @@ export class DonateComponent implements OnInit, OnDestroy {
   validateDonation(donation: Donation): void {
     if (!donation.id || this.validatingId === donation.id) return;
     this.validatingId = donation.id;
+
+    // ✔ Optimistic validate : mettre à jour le statut immédiatement
+    this.allDonations = this.allDonations.map(d =>
+      d.id === donation.id ? { ...d, status: 'VALIDATED' } : d
+    );
+    this.donations = this.visibleDonations; // recalcule (la donation VALIDATED sera visible à tous)
+    this.successMessage = 'Donation validated! ✅';
+    setTimeout(() => this.successMessage = '', 3000);
+
     this.donationService.validate(donation.id).subscribe({
-      next: () => {
-        this.validatingId = null;
-        this.successMessage = 'Donation validated!';
-        setTimeout(() => this.successMessage = '', 3000);
-        this.loadDonationsForEvent();
-      },
+      next: () => { this.validatingId = null; },
       error: (err: any) => {
         this.validatingId = null;
+        // Rollback en cas d'échec
+        this.allDonations = this.allDonations.map(d =>
+          d.id === donation.id ? { ...d, status: 'PENDING' } : d
+        );
+        this.donations = this.visibleDonations;
         this.errorMessage = err.error?.message || 'Validation failed.';
       }
     });
@@ -442,10 +493,37 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.pendingDonation = null;
   }
 
-  isOwner(donation: Donation): boolean { return donation.userName === this.currentUserEmail; }
+  /**
+   * Retourne true si l'utilisateur connecté est le propriétaire du don.
+   * Comparaison par userId (fiable) avec fallback sur email.
+   */
+  isOwner(donation: Donation): boolean {
+    if (this.currentUserId && donation.userId) {
+      return donation.userId === this.currentUserId;
+    }
+    // Fallback : comparaison email si userId non disponible
+    return !!(this.currentUserEmail && donation.userName === this.currentUserEmail);
+  }
   canEdit(donation: Donation): boolean { return this.isOwner(donation) || this.isAdmin; }
   canDelete(donation: Donation): boolean { return this.isOwner(donation) || this.isAdmin; }
   canValidate(): boolean { return this.isAdmin; }
+
+  getFraudClass(score: number): string {
+    if (score == null) return '';
+    if (score < 0.3) return 'fraud-low';
+    if (score < 0.7) return 'fraud-medium';
+    return 'fraud-high';
+  }
+
+  get donorProfile(): string {
+    if (!this.currentUserEmail) return 'Guest Contributor';
+    return this.isAdmin ? 'Platform Admin' : 'Verified Member';
+  }
+
+  get donorEmoji(): string {
+    if (!this.currentUserEmail) return '🌱';
+    return this.isAdmin ? '👑' : '💚';
+  }
 
   getTimeAgo(dateStr?: string): string {
     if (!dateStr) return '';

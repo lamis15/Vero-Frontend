@@ -475,3 +475,60 @@
 }
 .pd-modal::-webkit-scrollbar-thumb:hover { background: rgba(59,154,178,.5); }
 
+/* ── REPORT ──────────────────────────────────────── */
+.pd-report-row { display: flex; align-items: center; gap: 12px; }
+
+.pd-report-btn {
+  background: transparent;
+  border: 1px solid rgba(211,47,47,.3);
+  color: #c0392b;
+  border-radius: 4px;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .2s;
+}
+.pd-report-btn:hover {
+  background: rgba(211,47,47,.06);
+  border-color: rgba(211,47,47,.5);
+}
+
+.pd-report-done {
+  font-size: 12px;
+  color: var(--teal2, #1e708a);
+  background: rgba(59,154,178,.06);
+  border: 1px solid rgba(59,154,178,.2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+}
+
+/* Modal overlay report */
+.pd-report-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,22,40,.65);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: pdFadeIn .2s ease;
+}
+
+.pd-report-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(10,22,40,.35);
+  animation: pdSlideUp .25s cubic-bezier(.22,1,.36,1);
+}

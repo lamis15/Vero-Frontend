@@ -1,1155 +1,376 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, Subscription, debounceTime, distinctUntilChanged, timeout, catchError, of } from 'rxjs';
+
+// ── Services ───────────────────────────────────────────────────
+import { AdminService, AdminCreateUserRequest, AdminUpdateUserRequest, AdminUserListItem } from '../../services/admin.service';
+import { AuthService, UserResponse } from '../../services/auth.service';
+import { MessagerieService, ConversationSummary, DirectMessage, TopicCounts } from '../../services/messagerie.service';
 import { ProductService } from '../../services/product.service';
 import { OrderService } from '../../services/order.service';
 import { UserService } from '../../services/user.service';
 import { NotificationService } from '../../services/notification.service';
 import { FormationService } from '../../services/formation.service';
 import { SessionService } from '../../services/session.service';
-import { Product, Order } from '../../services/product.models';
+import { Product } from '../../services/product.models';
 import { Formation, FormationResource, FormationStatus, Session, SessionStatus } from '../../services/formation.models';
-import { forkJoin } from 'rxjs';
+
+// ── Sous-composants IA ─────────────────────────────────────────
+import { AdminDonationsComponent } from './admin-donation/admin-donations.component';
+import { AdminPetitionsComponent } from './admin-petitions/admin-petitions.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AdminDonationsComponent,
+    AdminPetitionsComponent,
+  ],
   templateUrl: './admin.component.html',
-  styleUrls: ['./admin.component.css']
+styleUrls: ['./admin.css', './admin.component.css'],
 })
-export class AdminComponent implements OnInit {
-  currentUser: any = null;
-  activeTab: string = 'overview';
-  loading = true;
+export class Admin implements OnInit, OnDestroy {
+  private static readonly USERS_CACHE_KEY = 'vero_admin_users_cache';
+  private static readonly CONVS_CACHE_KEY  = 'vero_admin_convs_cache';
 
-  // Stats
-  stats = {
-    totalUsers: 0,
-    totalOrders: 0,
-    totalProducts: 0,
-    totalRevenue: 0
+  // ── Users ──────────────────────────────────────────────────
+  users: AdminUserListItem[] = Admin.readCache<any>(Admin.USERS_CACHE_KEY)?.users ?? [];
+  loading    = this.users.length === 0;
+  error      = '';
+  totalUsers = Admin.readCache<any>(Admin.USERS_CACHE_KEY)?.total ?? 0;
+  currentPage  = 1;
+  usersPerPage = 10;
+  totalPages   = Admin.readCache<any>(Admin.USERS_CACHE_KEY)?.pages ?? 0;
+  searchQuery  = '';
+  selectedRole = '';
+
+  // ── Tabs ───────────────────────────────────────────────────
+  activeTab: 'users' | 'add' | 'settings' | 'edit' | 'messages'
+           | 'products' | 'formations' | 'donations' | 'petitions' = 'users';
+
+  successMessage = '';
+  errorMessage   = '';
+
+  // ── Modals ─────────────────────────────────────────────────
+  confirmDeleteId: number | null = null;
+  editingUserId:   number | null = null;
+  editUserForm: AdminUpdateUserRequest = {};
+
+  newUser: AdminCreateUserRequest = {
+    fullName: '', email: '', password: '', role: 'USER', verified: true, banned: false
   };
+  addLoading = false;
+  addMessage  = '';
 
-  // Products
+  // ── Conversations ──────────────────────────────────────────
+  adminMe: UserResponse | null = null;
+  conversationSearch   = '';
+  adminConversations: ConversationSummary[] = Admin.readCache<ConversationSummary[]>(Admin.CONVS_CACHE_KEY) ?? [];
+  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
+  selectedConversation: ConversationSummary | null = null;
+  selectedConversationMessages: DirectMessage[] = [];
+  messagesLoading = this.adminConversations.length === 0;
+  threadLoading   = false;
+
+  private selectedConversationRequestKey = '';
+  private selectedConversationRequestId  = 0;
+  private usersLoadRequestId             = 0;
+  private conversationsLoadRequestId     = 0;
+  private adminLiveSyncInterval: ReturnType<typeof setInterval> | null = null;
+  private usersLiveSyncInterval: ReturnType<typeof setInterval>  | null = null;
+  private search$        = new Subject<string>();
+  private adminMessageSub?: Subscription;
+
+  // ── Products ───────────────────────────────────────────────
   products: Product[] = [];
   productsLoading = false;
   showProductModal = false;
   editingProduct: Product | null = null;
-  productForm = {
-    name: '',
-    description: '',
-    price: 0,
-    stock: 0,
-    category: 'FOOD',
-    image: '',
-    origin: '',
-    isEcological: true
-  };
-  selectedImageFile: File | null = null;
-  imagePreview: string | null = null;
+  productForm = { name: '', description: '', price: 0, stock: 0, category: 'NATURAL_COSMETICS', image: '', origin: '', isEcological: true };
+  productSaving = false;
+  productImageCache = new Map<number, string>();
 
-  // Orders
-  orders: any[] = [];
-  ordersLoading = false;
-  selectedOrder: any | null = null;
-  orderCustomers: Map<number, any> = new Map(); // Cache customer data
-
-  categories = ['NATURAL_COSMETICS', 'ECO_FRIENDLY_HOME', 'SUSTAINABLE_FASHION', 'KITCHEN_AND_DINING', 'ECO_GARDENING', 'ECO_PET_PRODUCTS', 'ECO_GIFT_SETS'];
-
-  // Category mapping for display (same as shop)
-  categoryEmojis: Record<string, string> = {
-    'NATURAL_COSMETICS': '🌿',
-    'ECO_FRIENDLY_HOME': '🏠',
-    'SUSTAINABLE_FASHION': '👕',
-    'KITCHEN_AND_DINING': '🍽️',
-    'ECO_GARDENING': '🌱',
-    'ECO_PET_PRODUCTS': '🐾',
-    'ECO_GIFT_SETS': '🎁'
-  };
-
-  categoryColors: Record<string, string> = {
-    'NATURAL_COSMETICS': '#f0ece4',
-    'ECO_FRIENDLY_HOME': '#e8f4e8',
-    'SUSTAINABLE_FASHION': '#e8e4dc',
-    'KITCHEN_AND_DINING': '#e4ede4',
-    'ECO_GARDENING': '#dce8dc',
-    'ECO_PET_PRODUCTS': '#ece8e4',
-    'ECO_GIFT_SETS': '#f4e8e8'
-  };
-
-  // Countries list with flags
-  countries = [
-    { name: 'France', flag: '🇫🇷' },
-    { name: 'Italy', flag: '🇮🇹' },
-    { name: 'Spain', flag: '🇪🇸' },
-    { name: 'Germany', flag: '🇩🇪' },
-    { name: 'Portugal', flag: '🇵🇹' },
-    { name: 'Netherlands', flag: '🇳🇱' },
-    { name: 'Belgium', flag: '🇧🇪' },
-    { name: 'Switzerland', flag: '🇨🇭' },
-    { name: 'Austria', flag: '🇦🇹' },
-    { name: 'Greece', flag: '🇬🇷' },
-    { name: 'Turkey', flag: '🇹🇷' },
-    { name: 'Morocco', flag: '🇲🇦' },
-    { name: 'Tunisia', flag: '🇹🇳' },
-    { name: 'Egypt', flag: '🇪🇬' },
-    { name: 'USA', flag: '🇺🇸' },
-    { name: 'Canada', flag: '🇨🇦' },
-    { name: 'Mexico', flag: '🇲🇽' },
-    { name: 'Brazil', flag: '🇧🇷' },
-    { name: 'Argentina', flag: '🇦🇷' },
-    { name: 'Colombia', flag: '🇨🇴' },
-    { name: 'UK', flag: '🇬🇧' },
-    { name: 'Ireland', flag: '🇮🇪' },
-    { name: 'Sweden', flag: '🇸🇪' },
-    { name: 'Norway', flag: '🇳🇴' },
-    { name: 'Denmark', flag: '🇩🇰' },
-    { name: 'Finland', flag: '🇫🇮' },
-    { name: 'Poland', flag: '🇵🇱' },
-    { name: 'Czech Republic', flag: '🇨🇿' },
-    { name: 'Hungary', flag: '🇭🇺' },
-    { name: 'Romania', flag: '🇷🇴' },
-    { name: 'Japan', flag: '🇯🇵' },
-    { name: 'China', flag: '🇨🇳' },
-    { name: 'South Korea', flag: '🇰🇷' },
-    { name: 'India', flag: '🇮🇳' },
-    { name: 'Thailand', flag: '🇹🇭' },
-    { name: 'Vietnam', flag: '🇻🇳' },
-    { name: 'Indonesia', flag: '🇮🇩' },
-    { name: 'Philippines', flag: '🇵🇭' },
-    { name: 'Malaysia', flag: '🇲🇾' },
-    { name: 'Singapore', flag: '🇸🇬' },
-    { name: 'Australia', flag: '🇦🇺' },
-    { name: 'New Zealand', flag: '🇳🇿' },
-    { name: 'South Africa', flag: '🇿🇦' },
-    { name: 'Kenya', flag: '🇰🇪' },
-    { name: 'Ethiopia', flag: '🇪🇹' },
-    { name: 'Local', flag: '🌍' }
+  readonly productCategories = ['NATURAL_COSMETICS','ECO_FRIENDLY_HOME','SUSTAINABLE_FASHION','KITCHEN_AND_DINING','ECO_GARDENING','ECO_PET_PRODUCTS','ECO_GIFT_SETS'];
+  readonly countries = [
+    { name: 'Tunisia', flag: '🇹🇳' }, { name: 'France', flag: '🇫🇷' }, { name: 'Italy', flag: '🇮🇹' },
+    { name: 'Spain', flag: '🇪🇸' }, { name: 'Germany', flag: '🇩🇪' }, { name: 'Morocco', flag: '🇲🇦' },
+    { name: 'USA', flag: '🇺🇸' }, { name: 'UK', flag: '🇬🇧' }, { name: 'Local', flag: '🌍' }
   ];
 
-  // Formations
+  // ── Formations ─────────────────────────────────────────────
   formations: Formation[] = [];
   formationsLoading = false;
   showFormationModal = false;
   editingFormation: Formation | null = null;
-  formationForm: {
-    title: string;
-    description: string;
-    duration: number;
-    maxCapacity: number;
-    price: number;
-    status: FormationStatus;
-  } = {
-    title: '',
-    description: '',
-    duration: 0,
-    maxCapacity: 0,
-    price: 0,
-    status: 'PLANNED' as FormationStatus
-  };
-  
-  // Participants details
-  allUsers: any[] = [];
-  trainersMap: Map<number, string> = new Map();
-  expandedFormationId: number | null = null;
-
-  // Sessions
+  formationForm = { title: '', description: '', duration: 0, maxCapacity: 0, price: 0, status: 'PLANNED' as FormationStatus };
+  selectedFormationForSessions: Formation | null = null;
   sessions: Session[] = [];
   sessionsLoading = false;
   showSessionModal = false;
   editingSession: Session | null = null;
-  sessionForm = {
-    title: '',
-    startDate: '',
-    endDate: '',
-    status: 'SCHEDULED' as SessionStatus,
-    type: 'ONLINE' as 'ONLINE' | 'IN_PERSON',
-    meetLink: '',
-    trainerId: 0,
-    formationId: 0
-  };
-  selectedFormationForSessions: Formation | null = null;
-
-  formationStatuses = ['PLANNED', 'IN_PROGRESS', 'COMPLETED'];
-  sessionStatuses = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-
-  // AI Description
-  generatingDescription = false;
-
-  // Resources
+  sessionForm = { title: '', startDate: '', endDate: '', status: 'SCHEDULED' as SessionStatus, type: 'ONLINE' as 'ONLINE'|'IN_PERSON', meetLink: '', trainerId: 0, formationId: 0 };
+  allUsers: any[] = [];
+  expandedFormationId: number | null = null;
   selectedResourceFile: File | null = null;
   resourceUploading = false;
   formationResources: FormationResource[] = [];
-
-  // Quiz
-  showQuizModal = false;
   generatingQuiz = false;
-
-  // Quiz Preview Modal (admin)
+  generatingDescription = false;
   showQuizPreviewModal = false;
   quizPreview: any = null;
   quizPreviewAnswers: Map<number, number> = new Map();
   quizPreviewSubmitting = false;
   quizPreviewResult: any = null;
   quizPreviewLoading = false;
-  quizForm: {
-    title: string;
-    passingScore: number;
-    questions: Array<{ text: string; options: Array<{ text: string; isCorrect: boolean }> }>;
-  } = { title: '', passingScore: 80, questions: [] };
+  showQuizModal = false;
+  quizForm: any = { title: '', passingScore: 80, questions: [] };
+  readonly formationStatuses = ['PLANNED', 'IN_PROGRESS', 'COMPLETED'];
+  readonly sessionStatuses   = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
   constructor(
+    private adminService: AdminService,
     private authService: AuthService,
+    private messagerieService: MessagerieService,
     private productService: ProductService,
     private orderService: OrderService,
     private userService: UserService,
+    private notificationService: NotificationService,
     private formationService: FormationService,
     private sessionService: SessionService,
-    public router: Router,
     private route: ActivatedRoute,
-    private notificationService: NotificationService
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit() {
-    this.authService.getCurrentUser().subscribe({
-      next: (user) => {
-        this.currentUser = user;
-        if (user.role !== 'ADMIN') {
-          this.router.navigate(['/']);
-        } else {
-          this.loadDashboardData();
-        }
-      },
-      error: () => this.router.navigate(['/login'])
-    });
-
-    this.route.queryParams.subscribe(params => {
-      if (params['tab']) {
-        this.activeTab = params['tab'];
-      }
-    });
+  private static readCache<T>(key: string): T | null {
+    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) as T : null; } catch { return null; }
+  }
+  private static writeCache(key: string, v: unknown): void {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
   }
 
-  loadDashboardData() {
-    this.loadProducts();
-    this.loadOrders();
-    this.loadFormations();
+  ngOnInit(): void {
+    this.loadImageCache();
+    this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => { this.currentPage = 1; this.loadUsers(); });
+    this.route.queryParams.subscribe(p => {
+      if (p['tab'] === 'products')   this.setTab('products');
+      if (p['tab'] === 'formations') this.setTab('formations');
+      if (p['tab'] === 'donations')  this.setTab('donations');
+      if (p['tab'] === 'petitions')  this.setTab('petitions');
+    });
+    this.loadUsers();
+    this.startUsersLiveSync();
+    this.loadAdminConversations();
+    this.loadTopicHeatmap();
     this.loadAllUsers();
-    this.loading = false;
+    this.authService.getMe().subscribe({
+      next: (me) => { this.adminMe = me; this.messagerieService.connect(me.id, me.role === 'ADMIN'); this.ensureNotificationPermission(); },
+      error: () => { const c = this.authService.currentUser; if (c) this.adminMe = c; }
+    });
+    this.adminMessageSub = this.messagerieService.adminIncoming$.subscribe((msg) => {
+      if (!msg) return;
+      this.upsertConversationFromMessage(msg);
+      this.showDesktopMessageNotification(msg.sender.fullName, msg.content);
+      const label = (msg.topic ?? null) as keyof TopicCounts | null;
+      if (label && this.topicHeatmap[label] != null) this.topicHeatmap = { ...this.topicHeatmap, [label]: this.topicHeatmap[label] + 1 };
+      if (!this.selectedConversation && this.activeTab === 'messages' && this.adminConversations.length > 0) { this.openAdminConversation(this.adminConversations[0]); return; }
+      if (this.selectedConversation && this.belongsToSelectedConversation(msg, this.selectedConversation)) this.selectedConversationMessages = [...this.selectedConversationMessages, msg];
+      else if (this.activeTab === 'messages') this.loadAdminConversations();
+    });
   }
 
-  setActiveTab(tab: string) {
+  ngOnDestroy(): void {
+    this.search$.complete();
+    this.adminMessageSub?.unsubscribe();
+    if (this.adminLiveSyncInterval) { clearInterval(this.adminLiveSyncInterval); this.adminLiveSyncInterval = null; }
+    this.stopUsersLiveSync();
+  }
+
+  setTab(tab: typeof this.activeTab): void {
     this.activeTab = tab;
-    if (tab === 'products' && this.products.length === 0) {
-      this.loadProducts();
-    }
-    if (tab === 'orders' && this.orders.length === 0) {
-      this.loadOrders();
-    }
-    if (tab === 'formations' && this.formations.length === 0) {
-      this.loadFormations();
-    }
+    this.addMessage = '';
+    if (tab === 'users')       { this.loadUsers(); this.startUsersLiveSync(); if (this.adminLiveSyncInterval) { clearInterval(this.adminLiveSyncInterval); this.adminLiveSyncInterval = null; } }
+    else if (tab === 'messages')   { this.stopUsersLiveSync(); this.loadAdminConversations(); this.startAdminLiveSync(); }
+    else if (tab === 'products')   { this.stopUsersLiveSync(); this.loadProducts(); }
+    else if (tab === 'formations') { this.stopUsersLiveSync(); this.loadFormations(); }
+    else if (tab === 'donations' || tab === 'petitions') { this.stopUsersLiveSync(); }
+    else { if (this.adminLiveSyncInterval) { clearInterval(this.adminLiveSyncInterval); this.adminLiveSyncInterval = null; } this.stopUsersLiveSync(); }
+  }
+  onTabPointerDown(tab: typeof this.activeTab): void { this.setTab(tab); }
+
+  loadUsers(): void {
+    const rid = ++this.usersLoadRequestId;
+    this.loading = this.users.length === 0; this.error = '';
+    this.adminService.getUsers(this.currentPage - 1, this.usersPerPage, this.searchQuery, this.selectedRole).subscribe({
+      next: (d) => {
+        if (this.usersLoadRequestId !== rid) return;
+        this.users = d.content ?? []; this.totalUsers = d.totalElements ?? this.users.length;
+        this.totalPages = Math.max(d.totalPages ?? 0, 1); this.currentPage = (d.number ?? 0) + 1; this.loading = false;
+        if (!this.searchQuery && !this.selectedRole && this.currentPage === 1)
+          Admin.writeCache(Admin.USERS_CACHE_KEY, { users: this.users, total: this.totalUsers, pages: this.totalPages });
+      },
+      error: () => { if (this.usersLoadRequestId !== rid) return; this.error = 'Failed to load users.'; this.loading = false; }
+    });
+  }
+  onSearchChange()    { this.search$.next(this.searchQuery.trim()); }
+  onRoleFilterChange(){ this.currentPage = 1; this.loadUsers(); }
+  onPageSizeChange()  { this.currentPage = 1; this.loadUsers(); }
+  goToPage(p: number){ if (p >= 1 && p <= this.totalPages && p !== this.currentPage) { this.currentPage = p; this.loadUsers(); } }
+  startEdit(u: AdminUserListItem): void { this.editingUserId = u.id; this.editUserForm = { fullName: u.fullName, email: u.email, role: u.role, verified: u.verified, banned: u.banned }; this.activeTab = 'edit'; }
+  cancelEdit(): void { this.editingUserId = null; this.activeTab = 'users'; }
+  saveEdit(id: number): void {
+    const p = { ...this.editUserForm };
+    const i = this.users.findIndex(u => u.id === id);
+    if (i !== -1) this.users[i] = { ...this.users[i], ...p, id } as AdminUserListItem;
+    this.editingUserId = null; this.setTab('users');
+    this.adminService.updateUser(id, p).subscribe({ next: () => this.showSuccess('User updated.'), error: () => { this.showError('Update failed.'); this.loadUsers(); } });
+  }
+  toggleBan(u: AdminUserListItem): void {
+    (u.banned ? this.adminService.unbanUser(u.id) : this.adminService.banUser(u.id)).subscribe({
+      next: () => { u.banned = !u.banned; this.showSuccess(u.banned ? 'User unbanned!' : 'User suspended!'); },
+      error: (e) => this.showError('Failed: ' + (e?.error?.message || e.message))
+    });
+  }
+  requestDelete(id: number){ this.confirmDeleteId = id; }
+  cancelDelete(){ this.confirmDeleteId = null; }
+  confirmDelete(): void {
+    if (!this.confirmDeleteId) return;
+    const id = this.confirmDeleteId; this.confirmDeleteId = null;
+    const prev = this.users; const pt = this.totalUsers;
+    this.users = this.users.filter(u => u.id !== id);
+    this.totalUsers = Math.max(this.totalUsers - 1, 0); this.totalPages = Math.max(Math.ceil(this.totalUsers / this.usersPerPage), 1);
+    this.adminService.deleteUser(id).subscribe({
+      next: () => { this.showSuccess('Account deleted.'); if (this.users.length === 0 && this.currentPage > 1) { this.currentPage--; this.loadUsers(); } },
+      error: (e) => { this.users = prev; this.totalUsers = pt; this.totalPages = Math.max(Math.ceil(this.totalUsers / this.usersPerPage), 1); this.showError(e?.error?.message || 'Cannot delete user.'); }
+    });
+  }
+  createUser(): void {
+    const p = { ...this.newUser };
+    this.newUser = { fullName: '', email: '', password: '', role: 'USER', verified: true, banned: false }; this.setTab('users');
+    this.adminService.createUser(p).subscribe({ next: () => { this.loadUsers(); this.showSuccess('User created.'); }, error: (e) => this.showError(e?.error?.message || 'Failed.') });
   }
 
-  // Product Management
-  loadProducts() {
+  loadAdminConversations(): void {
+    const rid = ++this.conversationsLoadRequestId;
+    this.messagesLoading = this.adminConversations.length === 0;
+    this.messagerieService.loadAdminConversations(this.conversationSearch).subscribe({
+      next: (c) => {
+        if (this.conversationsLoadRequestId !== rid) return;
+        this.adminConversations = c; this.messagesLoading = false;
+        if (!this.conversationSearch) Admin.writeCache(Admin.CONVS_CACHE_KEY, c);
+        this.preloadAdminVisibleHistories(c);
+        if (!this.selectedConversation && c.length > 0) this.openAdminConversation(c[0]);
+      },
+      error: () => { if (this.conversationsLoadRequestId !== rid) return; this.messagesLoading = false; }
+    });
+  }
+  filterConversations(){ this.loadAdminConversations(); }
+  loadTopicHeatmap(){ this.messagerieService.loadTopicHeatmap().subscribe({ next: (c) => this.topicHeatmap = c, error: () => {} }); }
+  get topicHeatmapTotal(){ const h = this.topicHeatmap; return (h.eco||0)+(h.lifestyle||0)+(h.product||0)+(h.other||0); }
+  topicPercent(l: keyof TopicCounts){ const t = this.topicHeatmapTotal; if (!t) return 0; return Math.round((this.topicHeatmap[l]/t)*100); }
+  openAdminConversation(c: ConversationSummary): void {
+    this.selectedConversation = c;
+    const key = c.conversationKey; this.selectedConversationRequestKey = key;
+    const rid = ++this.selectedConversationRequestId;
+    this.threadLoading = true;
+    this.messagerieService.loadAdminHistoryCached(c.userA.id, c.userB.id).subscribe({
+      next: (m) => { if (this.selectedConversationRequestKey !== key || this.selectedConversationRequestId !== rid) return; this.selectedConversationMessages = m; this.threadLoading = false; },
+      error: () => { if (this.selectedConversationRequestKey !== key || this.selectedConversationRequestId !== rid) return; this.threadLoading = false; }
+    });
+  }
+  onAdminConversationPointerDown(c: ConversationSummary){ this.openAdminConversation(c); }
+
+  private loadImageCache(): void { try { const r = localStorage.getItem('vero_product_images'); if (r) { const o = JSON.parse(r); Object.entries(o).forEach(([k,v]) => this.productImageCache.set(Number(k), v as string)); } } catch {} }
+  private saveImageCache(): void { try { const o: any = {}; this.productImageCache.forEach((v,k) => o[k]=v); localStorage.setItem('vero_product_images', JSON.stringify(o)); } catch {} }
+  getProductImage(p: Product){ return this.productImageCache.get(p.id) ?? p.image ?? null; }
+  loadProducts(): void {
     this.productsLoading = true;
-    this.productService.getAll().subscribe({
-      next: (products) => {
-        this.products = products;
-        this.stats.totalProducts = products.length;
-        this.productsLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading products:', err);
-        this.productsLoading = false;
-      }
+    this.productService.getAll().pipe(timeout(15000), catchError(() => { this.showError('Products timeout.'); this.productsLoading = false; return of([]); })).subscribe({
+      next: (d) => { this.products = d.map(p => ({ ...p, image: p.image && p.image.length > 200 ? null : p.image })) as any; this.productsLoading = false; this.cdr.detectChanges(); },
+      error: () => { this.showError('Failed to load products.'); this.productsLoading = false; }
     });
   }
-
-  openProductModal(product?: Product) {
-    if (product) {
-      this.editingProduct = product;
-      this.productForm = {
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        stock: product.stock,
-        category: product.category,
-        image: product.image || '',
-        origin: product.origin || '',
-        isEcological: product.isEcological
-      };
-      this.imagePreview = product.image || null;
-    } else {
-      this.editingProduct = null;
-      this.productForm = {
-        name: '',
-        description: '',
-        price: 0,
-        stock: 0,
-        category: 'NATURAL_COSMETICS' as any,
-        image: '',
-        origin: '',
-        isEcological: true
-      };
-      this.imagePreview = null;
-    }
-    this.selectedImageFile = null;
-    this.showProductModal = true;
-  }
-
-  closeProductModal() {
-    this.showProductModal = false;
-    this.editingProduct = null;
-    this.selectedImageFile = null;
-    this.imagePreview = null;
-  }
-
-  onImageSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        this.notificationService.error('Please select a valid image file');
-        return;
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        this.notificationService.error('Image size should be less than 5MB');
-        return;
-      }
-
-      this.selectedImageFile = file;
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        this.imagePreview = e.target?.result as string;
-        this.productForm.image = e.target?.result as string; // Store base64 in form
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  removeImage() {
-    this.selectedImageFile = null;
-    this.imagePreview = null;
-    this.productForm.image = '';
-  }
-
-  triggerFileInput() {
-    const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
-    fileInput?.click();
-  }
-
-  saveProduct() {
-    // Validation des champs obligatoires
-    if (!this.productForm.name || this.productForm.name.trim() === '') {
-      this.notificationService.warning('Please enter a product name');
-      return;
-    }
-
-    if (!this.productForm.description || this.productForm.description.trim() === '') {
-      this.notificationService.warning('Please enter a product description');
-      return;
-    }
-
-    if (!this.productForm.price || this.productForm.price <= 0) {
-      this.notificationService.warning('Please enter a valid price (greater than 0)');
-      return;
-    }
-
-    if (this.productForm.stock === null || this.productForm.stock === undefined || this.productForm.stock < 0) {
-      this.notificationService.warning('Please enter a valid stock quantity (0 or greater)');
-      return;
-    }
-
-    if (!this.productForm.category) {
-      this.notificationService.warning('Please select a category');
-      return;
-    }
-
-    if (!this.productForm.origin || this.productForm.origin.trim() === '') {
-      this.notificationService.warning('Please select a country of origin');
-      return;
-    }
-
-    if (!this.productForm.image || this.productForm.image.trim() === '') {
-      this.notificationService.warning('Please upload a product image');
-      return;
-    }
-
-    const productData: any = { ...this.productForm };
-    
+  deleteProduct(id: number){ if (!confirm('Delete?')) return; this.productService.delete(id).subscribe({ next: () => { this.products = this.products.filter(p => p.id !== id); this.showSuccess('Deleted.'); }, error: () => this.showError('Failed.') }); }
+  openProductModal(p?: Product): void { this.editingProduct = p ?? null; if (p) { this.productForm = { name: p.name, description: p.description, price: p.price, stock: p.stock, category: p.category as string, image: this.productImageCache.get(p.id) ?? p.image ?? '', origin: p.origin ?? '', isEcological: p.isEcological }; } else { this.productForm = { name: '', description: '', price: 0, stock: 0, category: 'NATURAL_COSMETICS', image: '', origin: '', isEcological: true }; } this.showProductModal = true; }
+  closeProductModal(){ this.showProductModal = false; this.editingProduct = null; }
+  onProductImageSelected(e: Event): void { const i = e.target as HTMLInputElement; if (!i.files?.[0]) return; const f = i.files[0]; if (f.size > 500*1024) { this.showError('Under 500KB.'); return; } const r = new FileReader(); r.onload = () => { this.productForm.image = r.result as string; }; r.readAsDataURL(f); }
+  saveProduct(): void {
+    if (!this.productForm.name.trim()) { this.showError('Name required.'); return; }
+    this.productSaving = true;
+    const img = this.productForm.image; const p: any = { ...this.productForm };
     if (this.editingProduct) {
-      productData.id = this.editingProduct.id;
-      this.productService.update(productData).subscribe({
-        next: () => {
-          this.notificationService.success('Product updated successfully!');
-          this.loadProducts();
-          this.closeProductModal();
-        },
-        error: (err) => {
-          console.error('Error updating product:', err);
-          this.notificationService.error('Error updating product. Please try again.');
-        }
-      });
+      p.id = this.editingProduct.id;
+      this.productService.update(p).subscribe({ next: (u) => { if (img) { this.productImageCache.set(u.id, img); this.saveImageCache(); } const i = this.products.findIndex(x => x.id === u.id); if (i !== -1) this.products[i] = u; this.products = [...this.products]; this.showSuccess('Updated.'); this.closeProductModal(); this.productSaving = false; this.cdr.detectChanges(); }, error: () => { this.showError('Failed.'); this.productSaving = false; } });
     } else {
-      this.productService.create(productData).subscribe({
-        next: () => {
-          this.notificationService.success('Product created successfully!');
-          this.loadProducts();
-          this.closeProductModal();
-        },
-        error: (err) => {
-          console.error('Error creating product:', err);
-          this.notificationService.error('Error creating product. Please try again.');
-        }
-      });
+      this.productService.create(p).subscribe({ next: (c) => { if (img) { this.productImageCache.set(c.id, img); this.saveImageCache(); } this.products = [c, ...this.products]; this.showSuccess('Created.'); this.closeProductModal(); this.productSaving = false; this.cdr.detectChanges(); }, error: () => { this.showError('Failed.'); this.productSaving = false; } });
     }
   }
 
-  deleteProduct(id: number) {
-    if (confirm('Are you sure you want to delete this product?')) {
-      this.productService.delete(id).subscribe({
-        next: () => this.loadProducts(),
-        error: (err) => console.error('Error deleting product:', err)
-      });
-    }
+  loadFormations(): void { this.formationsLoading = true; this.formationService.getAll().pipe(timeout(15000), catchError(() => { this.showError('Timeout.'); this.formationsLoading = false; return of([]); })).subscribe({ next: (d) => { this.formations = d; this.formationsLoading = false; this.cdr.detectChanges(); }, error: () => { this.showError('Failed.'); this.formationsLoading = false; } }); }
+  deleteFormation(id: number){ if (!confirm('Delete?')) return; this.formationService.delete(id).subscribe({ next: () => { this.formations = this.formations.filter(f => f.id !== id); this.showSuccess('Deleted.'); }, error: () => this.showError('Failed.') }); }
+  openFormationModal(f?: Formation): void { if (f) { this.editingFormation = f; this.formationForm = { title: f.title, description: f.description, duration: f.duration, maxCapacity: f.maxCapacity, price: f.price||0, status: f.status }; } else { this.editingFormation = null; this.formationForm = { title: '', description: '', duration: 0, maxCapacity: 0, price: 0, status: 'PLANNED' as FormationStatus }; } this.showFormationModal = true; }
+  closeFormationModal(){ this.showFormationModal = false; this.editingFormation = null; }
+  saveFormation(): void { if (!this.formationForm.title.trim()) { this.showError('Title required.'); return; } const d: any = { ...this.formationForm, pinned: false }; if (this.editingFormation) { d.id = this.editingFormation.id; d.participantIds = this.editingFormation.participantIds||[]; this.formationService.update(d).subscribe({ next: () => { this.showSuccess('Updated.'); this.loadFormations(); this.closeFormationModal(); }, error: () => this.showError('Failed.') }); } else { this.formationService.create(d).subscribe({ next: () => { this.showSuccess('Created.'); this.loadFormations(); this.closeFormationModal(); }, error: () => this.showError('Failed.') }); } }
+  viewFormationSessions(f: Formation): void { this.selectedFormationForSessions = f; this.sessionsLoading = true; this.sessionService.getByFormation(f.id!).subscribe({ next: (s) => { this.sessions = s; this.sessionsLoading = false; this.cdr.detectChanges(); }, error: () => { this.showError('Failed.'); this.sessionsLoading = false; } }); this.loadResources(f.id!); }
+  closeSessionsView(){ this.selectedFormationForSessions = null; this.sessions = []; }
+  openSessionModal(s?: Session): void { if (!this.selectedFormationForSessions) return; if (this.allUsers.length === 0) this.loadAllUsers(); if (s) { this.editingSession = s; this.sessionForm = { title: s.title, startDate: s.startDate?.slice(0,16)||'', endDate: s.endDate?.slice(0,16)||'', status: s.status as SessionStatus, type: (s as any).type||'ONLINE', meetLink: (s as any).meetLink||'', trainerId: s.trainerId||0, formationId: this.selectedFormationForSessions.id! }; } else { this.editingSession = null; this.sessionForm = { title: '', startDate: '', endDate: '', status: 'SCHEDULED' as SessionStatus, type: 'ONLINE', meetLink: '', trainerId: 0, formationId: this.selectedFormationForSessions.id! }; } this.showSessionModal = true; }
+  closeSessionModal(){ this.showSessionModal = false; this.editingSession = null; }
+  saveSession(): void { if (!this.sessionForm.title.trim()||!this.sessionForm.startDate||!this.sessionForm.endDate) { this.showError('Fill all required fields.'); return; } const now=new Date(),start=new Date(this.sessionForm.startDate),end=new Date(this.sessionForm.endDate); let st: SessionStatus = 'SCHEDULED' as SessionStatus; if (now>=start&&now<=end) st='IN_PROGRESS' as SessionStatus; else if (now>end) st='COMPLETED' as SessionStatus; const d: any = { ...this.sessionForm, status: st, type: 'ONLINE' }; if (this.editingSession) { d.id = this.editingSession.id; this.sessionService.update(d).subscribe({ next: () => { this.showSuccess('Updated.'); this.viewFormationSessions(this.selectedFormationForSessions!); this.closeSessionModal(); }, error: () => this.showError('Failed.') }); } else { this.sessionService.create(d, this.selectedFormationForSessions!.id!).subscribe({ next: () => { this.showSuccess('Created.'); this.viewFormationSessions(this.selectedFormationForSessions!); this.closeSessionModal(); }, error: () => this.showError('Failed.') }); } }
+  deleteSession(id: number){ this.sessionService.delete(id).subscribe({ next: () => { this.sessions = this.sessions.filter(s => s.id !== id); this.showSuccess('Deleted.'); }, error: () => this.showError('Failed.') }); }
+  loadAllUsers(){ this.userService.getAll().subscribe({ next: (u) => this.allUsers = u, error: () => {} }); }
+  get trainers(){ return this.allUsers.filter(u => u.role==='TRAINER'||u.role==='ADMIN'||u.role==='USER'); }
+  getTrainerName(id: number){ const t = this.allUsers.find(u => u.id===id); return t ? t.fullName : '—'; }
+  toggleParticipantsPanel(id: number){ this.expandedFormationId = this.expandedFormationId===id ? null : id; }
+  getParticipantDetails(ids: number[]){ if (!ids?.length) return []; return ids.map(id => this.allUsers.find(u => u.id===id)).filter(Boolean); }
+  getFormationStatusClass(s: FormationStatus){ return { PLANNED:'status-planned',IN_PROGRESS:'status-in-progress',COMPLETED:'status-completed' }[s]||'status-planned'; }
+  getComputedSessionStatus(s: Session){ const now=new Date(),start=new Date(s.startDate),end=new Date(s.endDate); if ((s as any).status==='CANCELLED') return 'CANCELLED'; if (now<start) return 'SCHEDULED'; if (now>=start&&now<=end) return 'IN_PROGRESS'; return 'COMPLETED'; }
+  getComputedSessionStatusLabel(s: Session){ const now=new Date(),start=s.startDate?new Date(s.startDate):null,end=s.endDate?new Date(s.endDate):null; if ((s as any).status==='CANCELLED') return 'Cancelled'; if (!start) return 'Upcoming'; if (now<start) return 'Upcoming'; if (end&&now>=start&&now<=end) return 'In Progress'; return 'Done'; }
+  formatDate(d: string){ return new Date(d).toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  togglePin(f: Formation){ this.formationService.togglePin(f.id!).subscribe({ next: (u) => { f.pinned=u.pinned; this.formations.sort((a,b)=>a.pinned===b.pinned?0:a.pinned?-1:1); }, error: () => this.showError('Error.') }); }
+  onResourceFileSelected(e: Event){ const i=e.target as HTMLInputElement; if (i.files?.[0]) this.selectedResourceFile=i.files[0]; }
+  uploadResource(id: number){ if (!this.selectedResourceFile) { this.showError('Select a file.'); return; } this.resourceUploading=true; this.formationService.uploadResource(id,this.selectedResourceFile).subscribe({ next: () => { this.showSuccess('Uploaded.'); this.selectedResourceFile=null; this.resourceUploading=false; this.loadResources(id); }, error: () => { this.showError('Failed.'); this.resourceUploading=false; } }); }
+  deleteResource(fid: number, rid: number){ if (!confirm('Delete?')) return; this.formationService.deleteResource(fid,rid).subscribe({ next: () => { this.showSuccess('Deleted.'); this.loadResources(fid); }, error: () => this.showError('Failed.') }); }
+  loadResources(id: number){ this.formationService.getResources(id).subscribe({ next: (r) => this.formationResources=r, error: () => {} }); }
+  downloadResource(fid: number, rid: number, name: string){ this.formationService.downloadResource(fid,rid).subscribe({ next: (b) => { const u=window.URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; a.click(); window.URL.revokeObjectURL(u); }, error: () => this.showError('Failed.') }); }
+  generateDescription(){ if (!this.formationForm.title.trim()) { this.showError('Enter a title first.'); return; } this.generatingDescription=true; this.formationService.generateDescription(this.formationForm.title,this.formationForm.duration).subscribe({ next: (r) => { this.formationForm.description=r.description; this.generatingDescription=false; }, error: () => { this.showError('Failed.'); this.generatingDescription=false; } }); }
+  generateQuizFromResources(){ if (!this.selectedFormationForSessions) return; if (!this.formationResources.length) { this.showError('Upload resources first.'); return; } this.generatingQuiz=true; this.formationService.generateQuizFromResources(this.selectedFormationForSessions.id!,10).subscribe({ next: () => { this.showSuccess('Quiz generated!'); this.generatingQuiz=false; }, error: (e) => { this.showError(e?.error?.message||'Failed.'); this.generatingQuiz=false; } }); }
+  closeQuizPreviewModal(){ this.showQuizPreviewModal=false; this.quizPreview=null; this.quizPreviewAnswers=new Map(); this.quizPreviewResult=null; }
+  selectQuizPreviewOption(qid: number, oid: number){ this.quizPreviewAnswers.set(qid,oid); }
+  isQuizPreviewSelected(qid: number, oid: number){ return this.quizPreviewAnswers.get(qid)===oid; }
+  allQuizPreviewAnswered(){ if (!this.quizPreview) return false; return this.quizPreviewAnswers.size===this.quizPreview.questions.length; }
+  submitQuizPreview(){ if (!this.allQuizPreviewAnswered()||!this.selectedFormationForSessions) return; this.quizPreviewSubmitting=true; const a=Array.from(this.quizPreviewAnswers.entries()).map(([q,o])=>({questionId:q,selectedOptionId:o})); this.formationService.submitQuiz(this.selectedFormationForSessions.id!,a).subscribe({ next: (r) => { this.quizPreviewResult=r; this.quizPreviewSubmitting=false; }, error: () => { this.showError('Failed.'); this.quizPreviewSubmitting=false; } }); }
+  closeQuizModal(){ this.showQuizModal=false; }
+
+  get suspendedOnPage(){ return this.users.filter(u => u.banned).length; }
+  get monitoredConversationCount(){ return this.adminConversations.length; }
+  initials(name: string | undefined){ return (name||'?').trim().charAt(0).toUpperCase(); }
+
+  private belongsToSelectedConversation(msg: DirectMessage, conv: ConversationSummary): boolean {
+    const ids=[msg.sender.id,msg.receiver.id].sort((a,b)=>a-b);
+    const sel=[conv.userA.id,conv.userB.id].sort((a,b)=>a-b);
+    return ids[0]===sel[0]&&ids[1]===sel[1];
   }
-
-  // Order Management
-  loadOrders() {
-    this.ordersLoading = true;
-    
-    // Load orders and users in parallel
-    forkJoin({
-      orders: this.orderService.getAll(),
-      users: this.userService.getAll()
-    }).subscribe({
-      next: ({ orders, users: usersRaw }: any) => {
-        // Handle both plain array and paginated response
-        const users: any[] = Array.isArray(usersRaw) ? usersRaw : (usersRaw?.content ?? []);
-        // Create a map of users for quick lookup
-        const userMap = new Map(users.map((u: any) => [u.id, u]));
-        
-        // Enhance orders with customer names
-        this.orders = orders.map((order: any) => ({
-          ...order,
-          customerName: userMap.get(order.idUser)?.fullName || 'Unknown User',
-          customerEmail: userMap.get(order.idUser)?.email || ''
-        })).sort((a: any, b: any) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
-        });
-        
-        this.stats.totalOrders = orders.length;
-        this.stats.totalRevenue = orders
-          .filter((o: any) => o.status === 'ACCEPTED')
-          .reduce((sum: number, o: any) => sum + o.totalAmount, 0);
-        this.ordersLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading orders:', err);
-        this.ordersLoading = false;
-      }
-    });
+  private upsertConversationFromMessage(msg: DirectMessage): void {
+    const idA=Math.min(msg.sender.id,msg.receiver.id), idB=Math.max(msg.sender.id,msg.receiver.id);
+    const key=`${idA}_${idB}`;
+    const s: ConversationSummary = { conversationKey:key, userA:idA===msg.sender.id?msg.sender:msg.receiver, userB:idB===msg.sender.id?msg.sender:msg.receiver, lastMessagePreview:msg.content.length>80?`${msg.content.slice(0,77)}...`:msg.content, lastMessageTime:msg.timestamp, lastMessageSenderId:msg.sender.id, messageCount:1 };
+    const i=this.adminConversations.findIndex(c=>c.conversationKey===key);
+    if (i>=0) this.adminConversations.splice(i,1);
+    this.adminConversations=[s,...this.adminConversations]; this.messagesLoading=false;
   }
-
-  viewOrderDetails(order: any) {
-    this.selectedOrder = order;
-  }
-
-  closeOrderDetails() {
-    this.selectedOrder = null;
-  }
-
-  updateOrderStatus(orderId: number, status: string) {
-    this.orderService.updateStatus(orderId, status as any).subscribe({
-      next: () => {
-        this.loadOrders();
-        if (this.selectedOrder && this.selectedOrder.id === orderId) {
-          this.selectedOrder.status = status;
-        }
-      },
-      error: (err) => console.error('Error updating order status:', err)
-    });
-  }
-
-  getProductNames(order: any): string {
-    if (!order.produits || order.produits.length === 0) {
-      return 'No products';
-    }
-    return order.produits.map((p: any) => p.name).join(', ');
-  }
-
-  getStatusClass(status: string): string {
-    const statusMap: Record<string, string> = {
-      'PENDING': 'status-pending',
-      'ACCEPTED': 'status-accepted',
-      'REJECTED': 'status-rejected'
-    };
-    return statusMap[status] || 'status-pending';
-  }
-
-  getProductEmoji(category: string): string {
-    return this.categoryEmojis[category] || '📦';
-  }
-
-  getProductColor(category: string): string {
-    return this.categoryColors[category] || '#f0f0f0';
-  }
-
-  // Formation Management
-  loadFormations() {
-    this.formationsLoading = true;
-    this.formationService.getAll().subscribe({
-      next: (formations) => {
-        this.formations = formations;
-        this.formationsLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading formations:', err);
-        this.notificationService.error('Error loading formations');
-        this.formationsLoading = false;
-      }
-    });
-  }
-
-  openFormationModal(formation?: Formation) {
-    if (formation) {
-      this.editingFormation = formation;
-      this.formationForm = {
-        title: formation.title,
-        description: formation.description,
-        duration: formation.duration,
-        maxCapacity: formation.maxCapacity,
-        price: formation.price || 0,
-        status: formation.status
-      };
-    } else {
-      this.editingFormation = null;
-      this.formationForm = {
-        title: '',
-        description: '',
-        duration: 0,
-        maxCapacity: 0,
-        price: 0,
-        status: 'PLANNED' as FormationStatus
-      };
-    }
-    this.showFormationModal = true;
-  }
-
-  closeFormationModal() {
-    this.showFormationModal = false;
-    this.editingFormation = null;
-  }
-
-  saveFormation() {
-    if (!this.formationForm.title || this.formationForm.title.trim() === '') {
-      this.notificationService.warning('Please enter a formation title');
-      return;
-    }
-
-    if (!this.formationForm.description || this.formationForm.description.trim() === '') {
-      this.notificationService.warning('Please enter a formation description');
-      return;
-    }
-
-    if (!this.formationForm.duration || this.formationForm.duration <= 0) {
-      this.notificationService.warning('Please enter a valid duration (greater than 0)');
-      return;
-    }
-
-    if (!this.formationForm.maxCapacity || this.formationForm.maxCapacity <= 0) {
-      this.notificationService.warning('Please enter a valid capacity (greater than 0)');
-      return;
-    }
-
-    const formationData: any = { ...this.formationForm, pinned: false };
-    
-    if (this.editingFormation) {
-      formationData.id = this.editingFormation.id;
-      formationData.participantIds = this.editingFormation.participantIds || [];
-      this.formationService.update(formationData).subscribe({
-        next: () => {
-          this.notificationService.success('Formation updated successfully!');
-          this.loadFormations();
-          this.closeFormationModal();
-        },
-        error: (err) => {
-          console.error('Error updating formation:', err);
-          this.notificationService.error('Error updating formation. Please try again.');
-        }
-      });
-    } else {
-      this.formationService.create(formationData).subscribe({
-        next: () => {
-          this.notificationService.success('Formation créée avec succès !');
-          this.loadFormations();
-          this.closeFormationModal();
-        },
-        error: (err) => {
-          console.error('Error creating formation:', err);
-          const msg = err?.error?.message || err?.message || `Erreur ${err?.status}`;
-          this.notificationService.error(`Erreur lors de la création : ${msg}`);
-        }
-      });
-    }
-  }
-
-  deleteFormation(id: number) {
-    if (confirm('Are you sure you want to delete this formation? All associated sessions will also be deleted.')) {
-      this.formationService.delete(id).subscribe({
-        next: () => {
-          this.notificationService.success('Formation deleted successfully!');
-          this.loadFormations();
-        },
-        error: (err) => {
-          console.error('Error deleting formation:', err);
-          this.notificationService.error('Error deleting formation. Please try again.');
-        }
-      });
-    }
-  }
-
-  updateFormationStatus(id: number, status: FormationStatus) {
-    this.formationService.updateStatus(id, status).subscribe({
-      next: () => {
-        this.notificationService.success('Formation status updated!');
-        this.loadFormations();
-      },
-      error: (err) => {
-        console.error('Error updating formation status:', err);
-        this.notificationService.error('Error updating status. Please try again.');
-      }
-    });
-  }
-
-  // Session Management
-  viewFormationSessions(formation: Formation) {
-    this.selectedFormationForSessions = formation;
-    this.loadSessionsForFormation(formation.id!);
-    this.loadResources(formation.id!);
-    // Ensure trainers are loaded (may not be ready yet on first load)
-    if (this.trainersMap.size === 0) {
-      this.loadAllUsers();
-    }
-  }
-
-  closeSessionsView() {
-    this.selectedFormationForSessions = null;
-    this.sessions = [];
-  }
-
-  loadSessionsForFormation(formationId: number) {
-    this.sessionsLoading = true;
-    this.sessionService.getByFormation(formationId).subscribe({
-      next: (sessions) => {
-        this.sessions = sessions;
-        this.sessionsLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading sessions:', err);
-        this.notificationService.error('Error loading sessions');
-        this.sessionsLoading = false;
-      }
-    });
-  }
-
-  openSessionModal(session?: Session) {
-    if (!this.selectedFormationForSessions) {
-      this.notificationService.warning('Please select a formation first');
-      return;
-    }
-
-    if (session) {
-      this.editingSession = session;
-      this.sessionForm = {
-        title: session.title,
-        startDate: session.startDate.substring(0, 16),
-        endDate: session.endDate.substring(0, 16),
-        status: session.status,
-        type: (session as any).type || 'ONLINE',
-        meetLink: session.meetLink || '',
-        trainerId: session.trainerId,
-        formationId: this.selectedFormationForSessions.id!
-      };
-    } else {
-      this.editingSession = null;
-      this.sessionForm = {
-        title: '',
-        startDate: '',
-        endDate: '',
-        status: 'SCHEDULED' as SessionStatus,
-        type: 'ONLINE',
-        meetLink: '',
-        trainerId: this.trainers.length > 0 ? this.trainers[0].id : 0,
-        formationId: this.selectedFormationForSessions.id!
-      };
-    }
-    this.showSessionModal = true;
-  }
-
-  closeSessionModal() {
-    this.showSessionModal = false;
-    this.editingSession = null;
-  }
-
-  saveSession() {
-    if (!this.sessionForm.title || this.sessionForm.title.trim() === '') {
-      this.notificationService.warning('Please enter a session title');
-      return;
-    }
-
-    if (!this.sessionForm.startDate) {
-      this.notificationService.warning('Please select a start date');
-      return;
-    }
-
-    if (!this.sessionForm.endDate) {
-      this.notificationService.warning('Please select an end date');
-      return;
-    }
-
-    const startDate = new Date(this.sessionForm.startDate);
-    const endDate = new Date(this.sessionForm.endDate);
-
-    if (endDate <= startDate) {
-      this.notificationService.warning('End date must be after start date');
-      return;
-    }
-
-    if (!this.sessionForm.trainerId || this.sessionForm.trainerId <= 0) {
-      this.notificationService.warning('Please select a trainer');
-      return;
-    }
-
-    const sessionData: any = {
-      title: this.sessionForm.title,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      status: this.sessionForm.status,
-      type: this.sessionForm.type,
-      meetLink: this.sessionForm.meetLink,
-      trainerId: this.sessionForm.trainerId
-    };
-    
-    if (this.editingSession) {
-      sessionData.id = this.editingSession.id;
-      this.sessionService.update(sessionData).subscribe({
-        next: () => {
-          this.notificationService.success('Session updated successfully!');
-          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
-          this.closeSessionModal();
-        },
-        error: (err) => {
-          console.error('Error updating session:', err);
-          this.notificationService.error('Error updating session. Please try again.');
-        }
-      });
-    } else {
-      this.sessionService.create(sessionData, this.sessionForm.formationId).subscribe({
-        next: () => {
-          this.notificationService.success('Session created successfully!');
-          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
-          this.closeSessionModal();
-        },
-        error: (err) => {
-          console.error('Error creating session:', err);
-          this.notificationService.error('Error creating session. Please try again.');
-        }
-      });
-    }
-  }
-
-  deleteSession(id: number) {
-    if (confirm('Are you sure you want to delete this session?')) {
-      this.sessionService.delete(id).subscribe({
-        next: () => {
-          this.notificationService.success('Session deleted successfully!');
-          this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
-        },
-        error: (err) => {
-          console.error('Error deleting session:', err);
-          this.notificationService.error('Error deleting session. Please try again.');
-        }
-      });
-    }
-  }
-
-  updateSessionStatus(id: number, status: SessionStatus) {
-    this.sessionService.updateStatus(id, status).subscribe({
-      next: () => {
-        this.notificationService.success('Session status updated!');
-        this.loadSessionsForFormation(this.selectedFormationForSessions!.id!);
-      },
-      error: (err) => {
-        console.error('Error updating session status:', err);
-        this.notificationService.error('Error updating status. Please try again.');
-      }
-    });
-  }
-
-  getFormationStatusClass(status: FormationStatus): string {
-    const statusMap: Record<string, string> = {
-      'PLANNED': 'status-planned',
-      'IN_PROGRESS': 'status-in-progress',
-      'COMPLETED': 'status-completed'
-    };
-    return statusMap[status] || 'status-planned';
-  }
-
-  getSessionStatusClass(status: SessionStatus): string {
-    const statusMap: Record<string, string> = {
-      'SCHEDULED': 'status-scheduled',
-      'IN_PROGRESS': 'status-in-progress',
-      'COMPLETED': 'status-completed',
-      'CANCELLED': 'status-cancelled'
-    };
-    return statusMap[status] || 'status-scheduled';
-  }
-
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  // Load all users for participant details
-  loadAllUsers(): void {
-    this.userService.getUsersByRole('TRAINER').subscribe({
-      next: (res: any) => {
-        const list: any[] = Array.isArray(res) ? res : (res?.content ?? []);
-        this.allUsers = list;
-        // Build a fast lookup map: id -> fullName
-        this.trainersMap = new Map(list.map((u: any) => [u.id, u.fullName || u.full_name || '—']));
-      },
-      error: (err) => {
-        console.error('Error loading trainers:', err);
-        this.allUsers = [];
-        this.trainersMap = new Map();
-      }
-    });
-  }
-
-  get trainers(): any[] {
-    if (!Array.isArray(this.allUsers)) return [];
-    return this.allUsers;
-  }
-
-  getTrainerName(trainerId: number): string {
-    if (!trainerId) return '—';
-    // Use the map first (always safe)
-    if (this.trainersMap && this.trainersMap.has(trainerId)) {
-      return this.trainersMap.get(trainerId)!;
-    }
-    // Safe array fallback
-    try {
-      if (Array.isArray(this.allUsers)) {
-        const trainer = this.allUsers.find((u: any) => u.id === trainerId);
-        return trainer ? (trainer.fullName || trainer.full_name || '—') : '—';
-      }
-    } catch { /* ignore */ }
-    return '—';
-  }
-
-  // Toggle participants panel
-  toggleParticipantsPanel(formationId: number): void {
-    if (this.expandedFormationId === formationId) {
-      this.expandedFormationId = null;
-    } else {
-      this.expandedFormationId = formationId;
-    }
-  }
-
-  // Get participant details
-  getParticipantDetails(participantIds: number[]): any[] {
-    if (!participantIds || participantIds.length === 0) return [];
-    if (!Array.isArray(this.allUsers)) return [];
-    return participantIds
-      .map((id: number) => this.allUsers.find((user: any) => user.id === id))
-      .filter((user: any) => user !== undefined);
-  }
-
-  // Format date short (for sessions table)
-  formatDateShort(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  // Format time only
-  formatTimeOnly(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  }
-
-  // Get session status class for modern design
-  getSessionStatusClassModern(status: SessionStatus): string {
-    const statusMap: Record<string, string> = {
-      'SCHEDULED': 'status-upcoming',
-      'IN_PROGRESS': 'status-in-progress',
-      'COMPLETED': 'status-completed',
-      'CANCELLED': 'status-cancelled'
-    };
-    return statusMap[status] || 'status-upcoming';
-  }
-
-  // AI Description Generation
-  generateDescription(): void {
-    if (!this.formationForm.title || this.formationForm.title.trim() === '') {
-      this.notificationService.warning('Veuillez saisir un titre avant de générer une description');
-      return;
-    }
-    this.generatingDescription = true;
-    this.formationService.generateDescription(this.formationForm.title, this.formationForm.duration).subscribe({
-      next: (res) => {
-        this.formationForm.description = res.description;
-        this.generatingDescription = false;
-      },
-      error: (err) => {
-        console.error('Error generating description:', err);
-        this.notificationService.error('Erreur lors de la génération de la description');
-        this.generatingDescription = false;
-      }
-    });
-  }
-
-  // Pin Toggle
-  togglePin(formation: Formation): void {
-    this.formationService.togglePin(formation.id!).subscribe({
-      next: (updated) => {
-        formation.pinned = updated.pinned;
-        this.formations.sort((a, b) => {
-          if (a.pinned === b.pinned) return 0;
-          return a.pinned ? -1 : 1;
-        });
-      },
-      error: (err) => {
-        console.error('Error toggling pin:', err);
-        this.notificationService.error("Erreur lors du changement d'épinglage");
-      }
-    });
-  }
-
-  // Resources
-  onResourceFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedResourceFile = input.files[0];
-    }
-  }
-
-  uploadResource(formationId: number): void {
-    if (!this.selectedResourceFile) {
-      this.notificationService.warning('Veuillez sélectionner un fichier');
-      return;
-    }
-    this.resourceUploading = true;
-    this.formationService.uploadResource(formationId, this.selectedResourceFile).subscribe({
-      next: () => {
-        this.notificationService.success('Ressource uploadée avec succès');
-        this.selectedResourceFile = null;
-        this.resourceUploading = false;
-        this.loadResources(formationId);
-      },
-      error: (err) => {
-        console.error('Error uploading resource:', err);
-        this.notificationService.error("Erreur lors de l'upload de la ressource");
-        this.resourceUploading = false;
-      }
-    });
-  }
-
-  deleteResource(formationId: number, resourceId: number): void {
-    if (confirm('Supprimer cette ressource ?')) {
-      this.formationService.deleteResource(formationId, resourceId).subscribe({
-        next: () => {
-          this.notificationService.success('Ressource supprimée');
-          this.loadResources(formationId);
-        },
-        error: (err) => {
-          console.error('Error deleting resource:', err);
-          this.notificationService.error('Erreur lors de la suppression');
-        }
-      });
-    }
-  }
-
-  loadResources(formationId: number): void {
-    this.formationService.getResources(formationId).subscribe({
-      next: (resources) => { this.formationResources = resources; },
-      error: (err) => { console.error('Error loading resources:', err); }
-    });
-  }
-
-  downloadResource(formationId: number, resourceId: number, fileName: string): void {
-    this.formationService.downloadResource(formationId, resourceId).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => {
-        console.error('Error downloading resource:', err);
-        this.notificationService.error('Erreur lors du téléchargement');
-      }
-    });
-  }
-
-  // Quiz
-  openQuizModal(): void {
-    this.quizForm = { title: '', passingScore: 80, questions: [] };
-    this.showQuizModal = true;
-  }
-
-  generateQuizFromResources(): void {
-    if (!this.selectedFormationForSessions) return;
-    if (this.formationResources.length === 0) {
-      this.notificationService.warning('Uploadez d\'abord des ressources pour cette formation.');
-      return;
-    }
-    this.generatingQuiz = true;
-    this.formationService.generateQuizFromResources(this.selectedFormationForSessions.id!, 10).subscribe({
-      next: () => {
-        this.notificationService.success('Quiz QCM généré !');
-        this.generatingQuiz = false;
-        this.router.navigate(['/formations', this.selectedFormationForSessions!.id, 'quiz'], {
-          queryParams: { preview: 'true', from: 'admin' }
-        });
-      },
-      error: (err) => {
-        console.error('Error generating quiz:', err);
-        const msg = err?.error?.message || err?.error || err?.message || 'Erreur lors de la génération';
-        this.notificationService.error(msg);
-        this.generatingQuiz = false;
-      }
-    });
-  }
-
-  openQuizPreview(formationId: number): void {
-    this.quizPreviewLoading = true;
-    this.quizPreviewAnswers = new Map();
-    this.quizPreviewResult = null;
-    this.showQuizPreviewModal = true;
-    this.formationService.getQuizPreview(formationId).subscribe({
-      next: (quiz) => {
-        this.quizPreview = quiz;
-        this.quizPreviewLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading quiz preview:', err);
-        this.notificationService.error('Erreur lors du chargement du quiz');
-        this.showQuizPreviewModal = false;
-        this.quizPreviewLoading = false;
-      }
-    });
-  }
-
-  closeQuizPreviewModal(): void {
-    this.showQuizPreviewModal = false;
-    this.quizPreview = null;
-    this.quizPreviewAnswers = new Map();
-    this.quizPreviewResult = null;
-  }
-
-  selectQuizPreviewOption(questionId: number, optionId: number): void {
-    this.quizPreviewAnswers.set(questionId, optionId);
-  }
-
-  isQuizPreviewSelected(questionId: number, optionId: number): boolean {
-    return this.quizPreviewAnswers.get(questionId) === optionId;
-  }
-
-  allQuizPreviewAnswered(): boolean {
-    if (!this.quizPreview) return false;
-    return this.quizPreviewAnswers.size === this.quizPreview.questions.length;
-  }
-
-  submitQuizPreview(): void {
-    if (!this.allQuizPreviewAnswered() || !this.selectedFormationForSessions) return;
-    this.quizPreviewSubmitting = true;
-    const answers = Array.from(this.quizPreviewAnswers.entries()).map(([questionId, selectedOptionId]) => ({
-      questionId, selectedOptionId
-    }));
-    this.formationService.submitQuiz(this.selectedFormationForSessions.id!, answers).subscribe({
-      next: (result) => {
-        this.quizPreviewResult = result;
-        this.quizPreviewSubmitting = false;
-      },
-      error: (err) => {
-        console.error('Error submitting quiz:', err);
-        this.notificationService.error('Erreur lors de la soumission');
-        this.quizPreviewSubmitting = false;
-      }
-    });
-  }
-
-  closeQuizModal(): void {
-    this.showQuizModal = false;
-  }
-
-  addQuestion(): void {
-    this.quizForm.questions.push({ text: '', options: [
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false }
-    ]});
-  }
-
-  removeQuestion(index: number): void {
-    this.quizForm.questions.splice(index, 1);
-  }
-
-  addOption(qIndex: number): void {
-    this.quizForm.questions[qIndex].options.push({ text: '', isCorrect: false });
-  }
-
-  removeOption(qIndex: number, oIndex: number): void {
-    this.quizForm.questions[qIndex].options.splice(oIndex, 1);
-  }
-
-  saveQuiz(formationId: number): void {
-    if (!this.quizForm.title.trim()) {
-      this.notificationService.warning('Veuillez saisir un titre pour le quiz');
-      return;
-    }
-    if (this.quizForm.questions.length === 0) {
-      this.notificationService.warning('Veuillez ajouter au moins une question');
-      return;
-    }
-    this.formationService.createQuiz(formationId, this.quizForm).subscribe({
-      next: () => {
-        this.notificationService.success('Quiz créé avec succès');
-        this.closeQuizModal();
-      },
-      error: (err) => {
-        console.error('Error creating quiz:', err);
-        this.notificationService.error('Erreur lors de la création du quiz');
-      }
-    });
-  }
+  private preloadAdminVisibleHistories(c: ConversationSummary[]){ for (const x of c.slice(0,8)) this.messagerieService.preloadAdminHistory(x.userA.id,x.userB.id); }
+  private startAdminLiveSync(){ if (this.adminLiveSyncInterval) return; this.adminLiveSyncInterval=setInterval(()=>{ if (this.activeTab!=='messages') return; if (this.selectedConversation) this.refreshSelectedConversationSilently(this.selectedConversation); },1000); }
+  private startUsersLiveSync(){ if (this.usersLiveSyncInterval) return; this.usersLiveSyncInterval=setInterval(()=>{ if (this.activeTab!=='users') return; this.refreshUsersSilently(); },1000); }
+  private stopUsersLiveSync(){ if (this.usersLiveSyncInterval) { clearInterval(this.usersLiveSyncInterval); this.usersLiveSyncInterval=null; } }
+  private refreshUsersSilently(){ this.adminService.getUsers(this.currentPage-1,this.usersPerPage,this.searchQuery,this.selectedRole).subscribe({ next: (d)=>{ if (this.activeTab!=='users') return; this.users=d.content??[]; this.totalUsers=d.totalElements??this.users.length; this.totalPages=Math.max(d.totalPages??0,1); this.currentPage=(d.number??0)+1; this.error=''; this.loading=false; } }); }
+  private refreshSelectedConversationSilently(c: ConversationSummary){ if (this.threadLoading) return; const key=c.conversationKey; this.messagerieService.loadAdminHistoryCached(c.userA.id,c.userB.id).subscribe({ next: (m)=>{ if (this.selectedConversationRequestKey!==key) return; this.selectedConversationMessages=m; } }); }
+  private ensureNotificationPermission(){ if (typeof window==='undefined'||!('Notification' in window)) return; if (Notification.permission==='default') Notification.requestPermission().catch(()=>undefined); }
+  private showDesktopMessageNotification(sender: string, content: string){ if (typeof window==='undefined'||!('Notification' in window)) return; if (Notification.permission!=='granted') return; const n=new Notification('Nouveau message (Admin)',{body:`${sender}: ${content.length>90?content.slice(0,87)+'...':content}`}); n.onclick=()=>{ window.focus(); this.setTab('messages'); }; }
+  showSuccess(msg: string){ this.successMessage=msg; this.errorMessage=''; setTimeout(()=>this.successMessage='',4000); }
+  showError(msg: string)  { this.errorMessage=msg; this.successMessage=''; setTimeout(()=>this.errorMessage='',6000); }
+  logout(){ this.authService.logout(); this.router.navigate(['/login']); }
 }

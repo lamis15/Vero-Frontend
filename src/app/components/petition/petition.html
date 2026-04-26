@@ -92,7 +92,7 @@
           <div class="fc-av fc-av-3">MR</div>
           <div class="fc-av fc-av-4">+</div>
         </div>
-        <button class="btn-fc-sign" *ngIf="!isAdmin" (click)="quickSign(filteredPetitions[0], $event)">
+        <button class="btn-fc-sign" *ngIf="!isAdmin && filteredPetitions[0].status === 'ACTIVE'" (click)="quickSign(filteredPetitions[0], $event)">
           Sign ✍️
         </button>
       </div>
@@ -182,7 +182,8 @@
         <div class="p-card-foot">
           <span class="p-deadline" *ngIf="p.deadline">{{ formatDeadline(p.deadline) }}</span>
           <span class="p-deadline" *ngIf="!p.deadline"></span>
-          <button class="btn-sign" *ngIf="!isAdmin" (click)="quickSign(p, $event)">Sign ✍️</button>
+          <button class="btn-sign" *ngIf="!isAdmin && !p._hasSigned" (click)="quickSign(p, $event)">Sign ✍️</button>
+          <button class="btn-sign signed-btn" *ngIf="!isAdmin && p._hasSigned" disabled>Signed ✓</button>
           <span class="admin-view-badge" *ngIf="isAdmin">👁 Read only</span>
         </div>
       </div>

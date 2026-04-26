@@ -4,15 +4,9 @@
 
 <!-- ── HERO ──────────────────────────────────────────────────────── -->
 <div class="donate-hero">
-
-  <!-- Background image removed per request -->
-
-  <!-- Dot Grid -->
   <div class="hero-bg-shapes">
     <div class="hero-grid"></div>
   </div>
-
-  <!-- Eco Leaves Animation -->
   <div class="eco-leaves">
     <div class="leaf leaf-1">🌿</div>
     <div class="leaf leaf-2">🍃</div>
@@ -23,30 +17,20 @@
     <div class="leaf leaf-7">🌿</div>
     <div class="leaf leaf-8">🌱</div>
   </div>
-
-  <!-- Waves -->
   <div class="ocean-waves">
     <div class="wave wave-1"></div>
     <div class="wave wave-2"></div>
     <div class="wave wave-3"></div>
   </div>
-
-  <!-- Hero content -->
   <div class="hero-content">
     <div class="hero-eyebrow">
       <div class="hero-eyebrow-dot"></div>
       Make an Impact
     </div>
-
-    <h1 class="hero-title">
-      Your generosity,<em>amplified.</em>
-    </h1>
-
+    <h1 class="hero-title">Your generosity,<em>amplified.</em></h1>
     <p class="hero-sub">
       Fund ecological events, volunteer your time, and build a greener tomorrow — one donation at a time.
     </p>
-
-    <!-- Stats counters -->
     <div class="hero-counters">
       <div class="counter-pill">
         <span class="counter-num">{{ events.length }}</span>
@@ -61,21 +45,16 @@
         <span class="counter-label">Donors</span>
       </div>
     </div>
-
-    <!-- CTA buttons -->
     <div class="hero-cta-row">
       <button class="btn-hero-primary" (click)="scrollToForm()">Donate Now →</button>
       <button class="btn-hero-ghost" (click)="goToBrowse(); scrollToForm()">Browse Events</button>
     </div>
   </div>
 
-  <!-- Floating featured event card -->
   <div class="hero-float-card" *ngIf="events.length > 0">
     <div class="fc-live-dot"></div>
     <div class="fc-badge">🌍 {{ events[0].status }}</div>
-    <div class="fc-title">
-      {{ events[0].title | slice:0:55 }}{{ events[0].title.length > 55 ? '…' : '' }}
-    </div>
+    <div class="fc-title">{{ events[0].title | slice:0:55 }}{{ events[0].title.length > 55 ? '…' : '' }}</div>
     <div class="fc-progress-track">
       <div class="fc-progress-fill" style="width: 68%"></div>
     </div>
@@ -100,9 +79,10 @@
     </div>
   </div>
 
-  <!-- Scroll indicator -->
   <div class="hero-scroll-hint">
-    <div class="hero-scroll-mouse"><div class="hero-scroll-wheel"></div></div>
+    <div class="hero-scroll-mouse">
+      <div class="hero-scroll-wheel"></div>
+    </div>
     <span>Scroll</span>
   </div>
 </div>
@@ -130,48 +110,29 @@
 
   <!-- ══════════════════ TAB 1 : BROWSE ══════════════════════════ -->
   <div class="tab-content" [hidden]="activeTab !== 'browse'">
-
     <div class="loading-wrap" *ngIf="eventsLoading && events.length === 0">
       <div class="loader-ring"></div>
       <p>Loading events...</p>
     </div>
-
     <div class="empty-wrap" *ngIf="!eventsLoading && events.length === 0">
       <div class="empty-leaf">📅</div>
       <h3>No events found</h3>
       <p>There are no active events at the moment.</p>
     </div>
-
-    <!-- Events grid -->
     <div class="petition-grid" *ngIf="events.length > 0">
-      <div class="p-card" *ngFor="let ev of events; let i = index"
-           [class.selected]="selectedEventIndex === i"
-           [style.animation-delay]="i * 0.07 + 's'"
-           (click)="selectEvent(i)">
-
-        <!-- Image strip -->
+      <div class="p-card" *ngFor="let ev of events; let i = index" [class.selected]="selectedEventIndex === i"
+        [style.animation-delay]="i * 0.07 + 's'" (click)="selectEvent(i)">
         <div class="p-card-img">
           <div class="p-card-img-emoji">🌍</div>
           <div class="p-card-img-gradient"></div>
         </div>
-
-        <!-- Status badge -->
-        <div class="p-card-badge" [ngClass]="getEventStatusClass(ev.status)">
-          {{ ev.status }}
-        </div>
-
-        <!-- Body -->
+        <div class="p-card-badge" [ngClass]="getEventStatusClass(ev.status)">{{ ev.status }}</div>
         <div class="p-card-body">
           <h3 class="p-card-title">{{ ev.title }}</h3>
-          <p class="p-card-desc">{{ ev.description | slice:0:100 }}{{ (ev.description.length || 0) > 100 ? '…' : '' }}</p>
+          <p class="p-card-desc">{{ ev.description | slice:0:100 }}{{ (ev.description.length || 0) }}
+          </p>
         </div>
-
-        <!-- Location -->
-        <div class="p-card-location" *ngIf="ev.location">
-          📍 {{ ev.location }}
-        </div>
-
-        <!-- Capacity bar -->
+        <div class="p-card-location" *ngIf="ev.location">📍 {{ ev.location }}</div>
         <div class="p-card-progress">
           <div class="p-progress-track">
             <div class="p-progress-fill" style="width: 68%"></div>
@@ -181,8 +142,6 @@
             <span class="p-goal">capacity</span>
           </div>
         </div>
-
-        <!-- Footer -->
         <div class="p-card-foot">
           <span class="p-deadline" *ngIf="ev.startDate">📅 {{ ev.startDate | date:'dd MMM yyyy' }}</span>
           <button class="btn-sign" (click)="selectEvent(i); $event.stopPropagation()">Donate 💚</button>
@@ -193,8 +152,6 @@
 
   <!-- ══════════════════ TAB 2 : DONATE FORM ═════════════════════ -->
   <div class="tab-content" [hidden]="activeTab !== 'donate'">
-
-    <!-- No event selected -->
     <div class="empty-wrap" *ngIf="!selectedEvent">
       <div class="empty-leaf">👈</div>
       <h3>Select an event first</h3>
@@ -202,17 +159,24 @@
       <button class="btn-sign" (click)="goToBrowse()">Browse Events →</button>
     </div>
 
-    <!-- Donate form + preview -->
     <div class="create-layout" *ngIf="selectedEvent">
-
-      <!-- Left: Form -->
       <div class="create-left">
         <div class="create-card">
           <div class="create-header">
             <div class="create-emoji">💚</div>
             <div>
               <h2 class="create-title">Donate to {{ selectedEvent.title }}</h2>
-              <p class="create-sub">📍 {{ selectedEvent.location }} · {{ selectedEvent.startDate | date:'dd MMM yyyy' }}</p>
+              <p class="create-sub">📍 {{ selectedEvent.location }} · {{ selectedEvent.startDate | date:'dd MMM yyyy' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- ── DONOR PROFILE CARD (IA) ─────────────────────── -->
+          <div class="donor-profile-card" *ngIf="isLoggedIn && donorProfile">
+            <span class="profile-emoji">{{ donorEmoji }}</span>
+            <div class="profile-info">
+              <span class="profile-label">Your donor profile</span>
+              <span class="profile-value">{{ donorProfile }}</span>
             </div>
           </div>
 
@@ -220,9 +184,12 @@
           <div class="field-group">
             <label class="field-label">Donation Type</label>
             <div class="type-row">
-              <button class="type-chip" [class.active]="donationType==='MONEY'"    (click)="donationType='MONEY'">💶 Money</button>
-              <button class="type-chip" [class.active]="donationType==='MATERIAL'" (click)="donationType='MATERIAL'">📦 Material</button>
-              <button class="type-chip" [class.active]="donationType==='TIME'"     (click)="donationType='TIME'">⏰ Time</button>
+              <button class="type-chip" [class.active]="donationType==='MONEY'" (click)="donationType='MONEY'">💶
+                Money</button>
+              <button class="type-chip" [class.active]="donationType==='MATERIAL'" (click)="donationType='MATERIAL'">📦
+                Material</button>
+              <button class="type-chip" [class.active]="donationType==='TIME'" (click)="donationType='TIME'">⏰
+                Time</button>
             </div>
           </div>
 
@@ -230,22 +197,21 @@
           <div class="field-group" *ngIf="donationType==='MONEY'">
             <label class="field-label">Amount</label>
             <div class="amount-grid">
-              <button class="amt-btn" *ngFor="let a of [5,20,50,100,250,500]"
-                      [class.active]="selectedAmount===a" (click)="selectAmount(a)">€{{ a }}</button>
+              <button class="amt-btn" *ngFor="let a of [5,20,50,100,250,500]" [class.active]="selectedAmount===a"
+                (click)="selectAmount(a)">€{{ a }}</button>
             </div>
             <div class="custom-row" style="margin-top:10px">
               <span class="cur">€</span>
-              <input type="number" class="custom-input" placeholder="Custom amount"
-                     [(ngModel)]="customAmount" (input)="selectedAmount=null">
+              <input type="number" class="custom-input" placeholder="Custom amount" [(ngModel)]="customAmount"
+                (input)="selectedAmount=null">
             </div>
           </div>
 
           <!-- MATERIAL -->
           <div class="field-group" *ngIf="donationType==='MATERIAL'">
             <label class="field-label">Items to donate</label>
-            <textarea class="field-input field-textarea" rows="3"
-                      placeholder="Describe items: 50 blankets, 20 books..."
-                      [(ngModel)]="materialQuantity"></textarea>
+            <textarea class="field-input field-textarea" rows="3" placeholder="Describe items: 50 blankets, 20 books..."
+              [(ngModel)]="materialQuantity"></textarea>
             <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
               <span class="goal-pill" (click)="materialQuantity='10 blankets'">🧣 Blankets</span>
               <span class="goal-pill" (click)="materialQuantity='20 books'">📚 Books</span>
@@ -259,8 +225,8 @@
           <div class="field-group" *ngIf="donationType==='TIME'">
             <label class="field-label">Volunteer Hours</label>
             <div class="goal-pills">
-              <button class="goal-pill" *ngFor="let h of [2,4,8,16,24,40]"
-                      [class.active]="volunteerHours===h" (click)="volunteerHours=h">{{ h }}h</button>
+              <button class="goal-pill" *ngFor="let h of [2,4,8,16,24,40]" [class.active]="volunteerHours===h"
+                (click)="volunteerHours=h">{{ h }}h</button>
             </div>
             <div class="time-summary" *ngIf="volunteerHours" style="margin-top:14px">
               ⏱ {{ volunteerHours }}h — ≈ {{ (volunteerHours / 8) | number:'1.0-1' }} day(s)
@@ -288,13 +254,14 @@
 
           <!-- Anonymous toggle -->
           <div class="toggle-row" (click)="isAnonymous=!isAnonymous"
-               style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:20px">
+            style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:20px">
             <div class="toggle-track" [class.on]="isAnonymous">
               <div class="toggle-thumb" [style.transform]="isAnonymous ? 'translateX(16px)' : ''"></div>
             </div>
             <div>
               <div class="toggle-text">Appear anonymously</div>
-              <div style="font-size:11px;color:var(--eco-muted);margin-top:2px">Your donation will appear as "Anonymous"</div>
+              <div style="font-size:11px;color:var(--eco-muted);margin-top:2px">Your donation will appear as "Anonymous"
+              </div>
             </div>
           </div>
 
@@ -341,9 +308,7 @@
             <h3 class="p-card-title">{{ selectedEvent.title }}</h3>
             <p class="p-card-desc">{{ (selectedEvent.description || '') | slice:0:120 }}</p>
           </div>
-          <div class="p-card-location" *ngIf="selectedEvent.location">
-            📍 {{ selectedEvent.location }}
-          </div>
+          <div class="p-card-location" *ngIf="selectedEvent.location">📍 {{ selectedEvent.location }}</div>
           <div class="p-card-progress">
             <div class="p-progress-track">
               <div class="p-progress-fill" style="width: 68%"></div>
@@ -354,22 +319,16 @@
             </div>
           </div>
           <div class="p-card-foot">
-            <span class="p-deadline" *ngIf="selectedEvent.startDate">
-              📅 {{ selectedEvent.startDate | date:'dd MMM yyyy' }}
-            </span>
-            <span class="donate-preview-badge" *ngIf="donationType === 'MONEY' && getFinalAmount() > 0">
-              💶 €{{ getFinalAmount() }}
-            </span>
-            <span class="donate-preview-badge" *ngIf="donationType === 'TIME' && volunteerHours">
-              ⏰ {{ volunteerHours }}h
-            </span>
-            <span class="donate-preview-badge" *ngIf="donationType === 'MATERIAL' && materialQuantity">
-              📦 {{ materialQuantity | slice:0:20 }}
-            </span>
+            <span class="p-deadline" *ngIf="selectedEvent.startDate">📅 {{ selectedEvent.startDate | date:'dd MMM yyyy'
+              }}</span>
+            <span class="donate-preview-badge" *ngIf="donationType==='MONEY' && getFinalAmount()>0">💶 €{{
+              getFinalAmount() }}</span>
+            <span class="donate-preview-badge" *ngIf="donationType==='TIME' && volunteerHours">⏰ {{ volunteerHours
+              }}h</span>
+            <span class="donate-preview-badge" *ngIf="donationType==='MATERIAL' && materialQuantity">📦 {{
+              materialQuantity | slice:0:20 }}</span>
           </div>
         </div>
-
-        <!-- Event impact stats -->
         <div class="preview-stats-card">
           <div class="preview-stat">
             <span class="preview-stat-num">{{ donations.length }}</span>
@@ -392,12 +351,10 @@
 
   <!-- ══════════════════ TAB 3 : HISTORY ════════════════════════ -->
   <div class="tab-content" [hidden]="activeTab !== 'history'">
-
     <div class="loading-wrap" *ngIf="donationsLoading">
       <div class="loader-ring"></div>
       <p>Loading...</p>
     </div>
-
     <div class="empty-wrap" *ngIf="!donationsLoading && donations.length === 0">
       <div class="empty-leaf">🌱</div>
       <h3>No donations yet</h3>
@@ -406,8 +363,7 @@
     </div>
 
     <div class="donation-list" *ngIf="!donationsLoading && donations.length > 0">
-      <div class="donation-item" *ngFor="let d of donations; let i = index"
-           [style.animation-delay]="i * 0.04 + 's'">
+      <div class="donation-item" *ngFor="let d of donations; let i = index" [style.animation-delay]="i * 0.04 + 's'">
         <div class="di-header">
           <div class="di-avatar" [class.anon]="d.anonymous">{{ getDonorInitials(d) }}</div>
           <div class="di-info">
@@ -420,20 +376,39 @@
             <span *ngIf="d.type==='MATERIAL'">📦</span>
           </div>
         </div>
-        <div class="di-message"  *ngIf="d.message">« {{ d.message }} »</div>
+        <div class="di-message" *ngIf="d.message">« {{ d.message }} »</div>
         <div class="di-material" *ngIf="d.type==='MATERIAL' && d.quantity">📦 {{ d.quantity }}</div>
+
         <div class="di-footer">
           <div class="di-tags">
+            <!-- Type badge -->
             <span class="di-tag type">{{ getDonationTypeIcon(d.type) }} {{ d.type }}</span>
-            <span class="di-tag status"
-                  [class.validated]="d.status==='VALIDATED'"
-                  [class.pending]="d.status==='PENDING'||!d.status"
-                  [class.rejected]="d.status==='REJECTED'">{{ d.status||'PENDING' }}</span>
+
+            <!-- Status badge avec couleurs IA -->
+            <span class="di-tag status" [class.validated]="d.status==='VALIDATED'"
+              [class.pending]="d.status==='PENDING' || !d.status" [class.pending-review]="d.status==='PENDING_REVIEW'"
+              [class.rejected]="d.status==='REJECTED'">
+              <ng-container [ngSwitch]="d.status">
+                <ng-container *ngSwitchCase="'VALIDATED'">✅ VALIDATED</ng-container>
+                <ng-container *ngSwitchCase="'PENDING_REVIEW'">⚠️ REVIEW</ng-container>
+                <ng-container *ngSwitchCase="'REJECTED'">❌ REJECTED</ng-container>
+                <ng-container *ngSwitchDefault>🕐 PENDING</ng-container>
+              </ng-container>
+            </span>
+
+            <!-- Score de fraude IA -->
+            <span class="di-tag fraud-score" *ngIf="d.fraudScore !== null && d.fraudScore !== undefined"
+              [ngClass]="getFraudClass(d.fraudScore)">
+              🛡️ Risk {{ (d.fraudScore * 100) | number:'1.0-0' }}%
+            </span>
           </div>
+
           <div class="di-actions">
-            <button class="di-action-btn"          *ngIf="canEdit(d)"                             (click)="openEdit(d)"        title="Edit">✏️</button>
-            <button class="di-action-btn delete"   *ngIf="canDelete(d)"                           (click)="deleteDonation(d)"  [disabled]="deletingId===d.id"   title="Delete">🗑️</button>
-            <button class="di-action-btn validate" *ngIf="canValidate()&&d.status!=='VALIDATED'"  (click)="validateDonation(d)"[disabled]="validatingId===d.id" title="Validate">✅</button>
+            <button class="di-action-btn" *ngIf="canEdit(d)" (click)="openEdit(d)" title="Edit">✏️</button>
+            <button class="di-action-btn delete" *ngIf="canDelete(d)" (click)="deleteDonation(d)"
+              [disabled]="deletingId===d.id" title="Delete">🗑️</button>
+            <button class="di-action-btn validate" *ngIf="canValidate() && d.status!=='VALIDATED'"
+              (click)="validateDonation(d)" [disabled]="validatingId===d.id" title="Validate">✅</button>
           </div>
         </div>
       </div>
@@ -451,7 +426,7 @@
     </div>
     <div class="impact-grid">
       <div class="impact-card" *ngFor="let step of donationSteps; let i = index"
-           [style.animation-delay]="i * 0.1 + 's'">
+        [style.animation-delay]="i * 0.1 + 's'">
         <div class="ic-num">{{ i + 1 }}</div>
         <div class="ic-title">{{ step.title }}</div>
         <div class="ic-desc">{{ step.desc }}</div>
@@ -485,7 +460,7 @@
       <input type="text" class="field-input" [(ngModel)]="editMessage" placeholder="Your message...">
     </div>
     <div class="toggle-row" (click)="editAnonymous=!editAnonymous"
-         style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:12px 0">
+      style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:12px 0">
       <div class="toggle-track" [class.on]="editAnonymous">
         <div class="toggle-thumb" [style.transform]="editAnonymous?'translateX(16px)':''"></div>
       </div>
@@ -513,10 +488,14 @@
     <p class="modal-desc">Supporting <strong>{{ selectedEvent?.title }}</strong></p>
     <div class="modal-summary">
       <div class="sm-row"><span>Type</span><strong>{{ pendingDonation?.type }}</strong></div>
-      <div class="sm-row" *ngIf="pendingDonation?.type==='MONEY'"><span>Amount</span><strong>€{{ pendingDonation?.amount }}</strong></div>
-      <div class="sm-row" *ngIf="pendingDonation?.type==='TIME'"><span>Time</span><strong>{{ pendingDonation?.amount }}h</strong></div>
-      <div class="sm-row" *ngIf="pendingDonation?.type==='MATERIAL'"><span>Items</span><strong>{{ materialQuantity }}</strong></div>
-      <div class="sm-row"><span>Donor</span><strong>{{ isAnonymous ? 'Anonymous' : currentUserDisplayName }}</strong></div>
+      <div class="sm-row" *ngIf="pendingDonation?.type==='MONEY'"><span>Amount</span><strong>€{{ pendingDonation?.amount
+          }}</strong></div>
+      <div class="sm-row" *ngIf="pendingDonation?.type==='TIME'"><span>Time</span><strong>{{ pendingDonation?.amount
+          }}h</strong></div>
+      <div class="sm-row" *ngIf="pendingDonation?.type==='MATERIAL'"><span>Items</span><strong>{{ materialQuantity
+          }}</strong></div>
+      <div class="sm-row"><span>Donor</span><strong>{{ isAnonymous ? 'Anonymous' : currentUserDisplayName }}</strong>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" (click)="cancelDonation()">Cancel</button>
@@ -531,13 +510,21 @@
 <!-- ── SUCCESS MODAL ───────────────────────────────────────────────── -->
 <div class="modal-overlay" *ngIf="showSuccessModal">
   <div class="modal-card">
-    <div class="success-sticker s1">🌿</div><div class="success-sticker s2">🎉</div>
-    <div class="success-sticker s3">💚</div><div class="success-sticker s4">🌱</div>
+    <div class="success-sticker s1">🌿</div>
+    <div class="success-sticker s2">🎉</div>
+    <div class="success-sticker s3">💚</div>
+    <div class="success-sticker s4">🌱</div>
     <div class="success-sticker s5">✨</div>
     <div class="success-circle">✓</div>
     <h3 class="modal-title">Thank you! 🌱</h3>
     <p class="modal-desc">Your contribution has been recorded. You're making a real difference!</p>
-    <div class="reward-badge"><span class="reward-icon">🏆</span><span class="reward-text">Eco Hero</span></div>
+
+    <!-- Donor profile badge après don -->
+    <div class="reward-badge" *ngIf="donorProfile">
+      <span class="reward-icon">{{ donorEmoji }}</span>
+      <span class="reward-text">{{ donorProfile }}</span>
+    </div>
+
     <button class="btn-primary-modal full-width" (click)="viewMyDonations()">View my donations</button>
   </div>
 </div>

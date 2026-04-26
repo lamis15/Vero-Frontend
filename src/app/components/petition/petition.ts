@@ -84,21 +84,38 @@ export class PetitionComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.browseLoading = true;
 
-    forkJoin([
-      this.petitionService.getActive(),
-      this.petitionService.getStats(),
-      this.petitionService.getMy()
-    ]).subscribe({
-      next: ([petitions, stats, myPetitions]) => {
-        this.petitions = petitions;
-        this.applyFilter();
-        this.stats = stats;
-        this.myPetitions = [...myPetitions];
-        this.myPetitionsLoaded = true;
-        this.browseLoading = false;
-      },
-      error: () => { this.browseLoading = false; }
-    });
+    if (this.isAdmin) {
+      // Admin : charge uniquement pétitions actives + stats (pas getMy)
+      forkJoin([
+        this.petitionService.getActive(),
+        this.petitionService.getStats()
+      ]).subscribe({
+        next: ([petitions, stats]) => {
+          this.petitions = petitions;
+          this.applyFilter();
+          this.stats = stats;
+          this.browseLoading = false;
+        },
+        error: () => { this.browseLoading = false; }
+      });
+    } else {
+      // User : charge pétitions actives + stats + ses propres pétitions
+      forkJoin([
+        this.petitionService.getActive(),
+        this.petitionService.getStats(),
+        this.petitionService.getMy()
+      ]).subscribe({
+        next: ([petitions, stats, myPetitions]) => {
+          this.petitions = petitions;
+          this.applyFilter();
+          this.stats = stats;
+          this.myPetitions = [...myPetitions];
+          this.myPetitionsLoaded = true;
+          this.browseLoading = false;
+        },
+        error: () => { this.browseLoading = false; }
+      });
+    }
 
     // Init 3D tree after DOM is ready
     setTimeout(() => this.initTree3D(), 300);
@@ -343,6 +360,7 @@ export class PetitionComponent implements OnInit, OnDestroy {
   }
 
   submitPetition() {
+    if (this.isAdmin) return; // L'admin ne peut pas créer de pétition
     if (this.createState !== 'idle' && this.createState !== 'confirmed') return;
     if (!this.newPetition.title.trim() || this.newPetition.title.trim().length < 10) {
       this.errorMessage = 'Title must be at least 10 characters'; return;
@@ -442,14 +460,23 @@ export class PetitionComponent implements OnInit, OnDestroy {
 
   quickSign(petition: Petition, event: Event) {
     event.stopPropagation();
+    if (this.isAdmin) return; // L'admin ne signe pas les pétitions
     if (!petition.id) return;
+    if (petition.status !== 'ACTIVE') return; // Seulement si la pétition est active
+    if ((petition as any)._hasSigned) return;
+
     this.petitionService.sign(petition.id).subscribe({
       next: () => {
         petition.currentSignatures = (petition.currentSignatures || 0) + 1;
+        (petition as any)._hasSigned = true;
       },
       error: (err: any) => {
         const msg = err?.error?.message || err?.error || err?.message || 'Une erreur est survenue';
-        alert(msg);
+        if (typeof msg === 'string' && msg.toLowerCase().includes('déjà signé')) {
+          (petition as any)._hasSigned = true;
+        } else {
+          alert(msg);
+        }
       }
     });
   }
