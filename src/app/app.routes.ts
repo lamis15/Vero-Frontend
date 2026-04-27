@@ -59,12 +59,6 @@ export const routes: Routes = [
       import('./components/profile/profile.component').then(m => m.ProfileComponent)
   },
   {
-    path: 'admin',
-    canActivate: [adminGuard],
-    loadComponent: () =>
-      import('./components/admin/admin').then(m => m.Admin)
-  },
-  {
     path: 'chat',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -87,12 +81,12 @@ export const routes: Routes = [
       import('./components/community/thread/thread.component').then(m => m.ThreadComponent)
   },
   {
-  path: 'my-reservations',
-  canActivate: [authGuard],   // ← ajoute ça
-  loadComponent: () =>
-    import('./components/my-reservations/my-reservations.component')
-      .then(m => m.MyReservationsComponent)
-},
+    path: 'my-reservations',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/my-reservations/my-reservations.component')
+        .then(m => m.MyReservationsComponent)
+  },
   {
     path: 'petitions',
     loadComponent: () =>
@@ -103,6 +97,35 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
   },
+
+  // ══ Routes admin/sous-pages EN PREMIER — avant la route 'admin' ══
+  {
+    path: 'admin/anomaly',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
+  },
+  {
+    path: 'admin/events',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./components/admin-events/Admin events.component').then(m => m.AdminEventsComponent)
+  },
+  {
+    path: 'admin/reservations',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./components/admin-events/Admin reservations.component').then(m => m.AdminReservationsComponent)
+  },
+
+  // ══ Route 'admin' APRÈS les sous-routes ══
+  {
+    path: 'admin',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./components/admin/admin').then(m => m.Admin)
+  },
+
   {
     path: '**',
     redirectTo: ''

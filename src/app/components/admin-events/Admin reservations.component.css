@@ -1,0 +1,443 @@
+@import '../admin/admin.css';
+
+/* src/app/components/admin events/Admin reservations.component.css
+   ═══════════════════════════════════════════════════════════════════
+   Toutes les règles vc-* héritées de admin.css (global stylesheet).
+   Ce fichier ajoute uniquement les classes propres au scoring.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:host { display: block; }
+
+/* ══ Sub tabs (All Events / Reservations / Anomaly) ════════════════════════ */
+
+.vc-sub-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--vc-hairline);
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.3) 100%);
+}
+
+.vc-sub-tab {
+  position: relative;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  color: var(--vc-ink-soft);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.vc-sub-tab:hover {
+  color: var(--vc-accent);
+}
+
+.vc-sub-tab.active {
+  color: var(--vc-accent);
+  border-bottom-color: var(--vc-accent);
+  font-weight: 500;
+}
+
+.vc-sub-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--vc-clay);
+  color: #fff;
+  border-radius: 999px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ══ Score ring ════════════════════════════════════════════════════════════ */
+
+.vc-score-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vc-score-ring {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.vc-score-ring svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.vc-ring-circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vc-score-ring-val {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ══ Mini bars ══════════════════════════════════════════════════════════════ */
+
+.vc-mini-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vc-mini-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--vc-muted);
+}
+
+.vc-mini-bar-row span:first-child,
+.vc-mini-bar-row span:last-child {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  min-width: 26px;
+}
+
+.vc-mini-bar-track {
+  width: 52px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--vc-hairline-2);
+  overflow: hidden;
+}
+
+.vc-mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ══ Distribution bar ═══════════════════════════════════════════════════════ */
+
+.vc-scoring-bar-wrap {
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--vc-hairline);
+  background: linear-gradient(180deg, rgba(246, 244, 238, 0.6) 0%, transparent 100%);
+}
+
+.vc-scoring-bar-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.vc-scoring-dist-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--vc-hairline-2);
+  gap: 1px;
+}
+
+.vc-dist-seg {
+  height: 100%;
+  min-width: 2px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.vc-dist-seg:first-child { border-radius: 999px 0 0 999px; }
+.vc-dist-seg:last-child  { border-radius: 0 999px 999px 0; }
+.vc-dist-ok   { background: var(--vc-ok); }
+.vc-dist-warn { background: var(--vc-warn); }
+.vc-dist-bad  { background: var(--vc-danger); }
+
+.vc-scoring-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.vc-scoring-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--vc-muted);
+}
+
+.vc-scoring-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ══ Insight banners ════════════════════════════════════════════════════════ */
+
+.vc-scoring-insight {
+  padding: 10px 32px;
+  border-bottom: 1px solid var(--vc-hairline-2);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--vc-ink-soft);
+}
+
+.vc-scoring-ins-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.vc-scoring-ins-icon.warn { background: var(--vc-warn-tint); color: var(--vc-warn); }
+.vc-scoring-ins-icon.ok   { background: var(--vc-ok-tint);   color: var(--vc-ok); }
+
+/* ══ Filter toolbar ═════════════════════════════════════════════════════════ */
+
+.vc-scoring-toolbar {
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--vc-hairline);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--vc-surface);
+}
+
+.vc-scoring-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--vc-hairline);
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vc-ink-soft);
+  cursor: pointer;
+  background: var(--vc-surface);
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.vc-scoring-chip:hover {
+  border-color: var(--vc-accent);
+  color: var(--vc-accent);
+  background: var(--vc-tint);
+}
+.vc-scoring-chip.active {
+  background: var(--vc-accent);
+  border-color: var(--vc-accent);
+  color: #fff;
+}
+
+.vc-scoring-chip-ct {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.vc-scoring-chip:not(.active) .vc-scoring-chip-ct {
+  background: var(--vc-hairline-2);
+  color: var(--vc-muted);
+}
+
+.vc-scoring-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--vc-hairline);
+  flex-shrink: 0;
+}
+
+/* ══ Scoring table rows ═════════════════════════════════════════════════════ */
+
+.vc-scoring-row[data-profile="risk"] td {
+  background: rgba(155, 44, 44, 0.018);
+}
+.vc-scoring-row[data-profile="reliable"] td {
+  background: rgba(31, 77, 63, 0.018);
+}
+
+/* ── Ligne traitée (confirmed / rejected) — légèrement atténuée ── */
+.vc-row-processed td {
+  opacity: 0.72;
+}
+.vc-row-processed:hover td {
+  opacity: 1;
+}
+
+/* ══ Expand button ══════════════════════════════════════════════════════════ */
+
+.vc-scoring-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--vc-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+.vc-scoring-expand-btn:hover { color: var(--vc-accent); }
+
+/* ══ Detail row ═════════════════════════════════════════════════════════════ */
+
+.vc-scoring-detail-row td {
+  padding: 0;
+  border-bottom: 1px solid var(--vc-hairline);
+}
+
+.vc-scoring-detail-inner {
+  padding: 16px 20px 20px;
+  background: linear-gradient(180deg, rgba(246, 244, 238, 0.8) 0%, var(--vc-surface) 100%);
+  animation: vcDetailSlide 0.22s ease both;
+}
+
+@keyframes vcDetailSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.vc-scoring-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.vc-scoring-detail-card {
+  padding: 12px 14px;
+  background: var(--vc-surface);
+  border: 1px solid var(--vc-hairline);
+  border-radius: 10px;
+}
+
+.vc-scoring-detail-lbl {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vc-muted);
+  margin-bottom: 6px;
+}
+
+.vc-scoring-detail-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--vc-ink);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+.vc-scoring-detail-val.ok   { color: var(--vc-ok); }
+.vc-scoring-detail-val.warn { color: var(--vc-warn); }
+.vc-scoring-detail-val.bad  { color: var(--vc-danger); }
+
+.vc-scoring-detail-sub {
+  font-size: 11px;
+  color: var(--vc-muted);
+  margin-top: 3px;
+}
+
+/* ══ AI note ════════════════════════════════════════════════════════════════ */
+
+.vc-scoring-ai-note {
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #E6EEE9, #EAF3E5);
+  border: 1px solid rgba(31, 77, 63, 0.2);
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.vc-scoring-ai-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--vc-accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.vc-scoring-ai-note p {
+  font-size: 12.5px;
+  color: var(--vc-ink-soft);
+  line-height: 1.55;
+}
+
+/* ══ Recommandation ═════════════════════════════════════════════════════════ */
+
+.vc-scoring-reco {
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vc-scoring-reco[data-reco="CONFIRM"] {
+  background: var(--vc-ok-tint);
+  border-left: 3px solid var(--vc-ok);
+  border-radius: 0 6px 6px 0;
+}
+.vc-scoring-reco[data-reco="MANUAL"] {
+  background: var(--vc-warn-tint);
+  border-left: 3px solid var(--vc-warn);
+  border-radius: 0 6px 6px 0;
+}
+.vc-scoring-reco[data-reco="REJECT"] {
+  background: var(--vc-danger-tint);
+  border-left: 3px solid var(--vc-danger);
+  border-radius: 0 6px 6px 0;
+}
+
+.vc-scoring-reco-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--vc-muted);
+}
+.vc-scoring-reco-val {
+  font-weight: 500;
+  font-size: 13px;
+}
+.vc-scoring-reco[data-reco="CONFIRM"] .vc-scoring-reco-val { color: var(--vc-ok); }
+.vc-scoring-reco[data-reco="MANUAL"]  .vc-scoring-reco-val { color: var(--vc-warn); }
+.vc-scoring-reco[data-reco="REJECT"]  .vc-scoring-reco-val { color: var(--vc-danger); }
+
+/* ══ Tag new member ═════════════════════════════════════════════════════════ */
+
+.vc-tag-new {
+  background: var(--vc-ocean-tint);
+  border-color: rgba(59, 122, 139, 0.2);
+  color: var(--vc-ocean);
+}

@@ -1,0 +1,215 @@
+<div class="vc-app">
+
+  <aside class="vc-nav">
+    <div class="vc-brand">
+      <span class="vc-mark">V</span>
+      <span class="vc-brand-word">Vero</span>
+      <span class="vc-brand-sub">Admin</span>
+    </div>
+
+    <div class="vc-nav-label">Workspace</div>
+
+    <nav class="vc-nav-list">
+
+      <button type="button" class="vc-nav-item-link" [class.active]="router.url === '/admin'" (click)="goTo('/admin')">
+        Overview
+      </button>
+
+      <button type="button" class="vc-nav-item-link" (click)="goToAdminTab('messages')">
+        Conversations
+      </button>
+
+      <div class="vc-nav-group">
+        <button type="button" class="vc-nav-parent" [class.open]="eventsMenuOpen" (click)="toggleEventsMenu()">
+          Events &amp; Bookings
+          <svg class="vc-nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        @if (eventsMenuOpen) {
+          <div class="vc-nav-sub open">
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/events')" (click)="goTo('/admin/events')">
+              <span class="vc-nav-sub-dot"></span>
+              All Events
+            </button>
+
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/reservations')" (click)="goTo('/admin/reservations')">
+              <span class="vc-nav-sub-dot"></span>
+              Reservations
+            </button>
+
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/anomaly')" (click)="goTo('/admin/anomaly')">
+              <span class="vc-nav-sub-dot"></span>
+              Anomaly Detector
+            </button>
+          </div>
+        }
+      </div>
+
+      <button type="button" class="vc-nav-item-link" (click)="goToAdminTab('add')">
+        Create user
+      </button>
+    </nav>
+
+    <div class="vc-nav-art">
+      <img class="vc-nav-art-img" src="assets/images/hero_minimal_leaf.png" alt="" />
+      <div class="vc-nav-art-pill">Eco <em>premium</em></div>
+    </div>
+
+    <div class="vc-nav-foot">
+      <button class="vc-link-btn" (click)="goBack()">← Back to Admin</button>
+    </div>
+  </aside>
+
+  <main class="vc-main">
+
+    <div class="vc-hero compact">
+      <img class="vc-hero-img" src="assets/images/hero-forest2.png" alt="" />
+      <div class="vc-hero-veil"></div>
+      <div class="vc-hero-inner">
+        <div class="vc-crumb light">
+          Administration · <span>Events</span>
+        </div>
+        <div class="vc-hero-row">
+          <div class="vc-hero-text">
+            <h1 class="vc-title light">
+              Event <em>Directory</em>
+            </h1>
+            <p class="vc-sub light">
+              Manage all platform events — status, capacity and lifecycle.
+            </p>
+          </div>
+          <div class="vc-header-actions">
+            <button class="vc-btn ghost-light" type="button" (click)="goTo('/admin/reservations')">
+              View Reservations →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="vc-stats">
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Total Events</span>
+        <strong class="vc-stat-val">{{ totalEvents }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Upcoming</span>
+        <strong class="vc-stat-val">{{ upcomingCount }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Ongoing</span>
+        <strong class="vc-stat-val">{{ ongoingCount }}</strong>
+      </div>
+      <div class="vc-stat">
+        <span class="vc-stat-lbl">Completed</span>
+        <strong class="vc-stat-val">{{ completedCount }}</strong>
+      </div>
+    </section>
+
+    @if (successMessage) {
+      <div class="vc-banner ok" style="margin:0 32px 16px">{{ successMessage }}</div>
+    }
+    @if (errorMessage) {
+      <div class="vc-banner err" style="margin:0 32px 16px">{{ errorMessage }}</div>
+    }
+
+    <section class="vc-section">
+      <div class="vc-section-head">
+        <div>
+          <h2 class="vc-h2">All Events</h2>
+          <p class="vc-muted">Search, filter and perform lifecycle actions.</p>
+        </div>
+        <div class="vc-filters">
+          <input type="text" placeholder="Search events..." [(ngModel)]="searchQuery" (input)="onSearchChange()" class="vc-input" />
+          <select [(ngModel)]="selectedStatus" (change)="onStatusFilterChange()" class="vc-input">
+            <option value="">All statuses</option>
+            <option value="UPCOMING">Upcoming</option>
+            <option value="ONGOING">Ongoing</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      @if (loading) {
+        <table class="vc-table">
+          <thead>
+            <tr>
+              <th>Event</th><th>Date</th><th>Location</th><th>Capacity</th><th>Status</th><th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of [1,2,3,4,5]; track s) {
+              <tr class="vc-skeleton-row">
+                <td><span class="vc-sk vc-sk-avatar"></span><span class="vc-sk vc-sk-line w60"></span></td>
+                <td><span class="vc-sk vc-sk-line w40"></span></td>
+                <td><span class="vc-sk vc-sk-line w50"></span></td>
+                <td><span class="vc-sk vc-sk-line w30"></span></td>
+                <td><span class="vc-sk vc-sk-chip"></span></td>
+                <td class="right"><span class="vc-sk vc-sk-line w60"></span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (filteredEvents.length === 0) {
+        <p class="vc-empty">No events found.</p>
+      } @else {
+        <table class="vc-table">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Date</th>
+              <th>Location</th>
+              <th>Capacity</th>
+              <th>Status</th>
+              <th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of filteredEvents; track event.id) {
+              <tr>
+                <td>
+                  <div class="vc-person">
+                    <div class="vc-avatar">{{ initials(event.title) }}</div>
+                    <div>
+                      <strong>{{ event.title }}</strong>
+                      <small>{{ event.description | slice:0:60 }}{{ event.description.length > 60 ? '...' : '' }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--vc-muted)">
+                    {{ event.startDate | date:'dd MMM yyyy' }}
+                  </span>
+                </td>
+                <td>
+                  <span style="font-size:13px;color:var(--vc-ink)">{{ event.location }}</span>
+                </td>
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--vc-muted)">
+                    {{ event.capacity }}
+                  </span>
+                </td>
+                <td>
+                  <span class="vc-tag" [ngClass]="statusClass(event.status)">
+                    {{ event.status }}
+                  </span>
+                </td>
+                <td class="right">
+                  <div class="vc-row-actions">
+                    <button class="vc-link-btn" (click)="editEvent(event)">Edit</button>
+                    <button class="vc-link-btn warn" (click)="cancelEvent(event)">Cancel</button>
+                    <button class="vc-link-btn danger" (click)="deleteEvent(event.id)">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+  </main>
+</div>

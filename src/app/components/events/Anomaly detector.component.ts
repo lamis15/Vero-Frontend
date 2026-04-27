@@ -5,8 +5,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
 
 export interface FeatureExplanation {
   feature: string; label: string;
@@ -34,8 +32,8 @@ export interface BatchSummary {
   selector: 'app-anomaly-detector',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './anomaly detector.component.html',
-  styleUrls: ['./anomaly detector.component.css'],
+  templateUrl: './Anomaly detector.component.html',
+  styleUrls: ['./Anomaly detector.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnomalyDetectorComponent implements OnInit {
@@ -103,13 +101,10 @@ export class AnomalyDetectorComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    public auth: AuthService,
-    private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    if (!this.auth.isAdmin) this.router.navigate(['/events']);
     this.checkML();
   }
 

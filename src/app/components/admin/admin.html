@@ -11,22 +11,45 @@
 
     <div class="vc-nav-label">Workspace</div>
     <nav class="vc-nav-list">
+      <!-- FIX : supprimé (pointerdown) redondant sur tous les boutons nav -->
       <button [class.active]="activeTab === 'users'" (click)="setTab('users')">
         Overview
       </button>
       <button [class.active]="activeTab === 'messages'" (click)="setTab('messages')">
         Conversations
       </button>
-      <button [class.active]="activeTab === 'events'" (click)="setTab('events')">
-        Events &amp; Bookings
-      </button>
+
+      <!-- ══ Events & Bookings — sous-menu TOUJOURS VISIBLE ══ -->
+      <div class="vc-nav-group">
+        <div class="vc-nav-parent open">
+          Events &amp; Bookings
+          <svg class="vc-nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+        <div class="vc-nav-sub open">
+          <a class="vc-nav-sub-btn" routerLink="/admin/events" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+            <span class="vc-nav-sub-dot"></span> All Events
+          </a>
+          <a class="vc-nav-sub-btn" routerLink="/admin/reservations" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+            <span class="vc-nav-sub-dot"></span> Reservations
+            @if (pendingReservationCount > 0) {
+              <span class="vc-nav-sub-badge">{{ pendingReservationCount }}</span>
+            }
+          </a>
+          <a class="vc-nav-sub-btn" routerLink="/admin/anomaly" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+            <span class="vc-nav-sub-dot"></span> Anomaly Detector
+          </a>
+        </div>
+      </div>
+
       <button [class.active]="activeTab === 'add'" (click)="setTab('add')">
         Create user
       </button>
     </nav>
 
     <div class="vc-nav-art">
-      <img src="assets/images/hero_minimal_leaf.png" alt="" />
+      <img class="vc-nav-art-img" src="assets/images/hero_minimal_leaf.png" alt="" />
       <div class="vc-nav-art-pill">Eco <em>premium</em></div>
     </div>
 
@@ -52,34 +75,29 @@
       <img class="vc-hero-img" src="assets/images/hero-forest2.png" alt="" />
       <div class="vc-hero-veil"></div>
       <div class="vc-hero-inner">
-        <div class="vc-crumb light">Administration ·
-          <span>{{
-            activeTab === 'users'    ? 'Directory' :
-            activeTab === 'messages' ? 'Conversations' :
-            activeTab === 'add'      ? 'New user' :
-            activeTab === 'edit'     ? 'Edit user' :
-            activeTab === 'events'   ? 'Events & Bookings' : ''
-          }}</span>
-        </div>
+        <div class="vc-crumb light">Administration · <span>{{
+          activeTab === 'users' ? 'Directory' :
+          activeTab === 'messages' ? 'Conversations' :
+          activeTab === 'add' ? 'New user' :
+          activeTab === 'edit' ? 'Edit user' : ''
+        }}</span></div>
 
         <div class="vc-hero-row">
           <div class="vc-hero-text">
             <h1 class="vc-title light">
               @switch (activeTab) {
-                @case ('users')    { The <em>Directory</em> }
+                @case ('users') { The <em>Directory</em> }
                 @case ('messages') { Conversation <em>monitor</em> }
-                @case ('add')      { A <em>new</em> member }
-                @case ('edit')     { Editing a <em>member</em> }
-                @case ('events')   { Event <em>&amp; Booking</em> }
+                @case ('add') { A <em>new</em> member }
+                @case ('edit') { Editing a <em>member</em> }
               }
             </h1>
             <p class="vc-sub light">
               @switch (activeTab) {
-                @case ('users')    { Manage accounts, roles and moderation actions across the Vero platform. }
+                @case ('users') { Manage accounts, roles and moderation actions across the Vero platform. }
                 @case ('messages') { Inspect private conversations and keep supervision light but present. }
-                @case ('add')      { Provision a new account with the correct role and initial access policy. }
-                @case ('edit')     { Update the selected account in place without leaving the directory. }
-                @case ('events')   { Manage all platform events and review reservation requests from members. }
+                @case ('add') { Provision a new account with the correct role and initial access policy. }
+                @case ('edit') { Update the selected account in place without leaving the directory. }
               }
             </p>
           </div>
@@ -111,7 +129,7 @@
       </div>
     </section>
 
-    <!-- AI TOPIC HEATMAP -->
+    <!-- AI TOPIC HEATMAP — only on Overview tab -->
     @if (activeTab === 'users' && topicHeatmapTotal > 0) {
       <section class="vc-heatmap">
         <div class="vc-heatmap-head">
@@ -124,34 +142,36 @@
             <span>tagged messages</span>
           </div>
         </div>
+
         <div class="vc-heatmap-bar">
           @if (topicHeatmap.eco) {
-            <span class="vc-heatmap-seg vc-heatmap-eco" [style.flex]="topicHeatmap.eco"></span>
+            <span class="vc-heatmap-seg vc-heatmap-eco"       [style.flex]="topicHeatmap.eco"></span>
           }
           @if (topicHeatmap.lifestyle) {
             <span class="vc-heatmap-seg vc-heatmap-lifestyle" [style.flex]="topicHeatmap.lifestyle"></span>
           }
           @if (topicHeatmap.product) {
-            <span class="vc-heatmap-seg vc-heatmap-product" [style.flex]="topicHeatmap.product"></span>
+            <span class="vc-heatmap-seg vc-heatmap-product"   [style.flex]="topicHeatmap.product"></span>
           }
           @if (topicHeatmap.other) {
-            <span class="vc-heatmap-seg vc-heatmap-other" [style.flex]="topicHeatmap.other"></span>
+            <span class="vc-heatmap-seg vc-heatmap-other"     [style.flex]="topicHeatmap.other"></span>
           }
         </div>
+
         <ul class="vc-heatmap-legend">
-          <li><span class="vc-heatmap-dot vc-heatmap-eco"></span> Eco &amp; sustainability <em>{{ topicPercent('eco') }}%</em> <small>{{ topicHeatmap.eco }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-eco"></span>       Eco &amp; sustainability <em>{{ topicPercent('eco') }}%</em> <small>{{ topicHeatmap.eco }}</small></li>
           <li><span class="vc-heatmap-dot vc-heatmap-lifestyle"></span> Lifestyle <em>{{ topicPercent('lifestyle') }}%</em> <small>{{ topicHeatmap.lifestyle }}</small></li>
-          <li><span class="vc-heatmap-dot vc-heatmap-product"></span> Product <em>{{ topicPercent('product') }}%</em> <small>{{ topicHeatmap.product }}</small></li>
-          <li><span class="vc-heatmap-dot vc-heatmap-other"></span> Other <em>{{ topicPercent('other') }}%</em> <small>{{ topicHeatmap.other }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-product"></span>   Product <em>{{ topicPercent('product') }}%</em> <small>{{ topicHeatmap.product }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-other"></span>     Other <em>{{ topicPercent('other') }}%</em> <small>{{ topicHeatmap.other }}</small></li>
         </ul>
       </section>
     }
 
     <!-- BANNERS -->
     @if (successMessage) { <div class="vc-banner ok">{{ successMessage }}</div> }
-    @if (errorMessage)   { <div class="vc-banner err">{{ errorMessage }}</div> }
+    @if (errorMessage) { <div class="vc-banner err">{{ errorMessage }}</div> }
 
-    <!-- DELETE USER MODAL -->
+    <!-- DELETE MODAL -->
     @if (confirmDeleteId) {
       <div class="vc-modal-overlay" (click)="cancelDelete()">
         <div class="vc-modal" (click)="$event.stopPropagation()">
@@ -160,20 +180,6 @@
           <div class="vc-modal-actions">
             <button class="vc-btn ghost" (click)="cancelDelete()">Cancel</button>
             <button class="vc-btn danger" (click)="confirmDelete()">Delete permanently</button>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- DELETE EVENT MODAL -->
-    @if (confirmDeleteEventId) {
-      <div class="vc-modal-overlay" (click)="confirmDeleteEventId = null">
-        <div class="vc-modal" (click)="$event.stopPropagation()">
-          <h3>Delete this event</h3>
-          <p>All reservations linked to this event will also be deleted. This action is permanent.</p>
-          <div class="vc-modal-actions">
-            <button class="vc-btn ghost" (click)="confirmDeleteEventId = null">Cancel</button>
-            <button class="vc-btn danger" (click)="confirmDeleteEvent()">Delete permanently</button>
           </div>
         </div>
       </div>
@@ -229,7 +235,9 @@
                       </div>
                     </div>
                   </td>
-                  <td><span class="vc-tag">{{ user.role }}</span></td>
+                  <td>
+                    <span class="vc-tag">{{ user.role }}</span>
+                  </td>
                   <td>
                     <div class="vc-tag-stack">
                       <span class="vc-tag" [class.ok]="user.verified" [class.warn]="!user.verified">
@@ -251,6 +259,7 @@
               }
             </tbody>
           </table>
+
           <div class="vc-pager">
             <button class="vc-link-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1">← Previous</button>
             <span class="vc-muted">Page {{ currentPage }} of {{ totalPages }}</span>
@@ -263,6 +272,7 @@
     <!-- ═══ ADD USER ═══ -->
     @if (activeTab === 'add') {
       <form class="vc-compose" (ngSubmit)="createUser()">
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">01 · Identity</span>
@@ -280,6 +290,7 @@
             </label>
           </div>
         </div>
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">02 · Access</span>
@@ -301,6 +312,7 @@
             </label>
           </div>
         </div>
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">03 · Policy</span>
@@ -326,6 +338,7 @@
             </label>
           </div>
         </div>
+
         <footer class="vc-compose-foot">
           <p class="vc-muted">Creating an account sends no automatic notification. Share the credentials securely.</p>
           <div class="vc-form-actions">
@@ -339,6 +352,7 @@
     <!-- ═══ EDIT USER ═══ -->
     @if (activeTab === 'edit' && editingUserId) {
       <form class="vc-compose" (ngSubmit)="saveEdit(editingUserId)">
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">01 · Identity</span>
@@ -356,6 +370,7 @@
             </label>
           </div>
         </div>
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">02 · Access</span>
@@ -373,6 +388,7 @@
             </label>
           </div>
         </div>
+
         <div class="vc-group">
           <aside class="vc-group-aside">
             <span class="vc-group-kicker">03 · Policy</span>
@@ -398,6 +414,7 @@
             </label>
           </div>
         </div>
+
         <footer class="vc-compose-foot">
           <p class="vc-muted">Changes apply immediately. Email notifications are not sent automatically.</p>
           <div class="vc-form-actions">
@@ -420,16 +437,15 @@
             <input type="text" placeholder="Search by user or message" [(ngModel)]="conversationSearch" (input)="filterConversations()" class="vc-input" />
           </div>
         </div>
+
         <div class="vc-monitor">
           <div class="vc-monitor-list">
             @if (!messagesLoading && adminConversations.length === 0) {
               <p class="vc-empty slim">No conversations yet.</p>
             } @else {
               @for (conversation of adminConversations; track conversation.conversationKey) {
-                <button class="vc-conv"
-                        [class.active]="selectedConversation?.conversationKey === conversation.conversationKey"
-                        (pointerdown)="onAdminConversationPointerDown(conversation)"
-                        (click)="openAdminConversation(conversation)">
+                <button class="vc-conv" [class.active]="selectedConversation?.conversationKey === conversation.conversationKey"
+                        (pointerdown)="onAdminConversationPointerDown(conversation)" (click)="openAdminConversation(conversation)">
                   <div class="vc-conv-avatars">
                     <span>{{ initials(conversation.userA.fullName) }}</span>
                     <span>{{ initials(conversation.userB.fullName) }}</span>
@@ -443,6 +459,7 @@
               }
             }
           </div>
+
           <div class="vc-monitor-thread">
             @if (!selectedConversation) {
               <p class="vc-empty">Select a conversation to review its history.</p>
@@ -451,6 +468,7 @@
                 <h3>{{ selectedConversation.userA.fullName }} &amp; {{ selectedConversation.userB.fullName }}</h3>
                 <small>{{ selectedConversation.userA.email }} · {{ selectedConversation.userB.email }}</small>
               </div>
+
               <div class="vc-thread-feed">
                 @if (!threadLoading && selectedConversationMessages.length === 0) {
                   <p class="vc-empty slim">No messages in this thread.</p>
@@ -479,250 +497,6 @@
         </div>
       </section>
     }
-
-    <!-- ═══ EVENTS & BOOKINGS ═══ -->
-    @if (activeTab === 'events') {
-
-      <!-- Sub-nav -->
-      <div class="vc-events-subnav-wrap">
-        <div class="vc-events-subnav">
-
-          <!-- FIX: All Events — just switch sub-tab, data already loaded -->
-          <button class="vc-subnav-btn" [class.active]="eventsSubTab === 'list'"
-                  (click)="eventsSubTab = 'list'">
-            <span class="vc-subnav-dot"></span> All Events
-          </button>
-
-          <!-- FIX: Reservations — call switchToReservations() which shows cache instantly -->
-          <button class="vc-subnav-btn" [class.active]="eventsSubTab === 'reservations'"
-                  (click)="switchToReservations()">
-            <span class="vc-subnav-dot"></span> Reservations
-            @if (pendingReservationsCount > 0) {
-              <span class="vc-subnav-count">{{ pendingReservationsCount }}</span>
-            }
-          </button>
-
-        </div>
-      </div>
-
-      <!-- ─── SUB-TAB: All Events ─── -->
-      @if (eventsSubTab === 'list') {
-        <section class="vc-section">
-          <div class="vc-section-head">
-            <div>
-              <h2 class="vc-h2">Event Directory</h2>
-              <p class="vc-muted">Manage all platform events — status, capacity and lifecycle.</p>
-            </div>
-            <div class="vc-filters">
-              <input type="text" placeholder="Search events…" [(ngModel)]="eventSearch" (input)="filterEvents()" class="vc-input" />
-              <select [(ngModel)]="eventStatusFilter" (change)="filterEvents()" class="vc-input sm">
-                <option value="">All statuses</option>
-                <option value="UPCOMING">Upcoming</option>
-                <option value="ONGOING">Ongoing</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          @if (eventsLoading) {
-            <table class="vc-table">
-              <thead>
-                <tr>
-                  <th>Event</th><th>Date</th><th>Location</th>
-                  <th>Capacity</th><th>Status</th><th class="right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of [1,2,3,4,5]; track s) {
-                  <tr class="vc-skeleton-row">
-                    <td><span class="vc-sk vc-sk-avatar"></span><span class="vc-sk vc-sk-line w70"></span></td>
-                    <td><span class="vc-sk vc-sk-line w60"></span></td>
-                    <td><span class="vc-sk vc-sk-line w40"></span></td>
-                    <td><span class="vc-sk vc-sk-line w30"></span></td>
-                    <td><span class="vc-sk vc-sk-chip"></span></td>
-                    <td class="right"><span class="vc-sk vc-sk-line w60"></span></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          } @else if (filteredEvents.length === 0) {
-            <p class="vc-empty">No events match the current filters.</p>
-          } @else {
-            <table class="vc-table">
-              <thead>
-                <tr>
-                  <th>Event</th>
-                  <th>Date</th>
-                  <th>Location</th>
-                  <th>Capacity</th>
-                  <th>Status</th>
-                  <th class="right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (ev of filteredEvents; track ev.id) {
-                  <tr>
-                    <td>
-                      <div class="vc-person">
-                        <div class="vc-event-icon">{{ eventCategoryIcon(ev) }}</div>
-                        <div>
-                          <strong>{{ ev.title }}</strong>
-                          <small>{{ ev.description?.length > 55 ? (ev.description | slice:0:55) + '…' : ev.description }}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span style="font-size:13px;color:var(--vc-ink-soft)">{{ ev.startDate | date:'dd MMM yyyy' }}</span><br>
-                      <small style="font-size:11px;color:var(--vc-muted)">{{ ev.startDate | date:'HH:mm' }}</small>
-                    </td>
-                    <td><span style="font-size:13px;color:var(--vc-ink-soft)">{{ ev.location }}</span></td>
-                    <td>
-                      <div class="vc-cap-cell">
-                        <span class="vc-cap-num">{{ ev.capacity }}</span>
-                        <div class="vc-cap-bar">
-                          <div class="vc-cap-fill" [style.width]="getEventFillPct(ev) + '%'"></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span class="vc-tag" [ngClass]="eventStatusClass(ev.status)">{{ ev.status }}</span>
-                    </td>
-                    <td class="right">
-                      <div class="vc-row-actions">
-                        @if (ev.status !== 'CANCELLED' && ev.status !== 'COMPLETED') {
-                          <button class="vc-link-btn warn" (click)="adminCancelEvent(ev)">Cancel</button>
-                        }
-                        @if (ev.status === 'ONGOING') {
-                          <button class="vc-link-btn" style="color:var(--vc-ok)" (click)="adminCompleteEvent(ev)">Complete</button>
-                        }
-                        <button class="vc-link-btn danger" (click)="requestDeleteEvent(ev.id)">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-            <div class="vc-pager">
-              <button class="vc-link-btn" (click)="eventsPage = eventsPage - 1; loadAdminEvents()" [disabled]="eventsPage <= 0">← Previous</button>
-              <span class="vc-muted">Page {{ eventsPage + 1 }}</span>
-              <button class="vc-link-btn" (click)="eventsPage = eventsPage + 1; loadAdminEvents()" [disabled]="filteredEvents.length < eventsPageSize">Next →</button>
-            </div>
-          }
-        </section>
-      }
-
-      <!-- ─── SUB-TAB: Reservations ─── -->
-      @if (eventsSubTab === 'reservations') {
-        <section class="vc-section">
-          <div class="vc-section-head">
-            <div>
-              <h2 class="vc-h2">
-                @if (reservationEventFilter) {
-                  Bookings — <em style="font-family:'Playfair Display',serif;font-style:italic;color:var(--vc-accent)">{{ reservationEventFilter.title }}</em>
-                } @else {
-                  All Reservations
-                }
-              </h2>
-              <p class="vc-muted">Review pending requests, confirm or reject individual bookings.</p>
-            </div>
-            <div class="vc-filters">
-              <!-- FIX: change filter calls loadAdminReservations() directly -->
-              <select [(ngModel)]="reservationStatusFilter" (change)="loadAdminReservations()" class="vc-input sm">
-                <option value="">All statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="CONFIRMED">Confirmed</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-              @if (reservationEventFilter) {
-                <button class="vc-btn ghost" (click)="reservationEventFilter = null; reservationStatusFilter = ''; loadAdminReservations()">✕ Clear filter</button>
-              }
-            </div>
-          </div>
-
-          @if (pendingReservationsCount > 0) {
-            <div class="vc-banner ok" style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-              <span style="font-size:18px">⏳</span>
-              <span><strong>{{ pendingReservationsCount }} pending</strong> reservation{{ pendingReservationsCount > 1 ? 's' : '' }} awaiting your review.</span>
-            </div>
-          }
-
-          @if (reservationsLoading) {
-            <table class="vc-table">
-              <thead>
-                <tr><th>Member</th><th>Event</th><th>Requested</th><th>Processed</th><th>Status</th><th class="right">Actions</th></tr>
-              </thead>
-              <tbody>
-                @for (s of [1,2,3,4]; track s) {
-                  <tr class="vc-skeleton-row">
-                    <td><span class="vc-sk vc-sk-avatar"></span><span class="vc-sk vc-sk-line w60"></span></td>
-                    <td><span class="vc-sk vc-sk-line w70"></span></td>
-                    <td><span class="vc-sk vc-sk-line w40"></span></td>
-                    <td><span class="vc-sk vc-sk-line w40"></span></td>
-                    <td><span class="vc-sk vc-sk-chip"></span></td>
-                    <td class="right"><span class="vc-sk vc-sk-line w60"></span></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          } @else if (adminReservations.length === 0) {
-            <p class="vc-empty">No reservations match the current filters.</p>
-          } @else {
-            <table class="vc-table">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Event</th>
-                  <th>Requested</th>
-                  <th>Processed</th>
-                  <th>Status</th>
-                  <th class="right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of adminReservations; track r.id) {
-                  <tr [class.vc-row-pending]="r.status === 'PENDING'">
-                    <td>
-                      <div class="vc-person">
-                        <div class="vc-avatar">{{ initials(r.user?.fullName) }}</div>
-                        <div>
-                          <strong>{{ r.user?.fullName }}</strong>
-                          <small>{{ r.user?.email }}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span style="font-size:13px;color:var(--vc-ink)">{{ r.event?.title }}</span><br>
-                      <small style="font-size:11px;color:var(--vc-muted)">{{ r.event?.startDate | date:'dd MMM' }} · {{ r.event?.location }}</small>
-                    </td>
-                    <td><span style="font-size:12px;color:var(--vc-muted)">{{ r.createdAt | date:'dd MMM yyyy' }}</span></td>
-                    <td>
-                      <span style="font-size:12px;color:var(--vc-muted)">
-                        {{ r.processedAt ? (r.processedAt | date:'dd MMM yyyy') : '—' }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="vc-tag" [ngClass]="reservationStatusClass(r.status)">{{ r.status }}</span>
-                    </td>
-                    <td class="right">
-                      <div class="vc-row-actions">
-                        @if (r.status === 'PENDING') {
-                          <button class="vc-link-btn" style="color:var(--vc-ok)" (click)="adminConfirmReservation(r)">Confirm</button>
-                          <button class="vc-link-btn warn" (click)="adminRejectReservation(r)">Reject</button>
-                        }
-                        <button class="vc-link-btn danger" (click)="adminDeleteReservation(r.id)">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-        </section>
-      }
-    }
-    <!-- /events tab -->
 
   </main>
 </div>

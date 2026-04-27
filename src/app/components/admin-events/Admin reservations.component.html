@@ -1,0 +1,438 @@
+<div class="vc-app">
+
+  <aside class="vc-nav">
+    <div class="vc-brand">
+      <span class="vc-mark">V</span>
+      <span class="vc-brand-word">Vero</span>
+      <span class="vc-brand-sub">Admin</span>
+    </div>
+
+    <div class="vc-nav-label">Workspace</div>
+
+    <nav class="vc-nav-list">
+
+      <button type="button" class="vc-nav-item-link" [class.active]="router.url === '/admin'" (click)="goTo('/admin')">
+        Overview
+      </button>
+
+      <button type="button" class="vc-nav-item-link" (click)="goToAdminTab('messages')">
+        Conversations
+      </button>
+
+      <div class="vc-nav-group">
+        <button type="button" class="vc-nav-parent" [class.open]="eventsMenuOpen" (click)="toggleEventsMenu()">
+          Events &amp; Bookings
+          <svg class="vc-nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        @if (eventsMenuOpen) {
+          <div class="vc-nav-sub open">
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/events')" (click)="goTo('/admin/events')">
+              <span class="vc-nav-sub-dot"></span>
+              All Events
+            </button>
+
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/reservations')" (click)="goTo('/admin/reservations')">
+              <span class="vc-nav-sub-dot"></span>
+              Reservations
+            </button>
+
+            <button type="button" class="vc-nav-sub-btn" [class.active]="router.url.startsWith('/admin/anomaly')" (click)="goTo('/admin/anomaly')">
+              <span class="vc-nav-sub-dot"></span>
+              Anomaly Detector
+            </button>
+          </div>
+        }
+      </div>
+
+      <button type="button" class="vc-nav-item-link" (click)="goToAdminTab('add')">
+        Create user
+      </button>
+    </nav>
+
+    <div class="vc-nav-art">
+      <img class="vc-nav-art-img" src="assets/images/hero_minimal_leaf.png" alt="" />
+      <div class="vc-nav-art-pill">Eco <em>premium</em></div>
+    </div>
+
+    <div class="vc-nav-foot">
+      <button class="vc-link-btn" (click)="goBack()">← Back to Admin</button>
+    </div>
+  </aside>
+
+  <main class="vc-main">
+
+    <div class="vc-hero compact">
+      <img class="vc-hero-img" src="assets/images/hero-forest2.png" alt="" />
+      <div class="vc-hero-veil"></div>
+      <div class="vc-hero-inner">
+        <div class="vc-crumb light">
+          Administration · <span>Reservations</span>
+          @if (eventTitle) { · <span>{{ eventTitle }}</span> }
+        </div>
+        <div class="vc-hero-row">
+          <div class="vc-hero-text">
+            <h1 class="vc-title light">
+              @if (eventTitle) { Bookings — <em>{{ eventTitle }}</em> }
+              @else { Decision <em>Intelligence</em> }
+            </h1>
+            <p class="vc-sub light">
+              Analyse comportementale · Filtrage intelligent des demandes en attente.
+            </p>
+          </div>
+          <div class="vc-header-actions">
+            <button class="vc-btn ghost-light" type="button" (click)="goTo('/admin/events')">← All Events</button>
+            <button class="vc-btn gold" disabled>✦ Scoring actif</button>
+            @if (eventTitle) {
+              <button class="vc-btn ghost-light" type="button" (click)="clearEventFilter()">✕ Clear filter</button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (stats) {
+      <section class="vc-stats">
+        <div class="vc-stat">
+          <span class="vc-stat-lbl">Pending</span>
+          <strong class="vc-stat-val">{{ stats.total }}</strong>
+        </div>
+        <div class="vc-stat">
+          <span class="vc-stat-lbl">Score moyen</span>
+          <strong class="vc-stat-val">{{ stats.avgScore }}</strong>
+        </div>
+        <div class="vc-stat">
+          <span class="vc-stat-lbl">Ann. moyen</span>
+          <strong class="vc-stat-val">{{ stats.avgCancelRate }}%</strong>
+        </div>
+        <div class="vc-stat">
+          <span class="vc-stat-lbl">Éco moyen</span>
+          <strong class="vc-stat-val">{{ stats.avgEco }}</strong>
+        </div>
+      </section>
+    }
+
+    @if (stats && stats.total > 0) {
+      <div class="vc-scoring-bar-wrap">
+        <div class="vc-scoring-bar-label">
+          <span class="vc-crumb" style="margin:0">Répartition des scores</span>
+          <span class="vc-crumb" style="margin:0">{{ stats.total }} réservations</span>
+        </div>
+
+        <div class="vc-scoring-dist-bar">
+          <div class="vc-dist-seg vc-dist-ok" [style.width]="reliablePct + '%'" [title]="stats.reliableCount + ' fiables'"></div>
+          <div class="vc-dist-seg vc-dist-warn" [style.width]="moderatePct + '%'" [title]="stats.moderateCount + ' modérés'"></div>
+          <div class="vc-dist-seg vc-dist-bad" [style.width]="riskPct + '%'" [title]="stats.riskCount + ' à risque'"></div>
+        </div>
+
+        <div class="vc-scoring-legend">
+          <span class="vc-scoring-leg-item">
+            <span class="vc-scoring-dot" style="background:var(--vc-ok)"></span>
+            Fiable ≥75 — {{ stats.reliableCount }}
+          </span>
+          <span class="vc-scoring-leg-item">
+            <span class="vc-scoring-dot" style="background:var(--vc-warn)"></span>
+            Modéré 50–74 — {{ stats.moderateCount }}
+          </span>
+          <span class="vc-scoring-leg-item">
+            <span class="vc-scoring-dot" style="background:var(--vc-danger)"></span>
+            Risqué &lt;50 — {{ stats.riskCount }}
+          </span>
+        </div>
+      </div>
+    }
+
+    @if (successMessage) {
+      <div class="vc-banner ok" style="margin:0 32px 16px">{{ successMessage }}</div>
+    }
+    @if (errorMessage) {
+      <div class="vc-banner err" style="margin:0 32px 16px">{{ errorMessage }}</div>
+    }
+
+    @if (stats) {
+      @if (stats.riskCount > 0) {
+        <div class="vc-scoring-insight warn">
+          <span class="vc-scoring-ins-icon warn">⚠</span>
+          <span>
+            <strong>{{ stats.riskCount }} réservation{{ stats.riskCount > 1 ? 's' : '' }}</strong>
+            à risque (score &lt;50) — vérification manuelle recommandée.
+          </span>
+        </div>
+      }
+
+      @if (stats.reliableCount > 0) {
+        <div class="vc-scoring-insight ok">
+          <span class="vc-scoring-ins-icon ok">✓</span>
+          <span>
+            <strong>{{ stats.reliableCount }} membre{{ stats.reliableCount > 1 ? 's' : '' }} fiables</strong>
+            (score ≥75) — confirmation sans risque significatif.
+          </span>
+        </div>
+      }
+    }
+
+    <div class="vc-scoring-toolbar">
+      <button class="vc-scoring-chip" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
+        Tous <span class="vc-scoring-chip-ct">{{ countForFilter('all') }}</span>
+      </button>
+
+      <button class="vc-scoring-chip" [class.active]="activeFilter === 'reliable'" (click)="setFilter('reliable')">
+        Fiables ≥75 <span class="vc-scoring-chip-ct">{{ countForFilter('reliable') }}</span>
+      </button>
+
+      <button class="vc-scoring-chip" [class.active]="activeFilter === 'cancel-high'" (click)="setFilter('cancel-high')">
+        Ann. élevées <span class="vc-scoring-chip-ct">{{ countForFilter('cancel-high') }}</span>
+      </button>
+
+      <button class="vc-scoring-chip" [class.active]="activeFilter === 'eco'" (click)="setFilter('eco')">
+        Éco+ ≥8 <span class="vc-scoring-chip-ct">{{ countForFilter('eco') }}</span>
+      </button>
+
+      <button class="vc-scoring-chip" [class.active]="activeFilter === 'new'" (click)="setFilter('new')">
+        Nouveaux <span class="vc-scoring-chip-ct">{{ countForFilter('new') }}</span>
+      </button>
+
+      <div class="vc-scoring-divider"></div>
+
+      <select class="vc-input sm" [(ngModel)]="activeSortKey" (ngModelChange)="setSort($event)">
+        <option value="score-desc">Score décroissant</option>
+        <option value="score-asc">Score croissant</option>
+        <option value="eco-desc">Éco score ↓</option>
+        <option value="cancel-desc">Annulations ↑</option>
+        <option value="events-desc">Participations ↓</option>
+      </select>
+    </div>
+
+    <section class="vc-section" style="margin-top:0">
+
+      @if (scoringLoading) {
+        <table class="vc-table">
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Événement</th>
+              <th>Score global</th>
+              <th>Éco</th>
+              <th>Ann.</th>
+              <th>Activité</th>
+              <th>Profil</th>
+              <th class="right">Décision</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of [1,2,3,4,5]; track s) {
+              <tr class="vc-skeleton-row">
+                <td><span class="vc-sk vc-sk-avatar"></span><span class="vc-sk vc-sk-line w60"></span></td>
+                <td><span class="vc-sk vc-sk-line w70"></span></td>
+                <td><span class="vc-sk vc-sk-chip"></span></td>
+                <td><span class="vc-sk vc-sk-line w30"></span></td>
+                <td><span class="vc-sk vc-sk-chip"></span></td>
+                <td><span class="vc-sk vc-sk-line w40"></span></td>
+                <td><span class="vc-sk vc-sk-chip"></span></td>
+                <td class="right"><span class="vc-sk vc-sk-line w60"></span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (filteredScored.length === 0) {
+        <p class="vc-empty">Aucune réservation trouvée.</p>
+      } @else {
+        <table class="vc-table">
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Événement</th>
+              <th>Score global</th>
+              <th>Éco</th>
+              <th>Ann.</th>
+              <th>Activité</th>
+              <th>Profil</th>
+              <th class="right">Décision</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (row of filteredScored; track row.reservation.id) {
+              <tr class="vc-scoring-row" [attr.data-profile]="row.profile" [class.vc-row-processed]="isProcessed(row.reservation.id)">
+                <td>
+                  <div class="vc-person">
+                    <div class="vc-avatar">{{ initials(row.reservation.user?.fullName) }}</div>
+                    <div>
+                      <strong>{{ row.reservation.user?.fullName }}</strong>
+                      <small>{{ row.reservation.user?.email }}</small>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span style="font-size:13px;color:var(--vc-ink)">{{ row.reservation.event?.title }}</span><br>
+                  <small style="font-size:11px;color:var(--vc-muted)">
+                    {{ row.reservation.event?.startDate | date:'dd MMM' }}
+                    · {{ row.reservation.event?.location }}
+                  </small>
+                </td>
+
+                <td>
+                  <div class="vc-score-cell">
+                    <div class="vc-score-ring">
+                      <svg width="42" height="42" viewBox="0 0 42 42" style="transform:rotate(-90deg)">
+                        <circle cx="21" cy="21" r="18" fill="none" stroke="var(--vc-hairline-2)" stroke-width="3"/>
+                        <circle cx="21" cy="21" r="18" fill="none"
+                                [attr.stroke]="ringColor(row.globalScore)"
+                                stroke-width="3"
+                                [attr.stroke-dasharray]="2 * 3.14159 * 18"
+                                [attr.stroke-dashoffset]="ringOffset(row.globalScore)"
+                                class="vc-ring-circle"/>
+                      </svg>
+                      <div class="vc-score-ring-val" [style.color]="ringColor(row.globalScore)">
+                        {{ row.globalScore }}
+                      </div>
+                    </div>
+
+                    <div class="vc-mini-bars">
+                      <div class="vc-mini-bar-row">
+                        <span>Éco</span>
+                        <div class="vc-mini-bar-track">
+                          <div class="vc-mini-bar-fill" [style.width]="(row.ecoScore * 10) + '%'" style="background:var(--vc-ok)"></div>
+                        </div>
+                        <span>{{ row.ecoScore }}</span>
+                      </div>
+
+                      <div class="vc-mini-bar-row">
+                        <span>Ann.</span>
+                        <div class="vc-mini-bar-track">
+                          <div class="vc-mini-bar-fill"
+                               [style.width]="row.cancelRate + '%'"
+                               [style.background]="row.cancelRate >= 50 ? 'var(--vc-danger)' : row.cancelRate >= 25 ? 'var(--vc-warn)' : 'var(--vc-ok)'">
+                          </div>
+                        </div>
+                        <span>{{ row.cancelRate }}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:13px" [style.color]="ecoColor(row.ecoScore)">
+                    {{ row.ecoScore }}<span style="font-size:10px;color:var(--vc-muted)">/10</span>
+                  </span>
+                </td>
+
+                <td>
+                  <span class="vc-tag" [ngClass]="cancelClass(row.cancelRate)">
+                    {{ row.cancelRate }}%
+                  </span>
+                </td>
+
+                <td>
+                  <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--vc-muted)">
+                    {{ row.confirmedReservations }} évén.
+                  </span>
+                </td>
+
+                <td>
+                  <span class="vc-tag" [ngClass]="scoreClass(row.globalScore)">
+                    {{ scoreLabel(row.globalScore) }}
+                  </span>
+                  @if (row.newMember) {
+                    <span class="vc-tag vc-tag-new" style="margin-left:4px">New</span>
+                  }
+                </td>
+
+                <td class="right">
+                  <div class="vc-row-actions">
+                    <button class="vc-scoring-expand-btn" (click)="toggleExpand(row.reservation.id)">
+                      {{ isExpanded(row.reservation.id) ? '⊖' : '⊕' }}
+                    </button>
+
+                    @if (isProcessed(row.reservation.id)) {
+                      <span class="vc-tag" [ngClass]="statusClass(row.reservation.status)" style="margin-right:6px">
+                        {{ row.reservation.status }}
+                      </span>
+                      <button class="vc-link-btn danger" (click)="deleteReservation(row.reservation.id)">
+                        Supprimer
+                      </button>
+                    } @else {
+                      <button class="vc-link-btn" style="color:var(--vc-ok)" (click)="confirmReservation(row)">
+                        Confirmer
+                      </button>
+                      <button class="vc-link-btn warn" (click)="rejectReservation(row)">
+                        Rejeter
+                      </button>
+                      <button class="vc-link-btn danger" (click)="deleteReservation(row.reservation.id)">
+                        Supprimer
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+
+              @if (isExpanded(row.reservation.id)) {
+                <tr class="vc-scoring-detail-row">
+                  <td colspan="8">
+                    <div class="vc-scoring-detail-inner">
+                      <div class="vc-scoring-detail-grid">
+
+                        <div class="vc-scoring-detail-card">
+                          <span class="vc-scoring-detail-lbl">Participations confirmées</span>
+                          <div class="vc-scoring-detail-val">{{ row.confirmedReservations }}</div>
+                          <div class="vc-scoring-detail-sub">événements complétés</div>
+                        </div>
+
+                        <div class="vc-scoring-detail-card">
+                          <span class="vc-scoring-detail-lbl">Taux d'annulation</span>
+                          <div class="vc-scoring-detail-val" [ngClass]="cancelClass(row.cancelRate)">
+                            {{ row.cancelRate }}%
+                          </div>
+                          <div class="vc-scoring-detail-sub">
+                            {{ row.cancelledReservations }} annulation{{ row.cancelledReservations !== 1 ? 's' : '' }}
+                            / {{ row.totalReservations }} total
+                          </div>
+                        </div>
+
+                        <div class="vc-scoring-detail-card">
+                          <span class="vc-scoring-detail-lbl">Score écologique</span>
+                          <div class="vc-scoring-detail-val" [ngClass]="row.ecoScore >= 8 ? 'ok' : row.ecoScore >= 5 ? 'warn' : 'bad'">
+                            {{ row.ecoScore }}/10
+                          </div>
+                          <div class="vc-scoring-detail-sub">basé sur l'engagement vert</div>
+                        </div>
+
+                        <div class="vc-scoring-detail-card">
+                          <span class="vc-scoring-detail-lbl">Score global</span>
+                          <div class="vc-scoring-detail-val" [ngClass]="scoreClass(row.globalScore)">
+                            {{ row.globalScore }}/100
+                          </div>
+                          <div class="vc-scoring-detail-sub">{{ scoreLabel(row.globalScore) }}</div>
+                        </div>
+
+                      </div>
+
+                      <div class="vc-scoring-ai-note">
+                        <div class="vc-scoring-ai-icon">✦</div>
+                        <p>{{ row.aiNote }}</p>
+                      </div>
+
+                      <div class="vc-scoring-reco" [attr.data-reco]="row.recommendation">
+                        <span class="vc-scoring-reco-label">Recommandation système :</span>
+                        <span class="vc-scoring-reco-val">
+                          @if (row.recommendation === 'CONFIRM') { ✓ Confirmation recommandée }
+                          @if (row.recommendation === 'MANUAL') { ⚠ Décision manuelle conseillée }
+                          @if (row.recommendation === 'REJECT') { ✗ Rejet recommandé }
+                        </span>
+                      </div>
+
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+  </main>
+</div>

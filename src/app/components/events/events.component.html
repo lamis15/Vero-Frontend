@@ -15,9 +15,12 @@
 
   <!-- Toast -->
   <div class="toast" *ngIf="toastMsg">
-    <div class="toast-check" [class.error]="toastIsError">{{ toastIsError ? '!' : '✓' }}</div>
+    <div class="toast-check" [class.error]="toastIsError">
+      {{ toastIsError ? '!' : '✓' }}
+    </div>
+
     <div class="toast-body">
-      <strong>{{ toastIsError ? 'Oops' : toastTitle }}</strong>
+      <strong>{{ toastTitle }}</strong>
       <p>{{ toastMsg }}</p>
     </div>
   </div>
@@ -146,11 +149,7 @@
               <img [src]="getEventImage(ev)" [alt]="ev.title" loading="lazy">
               <div class="card-img-overlay"></div>
               <div class="card-category">{{ getCategoryLabel(ev) }}</div>
-              <div class="card-co2">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                {{ getCo2(ev) }} kg CO₂
-              </div>
-              <div class="card-spots" [class.low]="getSpotsLeft(ev) < 10">{{ getSpotsLeft(ev) }} spots</div>
+              <div class="card-spots">{{ ev.capacity }} seats</div>
               <div class="card-status-badge badge-cancelled" *ngIf="ev.status==='CANCELLED'">Cancelled</div>
               <div class="card-status-badge badge-completed" *ngIf="ev.status==='COMPLETED'">Completed</div>
               <button class="btn-flip-ratings" (click)="$event.stopPropagation(); flipCard(ev.id!)" title="See community ratings">★ Reviews</button>
@@ -170,8 +169,8 @@
               </div>
               <div class="capacity-bar-wrap">
                 <div class="capacity-label">
-                  <span>{{ getFilledSpots(ev) }}/{{ ev.capacity }}</span>
-                  <span>{{ getSpotsLeft(ev) }} left</span>
+                  <span>{{ getFilledSpots(ev) }} / {{ ev.capacity }} seats taken</span>
+                  <span>{{ getSpotsLeft(ev) }} seats left</span>
                 </div>
                 <div class="capacity-bar">
                   <div class="capacity-fill" [style.width]="getFillPercent(ev) + '%'"></div>
@@ -205,8 +204,9 @@
             </div>
           </div>
 
-          <!-- FACE ARRIÈRE — ratings -->
+          <!-- ══ FACE ARRIÈRE — ratings ══ -->
           <div class="flip-back">
+
             <div class="back-header">
               <div class="back-title">
                 <span class="back-star">★</span>
@@ -214,19 +214,25 @@
                 <span class="live-dot">● LIVE</span>
               </div>
               <button class="btn-flip-back" (click)="flipCard(ev.id!)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
             </div>
+
             <div class="back-avg" *ngIf="getEventRatings(ev.id!).length > 0">
               <span class="back-avg-score">{{ getEventAvg(ev.id!) }}</span>
-              <div class="back-avg-stars">
-                <span *ngFor="let s of [1,2,3,4,5,6]" class="bstar" [class.filled]="s <= getEventAvgRounded(ev.id!)">★</span>
+              <div>
+                <div class="back-avg-stars">
+                  <span *ngFor="let s of [1,2,3,4,5,6]" class="bstar" [class.filled]="s <= getEventAvgRounded(ev.id!)">★</span>
+                </div>
+                <div class="back-avg-count">{{ getEventRatings(ev.id!).length }} review{{ getEventRatings(ev.id!).length > 1 ? 's' : '' }}</div>
               </div>
-              <span class="back-avg-count">{{ getEventRatings(ev.id!).length }} review{{ getEventRatings(ev.id!).length > 1 ? 's' : '' }}</span>
             </div>
+
             <div class="back-reviews" *ngIf="getEventRatings(ev.id!).length > 0">
-              <div class="back-review-item" *ngFor="let rv of getEventRatings(ev.id!).slice(0, 4)" [class.new-rv]="rv.id === latestRatingIds[ev.id!]">
+              <div class="back-review-item"
+                   *ngFor="let rv of getEventRatings(ev.id!).slice(0, 5)"
+                   [class.new-rv]="rv.id === latestRatingIds[ev.id!]">
                 <div class="brv-avatar">{{ rv.userName.charAt(0).toUpperCase() }}</div>
                 <div class="brv-body">
                   <div class="brv-top">
@@ -237,13 +243,24 @@
                     <span class="brv-date">{{ rv.ratedAt | date:'MMM d' }}</span>
                   </div>
                   <p class="brv-comment" *ngIf="rv.comment">{{ rv.comment }}</p>
+
+                  <!-- ✅ IMAGE COMPACTE — clic = lightbox -->
+                  <div class="brv-moment" *ngIf="rv.imageUrl"
+                       (click)="openRatingLightbox(resolveRatingImageUrl(rv.imageUrl), rv.userName)">
+                    <img [src]="resolveRatingImageUrl(rv.imageUrl)"
+                         class="brv-moment-img"
+                         [alt]="rv.userName + ' moment'" />
+                  </div>
+
                 </div>
               </div>
             </div>
+
             <div class="back-empty" *ngIf="getEventRatings(ev.id!).length === 0">
               <div class="back-empty-icon">⭐</div>
-              <p>No reviews yet for this event.</p>
+              <p>No reviews yet.<br>Be the first!</p>
             </div>
+
           </div>
 
         </div>
@@ -268,7 +285,7 @@
   <!-- FAB -->
   <button class="fab" *ngIf="canManage()" (click)="openCreate()" title="New Event">+</button>
 
-  <!-- ══════════════════ DETAIL MODAL ══════════════════ -->
+  <!-- DETAIL MODAL -->
   <div class="modal-backdrop" *ngIf="showDetail" (click)="showDetail=false">
     <div class="modal-detail" *ngIf="detailEvent" (click)="$event.stopPropagation()">
       <div class="detail-img">
@@ -295,12 +312,9 @@
           </div>
           <div class="detail-cell">
             <div class="detail-cell-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Participants</div>
-            <div class="detail-cell-value">{{ getFilledSpots(detailEvent) }}/{{ detailEvent.capacity }}</div>
+            <div class="detail-cell-value">{{ getFilledSpots(detailEvent) }}/{{ detailEvent.capacity }} reserved</div>
           </div>
-          <div class="detail-cell">
-            <div class="detail-cell-label">🌿 Eco Impact</div>
-            <div class="detail-cell-value">{{ getCo2(detailEvent) }} kg CO₂</div>
-          </div>
+          
           <div class="detail-cell">
             <div class="detail-cell-label">Organizer</div>
             <div class="detail-cell-value">{{ detailEvent.createdBy?.fullName || 'Vero Community' }}</div>
@@ -322,29 +336,19 @@
     </div>
   </div>
 
-  <!-- ══════════════════ FORM MODAL ══════════════════ -->
+  <!-- FORM MODAL -->
   <div class="modal-backdrop" *ngIf="showFormModal" (click)="showFormModal=false">
     <div class="modal-form-box" (click)="$event.stopPropagation()">
-
-      <!-- Header -->
       <div class="modal-form-header">
         <div class="modal-form-icon">{{ formStep === 6 ? '🧠' : formStep === 3 ? '📊' : editMode ? '✏️' : '🌲' }}</div>
         <div class="modal-form-titles">
-          <div class="modal-form-title">
-            {{ formStep === 6 ? 'AI Success Prediction' : formStep === 3 ? 'Popularity Forecast' : editMode ? 'Edit Event' : 'New Event' }}
-          </div>
+          <div class="modal-form-title">{{ formStep === 6 ? 'AI Success Prediction' : formStep === 3 ? 'Popularity Forecast' : editMode ? 'Edit Event' : 'New Event' }}</div>
           <div class="modal-form-sub" *ngIf="editMode && formStep < 6">Update <span>{{ form.title }}</span></div>
-          <div class="modal-form-sub" *ngIf="!editMode && formStep < 6">
-            {{ ["What's your event?", "When & where?", "Predict popularity", "Add a photo", "Review your event"][formStep - 1] }}
-          </div>
-          <div class="modal-form-sub" *ngIf="formStep === 6">
-            Powered by <span>Gradient Boosting · SHAP</span>
-          </div>
+          <div class="modal-form-sub" *ngIf="!editMode && formStep < 6">{{ ["What's your event?", "When & where?", "Predict popularity", "Add a photo", "Review your event"][formStep - 1] }}</div>
+          <div class="modal-form-sub" *ngIf="formStep === 6">Powered by <span>Gradient Boosting · SHAP</span></div>
         </div>
         <button class="modal-form-close" (click)="showFormModal=false">✕</button>
       </div>
-
-      <!-- Steps bar — 6 steps -->
       <div class="steps-bar">
         <div class="step-dot" [class.active]="formStep===1" [class.done]="formStep>1"><span>1</span></div>
         <div class="step-line" [class.done]="formStep>1"></div>
@@ -358,8 +362,7 @@
         <div class="step-line" [class.done]="formStep>5"></div>
         <div class="step-dot" [class.active]="formStep===6"><span>🧠</span></div>
       </div>
-
-      <!-- ── STEP 1 ── -->
+      <!-- STEP 1 -->
       <div class="modal-form-body" *ngIf="formStep===1">
         <div class="form-section">
           <div class="form-section-header"><div class="form-section-label">✦ IDENTITY</div></div>
@@ -367,22 +370,16 @@
           <div class="fld"><label>Description</label><textarea [(ngModel)]="form.description" rows="3" placeholder="What will participants experience?"></textarea></div>
         </div>
         <div class="form-section">
-          <div class="form-section-header">
-            <div class="form-section-label">🌿 CATEGORY</div>
-            <span class="form-section-val" *ngIf="form.category">{{ form.category }}</span>
-          </div>
+          <div class="form-section-header"><div class="form-section-label">🌿 CATEGORY</div><span class="form-section-val" *ngIf="form.category">{{ form.category }}</span></div>
           <div class="category-grid">
             <div class="cat-option" *ngFor="let cat of categories" [class.selected]="form.category===cat.key" (click)="form.category=cat.key">
-              <div class="cat-emoji">{{ cat.emoji }}</div>
-              <div class="cat-name">{{ cat.label }}</div>
-              <div class="cat-desc">{{ cat.desc }}</div>
-              <div class="cat-check">✓</div>
+              <div class="cat-emoji">{{ cat.emoji }}</div><div class="cat-name">{{ cat.label }}</div>
+              <div class="cat-desc">{{ cat.desc }}</div><div class="cat-check">✓</div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- ── STEP 2 ── -->
+      <!-- STEP 2 -->
       <div class="modal-form-body" *ngIf="formStep===2">
         <div class="form-section">
           <div class="form-section-header"><div class="form-section-label">📅 DATE & TIME</div></div>
@@ -395,35 +392,16 @@
             <div class="fld"><label>End Time</label><input type="time" [(ngModel)]="formEndTime" /></div>
           </div>
         </div>
-        <div class="form-section">
-          <div class="form-section-header"><div class="form-section-label">📍 LOCATION</div></div>
-          <div class="fld"><input [(ngModel)]="form.location" placeholder="Where will it happen?" /></div>
-        </div>
-        <div class="form-section">
-          <div class="form-section-header"><div class="form-section-label">👥 CAPACITY</div></div>
-          <div class="capacity-slider-wrap">
-            <input type="range" min="5" max="500" step="5" [(ngModel)]="form.capacity" />
-            <span class="capacity-val">{{ form.capacity }}</span>
-          </div>
-        </div>
+        <div class="form-section"><div class="form-section-header"><div class="form-section-label">📍 LOCATION</div></div><div class="fld"><input [(ngModel)]="form.location" placeholder="Where will it happen?" /></div></div>
+        <div class="form-section"><div class="form-section-header"><div class="form-section-label">👥 CAPACITY</div></div><div class="capacity-slider-wrap"><input type="range" min="5" max="500" step="5" [(ngModel)]="form.capacity" /><span class="capacity-val">{{ form.capacity }}</span></div></div>
       </div>
-
-      <!-- ── STEP 3 — POPULARITY PREDICTOR ── -->
+      <!-- STEP 3 -->
       <div class="modal-form-body pop-pred-body" *ngIf="formStep===3">
-
-        <!-- IDLE -->
         <div class="pop-idle" *ngIf="!popPredicting && !popResult">
-          <div class="pop-idle-orbs">
-            <div class="pop-orb pop-orb-a"></div>
-            <div class="pop-orb pop-orb-b"></div>
-          </div>
+          <div class="pop-idle-orbs"><div class="pop-orb pop-orb-a"></div><div class="pop-orb pop-orb-b"></div></div>
           <div class="pop-idle-icon">📊</div>
           <h3 class="pop-idle-title">Predict Popularity</h3>
-          <p class="pop-idle-sub">
-            Our <strong>GradientBoosting</strong> model estimates how many reservations
-            your event will receive before it's published.
-            Use this result to <em>calibrate the ideal capacity</em>.
-          </p>
+          <p class="pop-idle-sub">Our <strong>GradientBoosting</strong> model estimates reservations. Use to <em>calibrate capacity</em>.</p>
           <div class="pop-recap-grid">
             <div class="pop-recap-chip"><span class="pop-recap-ico">🌿</span><span>{{ form.category }}</span></div>
             <div class="pop-recap-chip"><span class="pop-recap-ico">📍</span><span>{{ form.location || 'Location' }}</span></div>
@@ -436,352 +414,151 @@
             <div class="pop-model-chip pop-model-chip-c">SHAP explainability</div>
           </div>
           <div class="pop-idle-actions">
-            <button class="pop-run-btn" (click)="runPopularityPrediction()" [disabled]="!popAvailable">
-              <span class="pop-run-glow"></span>
-              ⚡ Run prediction
-            </button>
+            <button class="pop-run-btn" (click)="runPopularityPrediction()" [disabled]="!popAvailable"><span class="pop-run-glow"></span>⚡ Run prediction</button>
             <button class="pop-skip-link" (click)="formStep = 4">Skip this step →</button>
           </div>
           <div class="pop-server-badge" [class.online]="popAvailable" [class.offline]="!popAvailable">
-            <span class="pop-server-dot"></span>
-            {{ popAvailable ? 'ML server connected' : 'ML server offline — start Flask :5000' }}
+            <span class="pop-server-dot"></span>{{ popAvailable ? 'ML server connected' : 'ML server offline' }}
           </div>
         </div>
-
-        <!-- LOADING -->
         <div class="pop-loading" *ngIf="popPredicting">
-          <div class="pop-loader-ring">
-            <div class="pop-ring pop-ring-1"></div>
-            <div class="pop-ring pop-ring-2"></div>
-            <div class="pop-ring pop-ring-3"></div>
-            <div class="pop-loader-core">📊</div>
-          </div>
-          <p class="pop-loading-title">Analyzing…</p>
-          <p class="pop-loading-sub">GradientBoosting · SHAP · LinearRegression</p>
+          <div class="pop-loader-ring"><div class="pop-ring pop-ring-1"></div><div class="pop-ring pop-ring-2"></div><div class="pop-ring pop-ring-3"></div><div class="pop-loader-core">📊</div></div>
+          <p class="pop-loading-title">Analyzing…</p><p class="pop-loading-sub">GradientBoosting · SHAP · LinearRegression</p>
           <div class="pop-loading-dots"><span></span><span></span><span></span></div>
         </div>
-
-        <!-- RÉSULTAT -->
         <div class="pop-result" *ngIf="popResult && !popResult.error && !popPredicting">
-
-          <!-- ══ HERO BLOCK ══════════════════════════════════════════════ -->
           <div class="pop-hero">
-
-            <!-- Circular gauge -->
             <div class="pop-gauge-wrap">
               <svg viewBox="0 0 120 120" class="pop-gauge-svg">
-                <!-- track -->
-                <circle cx="60" cy="60" r="50" fill="none"
-                        stroke="rgba(30,107,69,.1)" stroke-width="10"/>
-                <!-- glow ring -->
-                <circle cx="60" cy="60" r="50" fill="none"
-                        [attr.stroke]="popGaugeColor" stroke-width="2"
-                        opacity=".15"/>
-                <!-- fill arc -->
-                <circle cx="60" cy="60" r="50" fill="none"
-                        stroke-width="10" stroke-linecap="round"
-                        [attr.stroke]="popGaugeColor"
-                        [attr.stroke-dasharray]="popGaugeDash"
-                        transform="rotate(-90 60 60)"
-                        style="transition:stroke-dasharray .8s cubic-bezier(.4,0,.2,1)"/>
-                <!-- tick marks -->
-                <line x1="60" y1="8"  x2="60" y2="14" stroke="rgba(30,107,69,.2)" stroke-width="1.5" transform="rotate(0 60 60)"/>
-                <line x1="60" y1="8"  x2="60" y2="14" stroke="rgba(30,107,69,.2)" stroke-width="1.5" transform="rotate(90 60 60)"/>
-                <line x1="60" y1="8"  x2="60" y2="14" stroke="rgba(30,107,69,.2)" stroke-width="1.5" transform="rotate(180 60 60)"/>
-                <line x1="60" y1="8"  x2="60" y2="14" stroke="rgba(30,107,69,.2)" stroke-width="1.5" transform="rotate(270 60 60)"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(30,107,69,.1)" stroke-width="10"/>
+                <circle cx="60" cy="60" r="50" fill="none" [attr.stroke]="popGaugeColor" stroke-width="2" opacity=".15"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke-linecap="round" [attr.stroke]="popGaugeColor" [attr.stroke-dasharray]="popGaugeDash" transform="rotate(-90 60 60)" style="transition:stroke-dasharray .8s"/>
               </svg>
-              <!-- Center content -->
-              <div class="pop-gauge-inner">
-                <span class="pop-gauge-pct" [style.color]="popGaugeColor">
-                  {{ popAnimFill.toFixed(0) }}%
-                </span>
-                <span class="pop-gauge-sub">fill rate</span>
-              </div>
-              <!-- Demand badge below gauge -->
-              <div class="pop-demand-badge" [attr.data-level]="popFillLevel">
-                <span class="pop-demand-dot"></span>{{ popFillLabel }}
-              </div>
+              <div class="pop-gauge-inner"><span class="pop-gauge-pct" [style.color]="popGaugeColor">{{ popAnimFill.toFixed(0) }}%</span><span class="pop-gauge-sub">fill rate</span></div>
+              <div class="pop-demand-badge" [attr.data-level]="popFillLevel"><span class="pop-demand-dot"></span>{{ popFillLabel }}</div>
             </div>
-
-            <!-- Right side: bookings + stats -->
             <div class="pop-hero-right">
-              <!-- Big booking number -->
               <div class="pop-booking-block">
                 <span class="pop-booking-num">{{ popResult.gb_prediction | number }}</span>
-                <div class="pop-booking-meta">
-                  <span class="pop-booking-label">expected bookings</span>
-                  <div class="pop-booking-chips">
-                    <span class="pop-booking-chip">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                      {{ _computedSeason }}
-                    </span>
-                    <span class="pop-booking-chip">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      {{ popResult.matched_location }}
-                    </span>
-                  </div>
-                </div>
+                <div class="pop-booking-meta"><span class="pop-booking-label">expected bookings</span><div class="pop-booking-chips"><span class="pop-booking-chip">{{ _computedSeason }}</span><span class="pop-booking-chip">{{ popResult.matched_location }}</span></div></div>
               </div>
-
-              <!-- Capacity comparison: Current → Suggested -->
               <div class="pop-cap-block">
                 <div class="pop-cap-row">
-                  <div class="pop-cap-item">
-                    <span class="pop-cap-label">CURRENT</span>
-                    <span class="pop-cap-num">{{ form.capacity }}</span>
-                    <span class="pop-cap-sub">seats</span>
-                  </div>
-                  <div class="pop-cap-arrow-wrap">
-                    <div class="pop-cap-divider"></div>
-                    <svg class="pop-cap-arrow-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </div>
-                  <div class="pop-cap-item pop-cap-item-suggested">
-                    <span class="pop-cap-label">SUGGESTED</span>
-                    <span class="pop-cap-num" [style.color]="popGaugeColor">{{ popResult.suggested_capacity }}</span>
-                    <span class="pop-cap-sub">seats</span>
-                    <span class="pop-cap-optimal-tag" *ngIf="popResult.capacity_advice === 'optimal'">✓ Optimal</span>
-                  </div>
+                  <div class="pop-cap-item"><span class="pop-cap-label">CURRENT</span><span class="pop-cap-num">{{ form.capacity }}</span><span class="pop-cap-sub">seats</span></div>
+                  <div class="pop-cap-arrow-wrap"><div class="pop-cap-divider"></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+                  <div class="pop-cap-item pop-cap-item-suggested"><span class="pop-cap-label">SUGGESTED</span><span class="pop-cap-num" [style.color]="popGaugeColor">{{ popResult.suggested_capacity }}</span><span class="pop-cap-sub">seats</span><span class="pop-cap-optimal-tag" *ngIf="popResult.capacity_advice === 'optimal'">✓ Optimal</span></div>
                 </div>
-                <button class="pop-cap-apply-tag"
-                        *ngIf="popResult.capacity_advice !== 'optimal'"
-                        [class.done]="capacityApplied"
-                        [disabled]="capacityApplied"
-                        (click)="applyPopCapacity(popResult.suggested_capacity)">
-                  <svg *ngIf="!capacityApplied" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  {{ capacityApplied ? '✓ Applied' : '✓ Apply' }}
+                <button class="pop-cap-apply-tag" *ngIf="popResult.capacity_advice !== 'optimal'" [class.done]="capacityApplied" [disabled]="capacityApplied" (click)="applyPopCapacity(popResult.suggested_capacity)">
+                  <svg *ngIf="!capacityApplied" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>{{ capacityApplied ? '✓ Applied' : '✓ Apply' }}
                 </button>
               </div>
-
-              <!-- Advice text -->
-              <div class="pop-advice-line" [attr.data-advice]="popResult.capacity_advice">
-                <span class="pop-advice-icon-sm">{{ popAdviceIcon }}</span>
-                <span class="pop-advice-text-sm">{{ popAdviceTextEn }}</span>
-              </div>
+              <div class="pop-advice-line" [attr.data-advice]="popResult.capacity_advice"><span class="pop-advice-icon-sm">{{ popAdviceIcon }}</span><span class="pop-advice-text-sm">{{ popAdviceTextEn }}</span></div>
             </div>
           </div>
-
-          <!-- ══ SHAP SECTION ════════════════════════════════════════════ -->
           <div class="pop-shap-section">
-            <div class="pop-shap-header">
-              <div class="pop-shap-title">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Influence Factors
-              </div>
-              <span class="pop-shap-badge">SHAP</span>
-            </div>
+            <div class="pop-shap-header"><div class="pop-shap-title">Influence Factors</div><span class="pop-shap-badge">SHAP</span></div>
             <div class="pop-shap-list">
-              <div class="pop-shap-row"
-                   *ngFor="let feat of popResult.shap_top_features"
-                   [class.pos]="feat.direction === 'positive'">
+              <div class="pop-shap-row" *ngFor="let feat of popResult.shap_top_features" [class.pos]="feat.direction === 'positive'">
                 <span class="pop-shap-name">{{ formatPopFeatureEn(feat.feature) }}</span>
-                <div class="pop-shap-bar-track">
-                  <div class="pop-shap-bar" [style.width.%]="popShapBarWidth(feat.impact)"></div>
-                </div>
-                <span class="pop-shap-val">
-                  {{ feat.direction === 'positive' ? '+' : '' }}{{ feat.impact.toFixed(1) }}
-                </span>
+                <div class="pop-shap-bar-track"><div class="pop-shap-bar" [style.width.%]="popShapBarWidth(feat.impact)"></div></div>
+                <span class="pop-shap-val">{{ feat.direction === 'positive' ? '+' : '' }}{{ feat.impact.toFixed(1) }}</span>
               </div>
             </div>
           </div>
-
-          <!-- ══ FOOTER ══════════════════════════════════════════════════ -->
           <div class="pop-result-footer">
-            <button class="pop-rerun-btn" (click)="runPopularityPrediction()">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
-              Re-analyze
-            </button>
-            <div class="pop-result-meta">
-              <span>GradientBoosting</span>
-              <span class="pop-meta-dot">·</span>
-              <span>R²={{ popResult.metrics?.gb_r2 }}</span>
-              <span class="pop-meta-dot">·</span>
-              <span>MAE≈{{ popResult.metrics?.gb_mae }}</span>
-            </div>
+            <button class="pop-rerun-btn" (click)="runPopularityPrediction()">↺ Re-analyze</button>
+            <div class="pop-result-meta"><span>GradientBoosting</span><span class="pop-meta-dot">·</span><span>R²={{ popResult.metrics?.gb_r2 }}</span><span class="pop-meta-dot">·</span><span>MAE≈{{ popResult.metrics?.gb_mae }}</span></div>
           </div>
-
         </div>
-
-        <!-- ERREUR -->
         <div class="pop-error" *ngIf="popResult?.error && !popPredicting">
-          <div class="pop-error-icon">⚡</div>
-          <h3>ML server unavailable</h3>
-          <p>Make sure Flask is running on port 5000</p>
+          <div class="pop-error-icon">⚡</div><h3>ML server unavailable</h3><p>Make sure Flask is running on port 5000</p>
           <code>cd ml_predictor &amp;&amp; python app.py</code>
           <button class="pop-skip-link" style="margin-top:14px" (click)="formStep = 4">← Continue without prediction</button>
         </div>
-
       </div>
-      <!-- /step 3 -->
-
-      <!-- ── STEP 4 — Photo ── -->
+      <!-- STEP 4 -->
       <div class="modal-form-body" *ngIf="formStep===4">
-        <div class="form-section">
-          <div class="form-section-header"><div class="form-section-label">📸 EVENT PHOTO</div></div>
+        <div class="form-section"><div class="form-section-header"><div class="form-section-label">📸 EVENT PHOTO</div></div>
           <div class="img-upload-zone">
             <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-            <ng-container *ngIf="!uploadPreview">
-              <div class="upload-icon">📷</div>
-              <div class="upload-label">Click to upload an image</div>
-              <div class="upload-sub">PNG, JPG, WEBP up to 10MB</div>
-            </ng-container>
-            <ng-container *ngIf="uploadPreview">
-              <img [src]="uploadPreview" class="img-preview" alt="Preview" />
-              <div class="upload-label" style="margin-top:8px;font-size:12px">✓ Image ready · click to change</div>
-            </ng-container>
+            <ng-container *ngIf="!uploadPreview"><div class="upload-icon">📷</div><div class="upload-label">Click to upload an image</div><div class="upload-sub">PNG, JPG, WEBP up to 10MB</div></ng-container>
+            <ng-container *ngIf="uploadPreview"><img [src]="uploadPreview" class="img-preview" alt="Preview" /><div class="upload-label" style="margin-top:8px;font-size:12px">✓ Image ready · click to change</div></ng-container>
           </div>
         </div>
       </div>
-
-      <!-- ── STEP 5 — REVIEW ── -->
+      <!-- STEP 5 -->
       <div class="modal-form-body" *ngIf="formStep===5">
-        <div class="form-section">
-          <div class="form-section-header"><div class="form-section-label">✅ REVIEW</div></div>
+        <div class="form-section"><div class="form-section-header"><div class="form-section-label">✅ REVIEW</div></div>
           <div class="fld"><label>Title</label><input [value]="form.title" readonly /></div>
           <div class="fld"><label>Location</label><input [value]="form.location" readonly /></div>
           <div class="fld"><label>Start</label><input [value]="form.startDate" readonly /></div>
           <div class="fld"><label>Capacity</label><input [value]="form.capacity" readonly /></div>
-          <div class="fld" *ngIf="uploadPreview">
-            <label>Image</label>
-            <img [src]="uploadPreview" style="width:100%;height:100px;object-fit:cover;border-radius:10px;" />
-          </div>
+          <div class="fld" *ngIf="uploadPreview"><label>Image</label><img [src]="uploadPreview" style="width:100%;height:100px;object-fit:cover;border-radius:10px;" /></div>
         </div>
-        <!-- ML teaser banner -->
         <div class="pred-teaser-banner">
           <span class="pred-teaser-icon">🧠</span>
-          <div class="pred-teaser-text">
-            <strong>Want to know your event's success rate?</strong>
-            <span>Our AI model analyzes weather, trends & competition to give you a score.</span>
-          </div>
-          <div class="pred-ml-badge" [class.online]="mlAvailable" [class.offline]="!mlAvailable">
-            <span class="pred-ml-dot"></span>
-            {{ mlAvailable ? 'Online' : 'Offline' }}
-          </div>
+          <div class="pred-teaser-text"><strong>Want to know your event's success rate?</strong><span>Our AI model analyzes weather, trends & competition to give you a score.</span></div>
+          <div class="pred-ml-badge" [class.online]="mlAvailable" [class.offline]="!mlAvailable"><span class="pred-ml-dot"></span>{{ mlAvailable ? 'Online' : 'Offline' }}</div>
         </div>
       </div>
-
-      <!-- ── STEP 6 — AI SUCCESS PREDICTOR ── -->
+      <!-- STEP 6 -->
       <div class="modal-form-body pred-body" *ngIf="formStep===6">
-
-        <!-- STATE 1: Trigger -->
         <div class="pred-trigger" *ngIf="!predicting && !predResult">
-          <div class="pred-orbs">
-            <div class="pred-orb pred-orb1"></div>
-            <div class="pred-orb pred-orb2"></div>
-          </div>
+          <div class="pred-orbs"><div class="pred-orb pred-orb1"></div><div class="pred-orb pred-orb2"></div></div>
           <div class="pred-brain-idle">🧠</div>
           <h3 class="pred-trigger-title">Predict Your Event's Success</h3>
-          <p class="pred-trigger-sub">
-            Our Gradient Boosting model analyzes weather, Google Trends,
-            calendar conflicts &amp; competitor events to estimate success probability.
-          </p>
-          <div class="pred-event-recap">
-            <span>📍 {{ form.location || 'No location' }}</span>
-            <span>📅 {{ formDate || 'No date' }}</span>
-            <span>👥 {{ form.capacity }} people</span>
-            <span>🌿 {{ form.category }}</span>
-          </div>
-          <button class="pred-run-btn" (click)="runPrediction()" [disabled]="!mlAvailable">
-            <span class="pred-run-glow"></span>
-            🚀 Run ML Prediction
-          </button>
+          <p class="pred-trigger-sub">Our Gradient Boosting model analyzes weather, Google Trends, calendar conflicts &amp; competitor events.</p>
+          <div class="pred-event-recap"><span>📍 {{ form.location || 'No location' }}</span><span>📅 {{ formDate || 'No date' }}</span><span>👥 {{ form.capacity }} people</span><span>🌿 {{ form.category }}</span></div>
+          <button class="pred-run-btn" (click)="runPrediction()" [disabled]="!mlAvailable"><span class="pred-run-glow"></span>🚀 Run ML Prediction</button>
           <button class="pred-skip-btn" (click)="skipPrediction()">Skip &amp; go back to review</button>
-          <div class="pred-ml-badge" style="margin-top:16px" [class.online]="mlAvailable" [class.offline]="!mlAvailable">
-            <span class="pred-ml-dot"></span>
-            {{ mlAvailable ? 'ML Server Online' : 'ML Offline — start Flask on port 5000' }}
-          </div>
+          <div class="pred-ml-badge" style="margin-top:16px" [class.online]="mlAvailable" [class.offline]="!mlAvailable"><span class="pred-ml-dot"></span>{{ mlAvailable ? 'ML Server Online' : 'ML Offline — start Flask on port 5000' }}</div>
         </div>
-
-        <!-- STATE 2: Analyzing -->
         <div class="pred-analyzing" *ngIf="predicting">
-          <div class="pred-brain-pulse">
-            <div class="pred-ring r1"></div>
-            <div class="pred-ring r2"></div>
-            <div class="pred-ring r3"></div>
-            <div class="pred-brain-core">🧠</div>
-          </div>
+          <div class="pred-brain-pulse"><div class="pred-ring r1"></div><div class="pred-ring r2"></div><div class="pred-ring r3"></div><div class="pred-brain-core">🧠</div></div>
           <h3 class="pred-an-title">Running ML Pipeline…</h3>
           <p class="pred-an-sub">Step {{ predStep }} / {{ predSteps.length }}</p>
           <div class="pred-steps-list">
-            <div class="pred-step" *ngFor="let s of predSteps; let i=index"
-                 [class.done]="i < predStep" [class.active]="i === predStep - 1" [class.pending]="i > predStep - 1">
-              <div class="pred-step-icon">
-                <span *ngIf="i < predStep" style="color:#fff;font-weight:700;font-size:10px">✓</span>
-                <span *ngIf="i >= predStep">{{ s.icon }}</span>
-              </div>
-              <span class="pred-step-label">{{ s.label }}</span>
-              <span class="pred-step-badge" *ngIf="i < predStep">done</span>
+            <div class="pred-step" *ngFor="let s of predSteps; let i=index" [class.done]="i < predStep" [class.active]="i === predStep - 1" [class.pending]="i > predStep - 1">
+              <div class="pred-step-icon"><span *ngIf="i < predStep" style="color:#fff;font-weight:700;font-size:10px">✓</span><span *ngIf="i >= predStep">{{ s.icon }}</span></div>
+              <span class="pred-step-label">{{ s.label }}</span><span class="pred-step-badge" *ngIf="i < predStep">done</span>
             </div>
           </div>
-          <div class="pred-prog-wrap">
-            <div class="pred-prog-track">
-              <div class="pred-prog-fill" [style.width.%]="predStep / predSteps.length * 100"></div>
-            </div>
-            <span class="pred-prog-txt">{{ (predStep / predSteps.length * 100) | number:'1.0-0' }}%</span>
-          </div>
+          <div class="pred-prog-wrap"><div class="pred-prog-track"><div class="pred-prog-fill" [style.width.%]="predStep / predSteps.length * 100"></div></div><span class="pred-prog-txt">{{ (predStep / predSteps.length * 100) | number:'1.0-0' }}%</span></div>
         </div>
-
-        <!-- STATE 3: Result -->
         <div class="pred-result" *ngIf="predResult && !predResult.error && !predicting">
           <div class="pred-result-top">
             <div class="pred-result-info">
               <div class="pred-eyebrow">🧠 Gradient Boosting · ROC-AUC {{ predResult.modelMetrics?.rocAuc }}</div>
-              <div class="pred-result-grade" [style.color]="predScoreColor(predResult.score)">
-                {{ predResult.grade }} — {{ predResult.gradeLabel }}
-              </div>
+              <div class="pred-result-grade" [style.color]="predScoreColor(predResult.score)">{{ predResult.grade }} — {{ predResult.gradeLabel }}</div>
               <p class="pred-summary">{{ predResult.summary }}</p>
             </div>
             <div class="pred-donut-wrap">
               <svg viewBox="0 0 120 120" class="pred-donut">
                 <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(30,107,69,.12)" stroke-width="8"/>
-                <circle cx="60" cy="60" r="54" fill="none" stroke-width="8" stroke-linecap="round"
-                        [attr.stroke]="predScoreColor(predResult.score)"
-                        [attr.stroke-dasharray]="predScoreDash(predAnimScore)"
-                        transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="54" fill="none" stroke-width="8" stroke-linecap="round" [attr.stroke]="predScoreColor(predResult.score)" [attr.stroke-dasharray]="predScoreDash(predAnimScore)" transform="rotate(-90 60 60)"/>
               </svg>
-              <div class="pred-donut-center">
-                <span class="pred-donut-num" [style.color]="predScoreColor(predResult.score)">{{ predAnimScore | number:'1.0-0' }}</span>
-                <span class="pred-donut-sub" [style.color]="predScoreColor(predResult.score)">{{ predResult.grade }}</span>
-              </div>
+              <div class="pred-donut-center"><span class="pred-donut-num" [style.color]="predScoreColor(predResult.score)">{{ predAnimScore | number:'1.0-0' }}</span><span class="pred-donut-sub" [style.color]="predScoreColor(predResult.score)">{{ predResult.grade }}</span></div>
             </div>
           </div>
           <div class="pred-tabs">
             <button class="pred-tab" [class.on]="predActiveTab==='signals'" (click)="predActiveTab='signals'">📡 Signals</button>
-            <button class="pred-tab" [class.on]="predActiveTab==='shap'"    (click)="predActiveTab='shap'">🔬 SHAP</button>
-            <button class="pred-tab" [class.on]="predActiveTab==='recs'"    (click)="predActiveTab='recs'">🎯 Recs</button>
+            <button class="pred-tab" [class.on]="predActiveTab==='shap'" (click)="predActiveTab='shap'">🔬 SHAP</button>
+            <button class="pred-tab" [class.on]="predActiveTab==='recs'" (click)="predActiveTab='recs'">🎯 Recs</button>
           </div>
           <div *ngIf="predActiveTab==='signals'" class="pred-tab-content">
             <div class="pred-signals">
               <div class="pred-sig-card" *ngFor="let sig of predResult.signals" [style.background]="predSigBg(sig.status)">
-                <div class="pred-sig-top">
-                  <span class="pred-sig-icon">{{ sig.icon }}</span>
-                  <div class="pred-sig-text">
-                    <div class="pred-sig-label">{{ sig.label }}</div>
-                    <div class="pred-sig-detail">{{ sig.detail }}</div>
-                  </div>
-                  <span class="pred-sig-val" [style.color]="predSigColor(sig.status)">{{ sig.value }}</span>
-                </div>
-                <div class="pred-sig-bar-bg">
-                  <div class="pred-sig-bar-fill" [style.width.%]="sig.value" [style.background]="predSigColor(sig.status)"></div>
-                </div>
+                <div class="pred-sig-top"><span class="pred-sig-icon">{{ sig.icon }}</span><div class="pred-sig-text"><div class="pred-sig-label">{{ sig.label }}</div><div class="pred-sig-detail">{{ sig.detail }}</div></div><span class="pred-sig-val" [style.color]="predSigColor(sig.status)">{{ sig.value }}</span></div>
+                <div class="pred-sig-bar-bg"><div class="pred-sig-bar-fill" [style.width.%]="sig.value" [style.background]="predSigColor(sig.status)"></div></div>
               </div>
             </div>
           </div>
           <div *ngIf="predActiveTab==='shap'" class="pred-tab-content">
             <div class="pred-shap-list">
               <div class="pred-shap-row" *ngFor="let f of predResult.shapFeatures">
-                <span class="pred-shap-name">{{ f.name }}</span>
-                <span class="pred-shap-raw">{{ f.raw }}</span>
-                <div class="pred-shap-bars">
-                  <div class="pred-shap-zero"></div>
-                  <div class="pred-shap-bar"
-                       [style.width.%]="predShapWidth(f.impact)"
-                       [style.background]="predShapColor(f.impact)"
-                       [style.margin-left]="f.impact>0?'50%':'auto'"
-                       [style.margin-right]="f.impact<0?'50%':'auto'"></div>
-                </div>
-                <span class="pred-shap-val" [style.color]="predShapColor(f.impact)">
-                  {{ f.impact>0?'+':'' }}{{ f.impact | number:'1.2-2' }}
-                </span>
+                <span class="pred-shap-name">{{ f.name }}</span><span class="pred-shap-raw">{{ f.raw }}</span>
+                <div class="pred-shap-bars"><div class="pred-shap-zero"></div><div class="pred-shap-bar" [style.width.%]="predShapWidth(f.impact)" [style.background]="predShapColor(f.impact)" [style.margin-left]="f.impact>0?'50%':'auto'" [style.margin-right]="f.impact<0?'50%':'auto'"></div></div>
+                <span class="pred-shap-val" [style.color]="predShapColor(f.impact)">{{ f.impact>0?'+':'' }}{{ f.impact | number:'1.2-2' }}</span>
               </div>
             </div>
           </div>
@@ -789,75 +566,34 @@
             <div class="pred-recs-list">
               <div class="pred-rec-card" *ngFor="let r of predResult.recommendations">
                 <span class="pred-rec-icon" [style.border-color]="predPrioColor(r.priority)">{{ r.icon }}</span>
-                <div class="pred-rec-body">
-                  <div class="pred-rec-priority" [style.color]="predPrioColor(r.priority)">{{ r.priority | uppercase }}</div>
-                  <p class="pred-rec-text">{{ r.text }}</p>
-                </div>
-                <div class="pred-rec-gain">
-                  <span class="pred-rec-gain-val" [style.color]="predPrioColor(r.priority)">+{{ r.gain }}%</span>
-                  <span class="pred-rec-gain-lbl">gain</span>
-                </div>
+                <div class="pred-rec-body"><div class="pred-rec-priority" [style.color]="predPrioColor(r.priority)">{{ r.priority | uppercase }}</div><p class="pred-rec-text">{{ r.text }}</p></div>
+                <div class="pred-rec-gain"><span class="pred-rec-gain-val" [style.color]="predPrioColor(r.priority)">+{{ r.gain }}%</span><span class="pred-rec-gain-lbl">gain</span></div>
               </div>
             </div>
           </div>
           <button class="pred-rerun-btn" (click)="runPrediction()">↺ Re-run Prediction</button>
         </div>
-
-        <!-- STATE 4: Error -->
         <div class="pred-error" *ngIf="predResult?.error && !predicting">
-          <div style="font-size:40px;margin-bottom:12px">⚡</div>
-          <h3>ML Server Unavailable</h3>
-          <p>Le modèle Event Predictor n'est pas encore entraîné.<br>Lance ces commandes dans l'ordre :</p>
-          <code>cd ml_predictor</code>
-          <code style="margin-top:6px">python generate_dataset.py</code>
-          <code style="margin-top:6px">python train_model.py</code>
-          <code style="margin-top:6px">python app.py</code>
-          <button class="pred-skip-btn" style="margin-top:16px" (click)="skipPrediction()">← Retour à la review</button>
+          <div style="font-size:40px;margin-bottom:12px">⚡</div><h3>ML Server Unavailable</h3>
+          <code>cd ml_predictor</code><code style="margin-top:6px">python generate_dataset.py</code>
+          <code style="margin-top:6px">python train_model.py</code><code style="margin-top:6px">python app.py</code>
+          <button class="pred-skip-btn" style="margin-top:16px" (click)="skipPrediction()">← Back to review</button>
         </div>
-
       </div>
-      <!-- /step 6 -->
-
-      <!-- ── FOOTER ── -->
+      <!-- FOOTER -->
       <div class="modal-form-footer">
         <button class="btn-back" *ngIf="formStep > 1" (click)="formStep = formStep - 1">Back</button>
-
-        <!-- Steps 1–4: Continue -->
-        <button class="btn-continue" *ngIf="formStep < 5" (click)="nextStep()">
-          Continue
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-          </svg>
-        </button>
-
-        <!-- Step 5 (review): Predict button + Save direct -->
+        <button class="btn-continue" *ngIf="formStep < 5" (click)="nextStep()">Continue <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
         <ng-container *ngIf="formStep === 5">
-          <button class="btn-continue"
-                  (click)="nextStep()"
-                  [disabled]="!mlAvailable"
-                  [title]="!mlAvailable ? 'Start Flask server on port 5000 first' : 'Predict event success with AI'">
-            🧠 Predict Success
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </button>
-          <button class="btn-save" (click)="submitForm()" [disabled]="saveLoading">
-            <span *ngIf="!saveLoading">💾 Save</span>
-            <span *ngIf="saveLoading" class="spinner"></span>
-          </button>
+          <button class="btn-continue" (click)="nextStep()" [disabled]="!mlAvailable">🧠 Predict Success <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+          <button class="btn-save" (click)="submitForm()" [disabled]="saveLoading"><span *ngIf="!saveLoading">💾 Save</span><span *ngIf="saveLoading" class="spinner"></span></button>
         </ng-container>
-
-        <!-- Step 6: Save after AI prediction -->
-        <button class="btn-save" *ngIf="formStep === 6" (click)="submitForm()" [disabled]="saveLoading || predicting">
-          <span *ngIf="!saveLoading">💾 Save Event</span>
-          <span *ngIf="saveLoading" class="spinner"></span>
-        </button>
+        <button class="btn-save" *ngIf="formStep === 6" (click)="submitForm()" [disabled]="saveLoading || predicting"><span *ngIf="!saveLoading">💾 Save Event</span><span *ngIf="saveLoading" class="spinner"></span></button>
       </div>
-
     </div>
   </div>
 
-  <!-- ══════════════════ DELETE CONFIRM ══════════════════ -->
+  <!-- DELETE CONFIRM -->
   <div class="modal-backdrop" *ngIf="showConfirm" (click)="showConfirm=false">
     <div class="modal-confirm" (click)="$event.stopPropagation()">
       <div class="confirm-icon-wrap">⚠️</div>
@@ -865,10 +601,18 @@
       <p class="confirm-msg">Are you sure you want to delete <strong>"{{ confirmEventName }}"</strong>?<br>This action cannot be undone.</p>
       <div class="confirm-actions">
         <button class="btn-confirm-cancel" (click)="showConfirm=false">Cancel</button>
-        <button class="btn-confirm-delete" (click)="doDelete()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-          Delete
-        </button>
+        <button class="btn-confirm-delete" (click)="doDelete()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ RATING LIGHTBOX -->
+  <div class="rating-lightbox-overlay" *ngIf="ratingLightboxUrl" (click)="closeRatingLightbox()">
+    <div class="rating-lightbox-box" (click)="$event.stopPropagation()">
+      <button class="rating-lightbox-close" (click)="closeRatingLightbox()">✕</button>
+      <img [src]="ratingLightboxUrl" class="rating-lightbox-img" alt="Shared moment" />
+      <div class="rating-lightbox-caption" *ngIf="ratingLightboxAuthor">
+        📸 Shared by <strong>{{ ratingLightboxAuthor }}</strong>
       </div>
     </div>
   </div>

@@ -102,7 +102,7 @@
   flex-direction: column;
   gap: 2px;
 }
-.vc-nav-list button {
+.vc-nav-list > button {
   padding: 9px 12px;
   background: transparent;
   border: none;
@@ -115,15 +115,146 @@
   transition: background 0.15s ease, color 0.15s ease;
   letter-spacing: -0.01em;
 }
-.vc-nav-list button:hover {
+.vc-nav-list > button:hover {
   background: var(--vc-hairline-2);
   color: var(--vc-ink);
 }
-.vc-nav-list button.active {
+.vc-nav-list > button.active {
   background: var(--vc-tint);
   color: var(--vc-accent);
   font-weight: 500;
   box-shadow: inset 2px 0 0 var(--vc-accent);
+}
+
+/* Anchor links in shell sidebar — same style as buttons */
+.vc-nav-item-link {
+  display: block;
+  padding: 9px 12px;
+  background: transparent;
+  border-radius: 7px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--vc-ink-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.vc-nav-item-link:hover {
+  background: var(--vc-hairline-2);
+  color: var(--vc-ink);
+}
+.vc-nav-item-link.active {
+  background: var(--vc-tint);
+  color: var(--vc-accent);
+  font-weight: 500;
+  box-shadow: inset 2px 0 0 var(--vc-accent);
+}
+
+/* ═══ NAV GROUP / ACCORDION ═══ */
+.vc-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+.vc-nav-parent {
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--vc-ink-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.vc-nav-parent:hover {
+  background: var(--vc-hairline-2);
+  color: var(--vc-ink);
+}
+.vc-nav-parent.open {
+  background: var(--vc-tint);
+  color: var(--vc-accent);
+  font-weight: 500;
+}
+.vc-nav-chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.vc-nav-parent.open .vc-nav-chevron {
+  transform: rotate(180deg);
+}
+
+.vc-nav-sub {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 4px 12px;
+  margin-left: 6px;
+  border-left: 1px solid var(--vc-hairline);
+}
+.vc-nav-sub.open {
+  display: flex;
+}
+
+/* Les sous-liens sont des <a> maintenant */
+.vc-nav-sub-btn {
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--vc-ink-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  text-decoration: none;
+}
+.vc-nav-sub-btn:hover {
+  background: var(--vc-hairline-2);
+  color: var(--vc-ink);
+}
+.vc-nav-sub-btn.active {
+  background: var(--vc-tint);
+  color: var(--vc-accent);
+  font-weight: 500;
+}
+
+.vc-nav-sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vc-hairline);
+  flex-shrink: 0;
+}
+.vc-nav-sub-btn.active .vc-nav-sub-dot {
+  background: var(--vc-accent);
+}
+
+.vc-nav-sub-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--vc-clay);
+  color: #fff;
+  border-radius: 999px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  display: grid;
+  place-items: center;
 }
 
 /* Sidebar decorative art */
@@ -136,7 +267,7 @@
   overflow: hidden;
   min-height: 96px;
 }
-.vc-nav-art img {
+.vc-nav-art-img {
   position: absolute;
   right: -18px;
   bottom: -10px;
@@ -397,7 +528,7 @@
   gap: 0;
   border-bottom: 1px solid var(--vc-hairline);
   padding: 20px 32px;
-  margin: 0 0 20px;
+  margin: 0 0 0;
   background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.3) 100%);
 }
 .vc-stat {
@@ -1318,7 +1449,7 @@ select.vc-input {
 .vc-defs dd .vc-tag { margin-right: 10px; vertical-align: middle; }
 
 /* ═══ RESPONSIVE ═══ */
-@media (max-width: 960px) {
+@media (max-width: 720px) {
   .vc-app { grid-template-columns: 1fr; }
   .vc-nav {
     position: relative;
@@ -1335,6 +1466,19 @@ select.vc-input {
   .vc-brand { padding-bottom: 0; border-bottom: none; flex-shrink: 0; }
   .vc-nav-list { flex-direction: row; flex-shrink: 0; }
   .vc-nav-foot { flex-direction: row; margin: 0 0 0 auto; border: none; padding: 0; align-items: center; }
+  .vc-nav-group { flex-direction: row; position: relative; }
+  .vc-nav-sub {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--vc-surface);
+    border: 1px solid var(--vc-hairline);
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 200px;
+    box-shadow: 0 10px 30px rgba(15,27,36,0.1);
+    z-index: 50;
+  }
   .vc-main { padding: 32px 20px 60px; }
   .vc-stats { grid-template-columns: repeat(2, 1fr); gap: 0 0; }
   .vc-stat { padding: 12px 20px; border-top: 1px solid var(--vc-hairline-2); }
@@ -1354,205 +1498,29 @@ select.vc-input {
   .vc-table tbody tr { display: block; padding: 14px 0; border-bottom: 1px solid var(--vc-hairline-2); }
   .vc-row-actions { justify-content: flex-start; gap: 18px; }
 }
-/* ═══════════════════════════════════════════════════════════
-   ADMIN EVENTS & RESERVATIONS — CSS additions
-   Append to admin.css
-═══════════════════════════════════════════════════════════ */
-
-/* ── Sub-navigation tabs ─────────────────────────────────── */
-.vc-events-subnav {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--vc-hairline);
-  margin: 0 32px 0;
-  background: transparent;
-}
-
-.vc-subnav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 24px;
+/* ═══ NAV ITEM (pour les liens <a> dans la nav) ═══ */
+.vc-nav-item {
+  display: block;
+  padding: 9px 12px;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  border-radius: 7px;
+  text-align: left;
   font-family: inherit;
   font-size: 14px;
-  color: var(--vc-muted);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  color: var(--vc-ink-soft);
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  letter-spacing: -0.01em;
+  text-decoration: none;
 }
-
-.vc-subnav-btn:hover {
+.vc-nav-item:hover {
+  background: var(--vc-hairline-2);
   color: var(--vc-ink);
 }
-
-.vc-subnav-btn.active {
-  color: var(--vc-accent);
-  border-bottom-color: var(--vc-accent);
-  font-weight: 600;
-}
-
-.vc-subnav-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-}
-
-.vc-subnav-btn.active .vc-subnav-dot {
-  opacity: 1;
-}
-
-.vc-subnav-count {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--vc-warn);
-  color: #fff;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0;
-}
-
-/* ── Event icon cell ────────────────────────────────────────── */
-.vc-event-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.vc-nav-item.active {
   background: var(--vc-tint);
-  border: 1px solid rgba(31, 77, 63, 0.18);
-  display: grid;
-  place-items: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-/* ── Capacity mini bar ──────────────────────────────────────── */
-.vc-cap-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 80px;
-}
-
-.vc-cap-num {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--vc-ink-soft);
-  font-weight: 500;
-}
-
-.vc-cap-bar {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--vc-hairline-2);
-  overflow: hidden;
-}
-
-.vc-cap-fill {
-  height: 100%;
-  background: linear-gradient(to right, var(--vc-accent), #2F6A57);
-  border-radius: 999px;
-  transition: width 0.6s ease;
-}
-
-/* ── Status tag overrides for events ────────────────────────── */
-.vc-tag.upcoming { background: var(--vc-warn-tint); border-color: rgba(163, 106, 18, 0.25); color: var(--vc-warn); }
-.vc-tag.ongoing  { background: var(--vc-ok-tint);   border-color: rgba(31, 94, 60, 0.25);  color: var(--vc-ok);   }
-
-/* ── Pending row highlight ───────────────────────────────────── */
-.vc-row-pending td {
-  background: rgba(201, 160, 72, 0.03);
-}
-
-/* ── Section spacing after subnav ───────────────────────────── */
-.vc-events-subnav + .vc-section {
-  margin-top: 28px;
-}
-/* ═══ Add this block to admin.css (append at the end) ═══ */
-
-.vc-events-subnav-wrap {
-  margin: 0 32px 0;
-}
-
-.vc-events-subnav {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--vc-hairline);
-  background: transparent;
-}
-
-.vc-subnav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 24px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--vc-muted);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.vc-subnav-btn:hover { color: var(--vc-ink); }
-.vc-subnav-btn.active {
   color: var(--vc-accent);
-  border-bottom-color: var(--vc-accent);
-  font-weight: 600;
+  font-weight: 500;
+  box-shadow: inset 2px 0 0 var(--vc-accent);
 }
-.vc-subnav-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-}
-.vc-subnav-btn.active .vc-subnav-dot { opacity: 1; }
-
-.vc-subnav-count {
-  min-width: 20px; height: 20px;
-  padding: 0 6px; border-radius: 999px;
-  background: var(--vc-warn); color: #fff;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; font-weight: 700;
-  display: inline-flex; align-items: center; justify-content: center;
-  letter-spacing: 0;
-}
-
-/* ── Event icon cell ── */
-.vc-event-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: var(--vc-tint);
-  border: 1px solid rgba(31, 77, 63, 0.18);
-  display: grid; place-items: center;
-  font-size: 16px; flex-shrink: 0;
-}
-
-/* ── Capacity mini bar ── */
-.vc-cap-cell { display: flex; flex-direction: column; gap: 5px; min-width: 80px; }
-.vc-cap-num  { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--vc-ink-soft); font-weight: 500; }
-.vc-cap-bar  { height: 4px; border-radius: 999px; background: var(--vc-hairline-2); overflow: hidden; }
-.vc-cap-fill { height: 100%; background: linear-gradient(to right, var(--vc-accent), #2F6A57); border-radius: 999px; transition: width 0.6s ease; }
-
-/* ── Pending row highlight ── */
-.vc-row-pending td { background: rgba(201, 160, 72, 0.03); }
-
-/* ── Section spacing ── */
-.vc-events-subnav-wrap + .vc-section { margin-top: 28px; }

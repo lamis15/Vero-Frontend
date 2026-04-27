@@ -1,326 +1,380 @@
-<div class="detector-page">
+<!-- src/app/components/events/Anomaly detector.component.html -->
+<div class="vc-app">
 
-  <!-- BG mesh -->
-  <div class="mesh-bg"></div>
-  <div class="orb a1"></div><div class="orb a2"></div>
-
-  <!-- ══ HEADER ══ -->
-  <div class="det-header">
-    <div class="det-badge">
-      <span class="pulse-dot"></span>
-      IsolationForest · LSTM Autoencoder · Ensemble 99%
-    </div>
-    <h1 class="det-title">Anomaly <em>Detector</em></h1>
-    <p class="det-sub">
-      Real-time detection of suspicious reservation patterns — mass booking,
-      repeat cancellations, and bot behavior. Powered by unsupervised ML.
-    </p>
-
-    <!-- Status + model pills -->
-    <div class="header-row">
-      <div class="ml-pill" [class.online]="mlAvailable" [class.offline]="!mlAvailable">
-        <span class="ml-dot"></span>
-        {{ mlAvailable ? 'ML Online · port 5000' : 'ML Offline — python app.py' }}
-      </div>
-      <div class="model-chips">
-        <span class="mchip green">🌲 Isolation Forest</span>
-        <span class="mchip amber">🧠 LSTM Autoencoder</span>
-        <span class="mchip">⚡ Ensemble</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODE TABS ══ -->
-  <div class="mode-tabs">
-    <button class="mtab" [class.on]="mode==='manual'"   (click)="mode='manual'">👤 Manual Analyze</button>
-    <button class="mtab" [class.on]="mode==='batch'"    (click)="mode='batch'">📊 Batch Scan</button>
-    <button class="mtab" [class.on]="mode==='realtime'" (click)="mode='realtime'">📡 Realtime Feed</button>
-  </div>
-
-  <!-- ═══════════════════════════ MANUAL ═══════════════════════════ -->
-  <div class="mode-content" *ngIf="mode === 'manual'">
-
-    <!-- Presets -->
-    <div class="presets-row">
-      <span class="presets-label">Quick presets :</span>
-      <button *ngFor="let p of presets" class="preset-btn"
-              [style.border-color]="p.color" [style.color]="p.color"
-              (click)="applyPreset(p)">
-        {{ p.icon }} {{ p.label }}
-      </button>
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="vc-nav">
+    <div class="vc-brand">
+      <span class="vc-mark">V</span>
+      <span class="vc-brand-word">Vero</span>
+      <span class="vc-brand-sub">Admin</span>
     </div>
 
-    <div class="manual-grid">
-      <!-- Form -->
-      <div class="form-panel">
-        <div class="panel-title">User Behavior Metrics</div>
+    <div class="vc-nav-label">Workspace</div>
+    <nav class="vc-nav-list">
+      <a class="vc-nav-item" routerLink="/admin">Overview</a>
+      <a class="vc-nav-item" routerLink="/admin" [queryParams]="{tab:'messages'}">Conversations</a>
 
-        <div class="field-grid">
-          <div class="fld">
-            <label>User ID</label>
-            <input type="number" [(ngModel)]="form.user_id" />
-          </div>
-          <div class="fld">
-            <label>Total Actions — <b>{{ form.n_actions }}</b></label>
-            <input type="range" min="1" max="50" [(ngModel)]="form.n_actions" class="vrange"/>
-          </div>
-          <div class="fld">
-            <label>Reservations — <b>{{ form.n_reservations }}</b></label>
-            <input type="range" min="0" max="40" [(ngModel)]="form.n_reservations" class="vrange"/>
-          </div>
-          <div class="fld">
-            <label>Cancellations — <b>{{ form.n_cancellations }}</b></label>
-            <input type="range" min="0" max="30" [(ngModel)]="form.n_cancellations" class="vrange danger"/>
-          </div>
-          <div class="fld">
-            <label>Avg interval (sec) — <b>{{ form.mean_interval_sec }}</b></label>
-            <input type="range" min="1" max="172800" step="100" [(ngModel)]="form.mean_interval_sec" class="vrange"/>
-          </div>
-          <div class="fld">
-            <label>Min interval (sec) — <b>{{ form.min_interval_sec }}</b></label>
-            <input type="range" min="0" max="3600" step="10" [(ngModel)]="form.min_interval_sec" class="vrange danger"/>
-          </div>
-          <div class="fld">
-            <label>Unique Events — <b>{{ form.n_unique_events }}</b></label>
-            <input type="range" min="1" max="30" [(ngModel)]="form.n_unique_events" class="vrange"/>
-          </div>
-          <div class="fld">
-            <label>Unique IPs — <b>{{ form.n_unique_ips }}</b></label>
-            <input type="range" min="1" max="10" [(ngModel)]="form.n_unique_ips" class="vrange danger"/>
-          </div>
-          <div class="fld">
-            <label>Reservations/hour — <b>{{ form.reservations_per_hour | number:'1.1-1' }}</b></label>
-            <input type="range" min="0" max="20" step="0.1" [(ngModel)]="form.reservations_per_hour" class="vrange danger"/>
-          </div>
-        </div>
-
-        <button class="analyze-btn" (click)="analyze()" [disabled]="loading || !mlAvailable">
-          <span class="btn-glow"></span>
-          <span *ngIf="!loading">🔍 Analyze User</span>
-          <span *ngIf="loading" class="spinner-inline">⟳ Analyzing…</span>
+      <!-- ── Events & Bookings accordion ── -->
+      <div class="vc-nav-group">
+        <button type="button" class="vc-nav-parent open">
+          Events & Bookings
+          <svg class="vc-nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </button>
+        <div class="vc-nav-sub open">
+          <a class="vc-nav-sub-btn" routerLink="/admin/events">
+            <span class="vc-nav-sub-dot"></span> All Events
+          </a>
+          <a class="vc-nav-sub-btn" routerLink="/admin/reservations">
+            <span class="vc-nav-sub-dot"></span> Reservations
+          </a>
+          <a class="vc-nav-sub-btn active" routerLink="/admin/anomaly">
+            <span class="vc-nav-sub-dot"></span> Anomaly Detector
+          </a>
+        </div>
       </div>
 
-      <!-- Result panel -->
-      <div class="result-panel" *ngIf="result">
+      <a class="vc-nav-item" routerLink="/admin" [queryParams]="{tab:'add'}">Create user</a>
+    </nav>
 
-        <!-- Risk gauge -->
-        <div class="risk-gauge" [style.background]="getRiskBg(result.risk_level)">
-          <div class="gauge-top">
-            <span class="gauge-icon">{{ getAnomalyIcon(result.anomaly_type) }}</span>
-            <div>
-              <div class="gauge-risk" [style.color]="getRiskColor(result.risk_level)">
-                {{ result.risk_label }}
+    <div class="vc-nav-art">
+      <img class="vc-nav-art-img" src="assets/images/hero_minimal_leaf.png" alt="" />
+      <div class="vc-nav-art-pill">Eco <em>premium</em></div>
+    </div>
+
+    <div class="vc-nav-foot">
+      <button class="vc-link-btn" routerLink="/admin">← Back to Admin</button>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="vc-main">
+    <div class="detector-page">
+
+      <!-- BG mesh -->
+      <div class="mesh-bg"></div>
+      <div class="orb a1"></div><div class="orb a2"></div>
+
+      <!-- ══ HEADER ══ -->
+      <div class="det-header">
+        <div class="det-badge">
+          <span class="pulse-dot"></span>
+          IsolationForest · LSTM Autoencoder · Ensemble 99%
+        </div>
+        <h1 class="det-title">Anomaly <em>Detector</em></h1>
+        <p class="det-sub">
+          Real-time detection of suspicious reservation patterns — mass booking,
+          repeat cancellations, and bot behavior. Powered by unsupervised ML.
+        </p>
+
+        <!-- Status + model pills -->
+        <div class="header-row">
+          <div class="ml-pill" [class.online]="mlAvailable" [class.offline]="!mlAvailable">
+            <span class="ml-dot"></span>
+            {{ mlAvailable ? 'ML Online · port 5000' : 'ML Offline — python app.py' }}
+          </div>
+          <div class="model-chips">
+            <span class="mchip green">🌲 Isolation Forest</span>
+            <span class="mchip amber">🧠 LSTM Autoencoder</span>
+            <span class="mchip">⚡ Ensemble</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MODE TABS ══ -->
+      <div class="mode-tabs">
+        <button class="mtab" [class.on]="mode==='manual'"   (click)="mode='manual'">👤 Manual Analyze</button>
+        <button class="mtab" [class.on]="mode==='batch'"    (click)="mode='batch'">📊 Batch Scan</button>
+        <button class="mtab" [class.on]="mode==='realtime'" (click)="mode='realtime'">📡 Realtime Feed</button>
+      </div>
+
+      <!-- ═══════════════════════════ MANUAL ═══════════════════════════ -->
+      <div class="mode-content" *ngIf="mode === 'manual'">
+
+        <!-- Presets -->
+        <div class="presets-row">
+          <span class="presets-label">Quick presets :</span>
+          <button *ngFor="let p of presets" class="preset-btn"
+                  [style.border-color]="p.color" [style.color]="p.color"
+                  (click)="applyPreset(p)">
+            {{ p.icon }} {{ p.label }}
+          </button>
+        </div>
+
+        <div class="manual-grid">
+          <!-- Form -->
+          <div class="form-panel">
+            <div class="panel-title">User Behavior Metrics</div>
+
+            <div class="field-grid">
+              <div class="fld">
+                <label>User ID</label>
+                <input type="number" [(ngModel)]="form.user_id" />
               </div>
-              <div class="gauge-type">{{ result.anomaly_type.replace('_',' ') }}</div>
+              <div class="fld">
+                <label>Total Actions — <b>{{ form.n_actions }}</b></label>
+                <input type="range" min="1" max="50" [(ngModel)]="form.n_actions" class="vrange"/>
+              </div>
+              <div class="fld">
+                <label>Reservations — <b>{{ form.n_reservations }}</b></label>
+                <input type="range" min="0" max="40" [(ngModel)]="form.n_reservations" class="vrange"/>
+              </div>
+              <div class="fld">
+                <label>Cancellations — <b>{{ form.n_cancellations }}</b></label>
+                <input type="range" min="0" max="30" [(ngModel)]="form.n_cancellations" class="vrange danger"/>
+              </div>
+              <div class="fld">
+                <label>Avg interval (sec) — <b>{{ form.mean_interval_sec }}</b></label>
+                <input type="range" min="1" max="172800" step="100" [(ngModel)]="form.mean_interval_sec" class="vrange"/>
+              </div>
+              <div class="fld">
+                <label>Min interval (sec) — <b>{{ form.min_interval_sec }}</b></label>
+                <input type="range" min="0" max="3600" step="10" [(ngModel)]="form.min_interval_sec" class="vrange danger"/>
+              </div>
+              <div class="fld">
+                <label>Unique Events — <b>{{ form.n_unique_events }}</b></label>
+                <input type="range" min="1" max="30" [(ngModel)]="form.n_unique_events" class="vrange"/>
+              </div>
+              <div class="fld">
+                <label>Unique IPs — <b>{{ form.n_unique_ips }}</b></label>
+                <input type="range" min="1" max="10" [(ngModel)]="form.n_unique_ips" class="vrange danger"/>
+              </div>
+              <div class="fld">
+                <label>Reservations/hour — <b>{{ form.reservations_per_hour | number:'1.1-1' }}</b></label>
+                <input type="range" min="0" max="20" step="0.1" [(ngModel)]="form.reservations_per_hour" class="vrange danger"/>
+              </div>
             </div>
-            <div class="gauge-score" [style.color]="getRiskColor(result.risk_level)">
-              {{ (result.ensemble_score * 100) | number:'1.0-0' }}
-            </div>
+
+            <button class="analyze-btn" (click)="analyze()" [disabled]="loading || !mlAvailable">
+              <span class="btn-glow"></span>
+              <span *ngIf="!loading">🔍 Analyze User</span>
+              <span *ngIf="loading" class="spinner-inline">⟳ Analyzing…</span>
+            </button>
           </div>
 
-          <!-- Model scores -->
-          <div class="model-scores">
-            <div class="mscore">
-              <span class="mscore-lbl">🌲 Isolation Forest</span>
-              <div class="mscore-bar">
-                <div class="mscore-fill if-bar" [style.width.%]="getBarWidth(result.iso_score)"
-                     [style.background]="getRiskColor(result.risk_level)"></div>
+          <!-- Result panel -->
+          <div class="result-panel" *ngIf="result">
+
+            <!-- Risk gauge -->
+            <div class="risk-gauge" [style.background]="getRiskBg(result.risk_level)">
+              <div class="gauge-top">
+                <span class="gauge-icon">{{ getAnomalyIcon(result.anomaly_type) }}</span>
+                <div>
+                  <div class="gauge-risk" [style.color]="getRiskColor(result.risk_level)">
+                    {{ result.risk_label }}
+                  </div>
+                  <div class="gauge-type">{{ result.anomaly_type.replace('_',' ') }}</div>
+                </div>
+                <div class="gauge-score" [style.color]="getRiskColor(result.risk_level)">
+                  {{ (result.ensemble_score * 100) | number:'1.0-0' }}
+                </div>
               </div>
-              <span class="mscore-val">{{ (result.iso_score*100)|number:'1.0-0' }}</span>
+
+              <!-- Model scores -->
+              <div class="model-scores">
+                <div class="mscore">
+                  <span class="mscore-lbl">🌲 Isolation Forest</span>
+                  <div class="mscore-bar">
+                    <div class="mscore-fill if-bar" [style.width.%]="getBarWidth(result.iso_score)"
+                         [style.background]="getRiskColor(result.risk_level)"></div>
+                  </div>
+                  <span class="mscore-val">{{ (result.iso_score*100)|number:'1.0-0' }}</span>
+                </div>
+                <div class="mscore">
+                  <span class="mscore-lbl">🧠 LSTM Error</span>
+                  <div class="mscore-bar">
+                    <div class="mscore-fill lstm-bar" [style.width.%]="getBarWidth(result.lstm_error)"
+                         [style.background]="getRiskColor(result.risk_level)"></div>
+                  </div>
+                  <span class="mscore-val">{{ (result.lstm_error*100)|number:'1.0-0' }}</span>
+                </div>
+              </div>
             </div>
-            <div class="mscore">
-              <span class="mscore-lbl">🧠 LSTM Error</span>
-              <div class="mscore-bar">
-                <div class="mscore-fill lstm-bar" [style.width.%]="getBarWidth(result.lstm_error)"
-                     [style.background]="getRiskColor(result.risk_level)"></div>
+
+            <!-- Feature explanation -->
+            <div class="explanation-list">
+              <div class="expl-title">Top Contributing Features</div>
+              <div class="expl-row" *ngFor="let f of result.explanation"
+                   [class.flagged]="f.flagged">
+                <span class="expl-flag">{{ f.flagged ? '🚩' : '✓' }}</span>
+                <div class="expl-info">
+                  <span class="expl-label">{{ f.label }}</span>
+                  <span class="expl-raw">{{ f.raw_value | number:'1.2-2' }}</span>
+                </div>
+                <div class="expl-zbar">
+                  <div class="expl-zfill"
+                       [style.width.%]="zBarWidth(f.z_score)"
+                       [style.background]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
+                  </div>
+                </div>
+                <span class="expl-z" [style.color]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
+                  z={{ f.z_score | number:'1.2-2' }}
+                </span>
               </div>
-              <span class="mscore-val">{{ (result.lstm_error*100)|number:'1.0-0' }}</span>
+            </div>
+
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-result" *ngIf="!result && !loading">
+            <div class="empty-icon">🔍</div>
+            <p>Configure the metrics and click <strong>Analyze User</strong></p>
+            <p class="empty-hint">Or try a preset above to see immediate results</p>
+          </div>
+          <div class="empty-result" *ngIf="loading">
+            <div class="loader-ring"></div>
+            <p>Running ML models…</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ BATCH ═══════════════════════════ -->
+      <div class="mode-content" *ngIf="mode === 'batch'">
+
+        <div class="batch-header">
+          <div>
+            <h3>Batch User Scan</h3>
+            <p>Scans 30 simulated users with mixed normal/anomalous behavior.</p>
+          </div>
+          <button class="scan-btn" (click)="runBatch()" [disabled]="loading || !mlAvailable">
+            {{ loading ? '⟳ Scanning…' : '▶ Run Batch Scan' }}
+          </button>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="summary-cards" *ngIf="batchSummary">
+          <div class="sum-card">
+            <div class="sum-val">{{ batchSummary.total }}</div>
+            <div class="sum-lbl">Users Scanned</div>
+          </div>
+          <div class="sum-card red">
+            <div class="sum-val">{{ batchSummary.anomalies }}</div>
+            <div class="sum-lbl">Anomalies</div>
+          </div>
+          <div class="sum-card green">
+            <div class="sum-val">{{ batchSummary.normal }}</div>
+            <div class="sum-lbl">Normal</div>
+          </div>
+          <div class="sum-card amber">
+            <div class="sum-val">{{ (batchSummary.rate * 100) | number:'1.0-0' }}%</div>
+            <div class="sum-lbl">Anomaly Rate</div>
+          </div>
+        </div>
+
+        <!-- User list -->
+        <div class="user-list" *ngIf="batchResults.length > 0">
+          <div class="user-row" *ngFor="let r of batchResults"
+               [class.anomaly]="r.is_anomaly"
+               (click)="openDetail(r)">
+            <div class="user-id">#{{ r.user_id }}</div>
+            <div class="user-type">
+              <span class="user-icon">{{ getAnomalyIcon(r.anomaly_type) }}</span>
+              {{ r.anomaly_type.replace('_',' ') }}
+            </div>
+            <div class="user-bar-wrap">
+              <div class="user-bar-fill"
+                   [style.width.%]="getBarWidth(r.ensemble_score)"
+                   [style.background]="getRiskColor(r.risk_level)">
+              </div>
+            </div>
+            <div class="user-score" [style.color]="getRiskColor(r.risk_level)">
+              {{ (r.ensemble_score*100)|number:'1.0-0' }}
+            </div>
+            <div class="user-badge" [style.background]="getRiskBg(r.risk_level)"
+                 [style.color]="getRiskColor(r.risk_level)">
+              {{ r.risk_label }}
             </div>
           </div>
         </div>
 
-        <!-- Feature explanation -->
-        <div class="explanation-list">
-          <div class="expl-title">Top Contributing Features</div>
-          <div class="expl-row" *ngFor="let f of result.explanation"
-               [class.flagged]="f.flagged">
-            <span class="expl-flag">{{ f.flagged ? '🚩' : '✓' }}</span>
-            <div class="expl-info">
-              <span class="expl-label">{{ f.label }}</span>
-              <span class="expl-raw">{{ f.raw_value | number:'1.2-2' }}</span>
+        <div class="empty-result" *ngIf="!loading && batchResults.length === 0">
+          <div class="empty-icon">📊</div>
+          <p>Click <strong>Run Batch Scan</strong> to analyze users</p>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ REALTIME ═══════════════════════════ -->
+      <div class="mode-content" *ngIf="mode === 'realtime'">
+
+        <div class="rt-header">
+          <div>
+            <h3>Realtime Detection Feed</h3>
+            <p>Simulates live reservation events every 2 seconds.</p>
+          </div>
+          <button class="rt-btn" [class.stop]="realtimeRunning" (click)="toggleRealtime()">
+            <span class="rt-dot" [class.running]="realtimeRunning"></span>
+            {{ realtimeRunning ? '⏹ Stop' : '▶ Start' }}
+          </button>
+        </div>
+
+        <div class="rt-feed" *ngIf="realtimeLog.length > 0">
+          <div class="rt-entry"
+               *ngFor="let entry of realtimeLog"
+               [class.rt-anomaly]="entry.result.is_anomaly"
+               [@.disabled]="true">
+            <span class="rt-time">{{ entry.time }}</span>
+            <span class="rt-uid">User #{{ entry.result.user_id }}</span>
+            <span class="rt-icon">{{ getAnomalyIcon(entry.result.anomaly_type) }}</span>
+            <span class="rt-type">{{ entry.result.anomaly_type.replace('_',' ') }}</span>
+            <div class="rt-bar">
+              <div [style.width.%]="getBarWidth(entry.result.ensemble_score)"
+                   [style.background]="getRiskColor(entry.result.risk_level)"></div>
             </div>
-            <div class="expl-zbar">
-              <div class="expl-zfill"
-                   [style.width.%]="zBarWidth(f.z_score)"
-                   [style.background]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
-              </div>
-            </div>
-            <span class="expl-z" [style.color]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
-              z={{ f.z_score | number:'1.2-2' }}
+            <span class="rt-score" [style.color]="getRiskColor(entry.result.risk_level)">
+              {{ (entry.result.ensemble_score*100)|number:'1.0-0' }}
+            </span>
+            <span class="rt-badge" [style.background]="getRiskBg(entry.result.risk_level)"
+                  [style.color]="getRiskColor(entry.result.risk_level)">
+              {{ entry.result.risk_label }}
             </span>
           </div>
         </div>
 
-      </div>
-
-      <!-- Empty state -->
-      <div class="empty-result" *ngIf="!result && !loading">
-        <div class="empty-icon">🔍</div>
-        <p>Configure the metrics and click <strong>Analyze User</strong></p>
-        <p class="empty-hint">Or try a preset above to see immediate results</p>
-      </div>
-      <div class="empty-result" *ngIf="loading">
-        <div class="loader-ring"></div>
-        <p>Running ML models…</p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════ BATCH ═══════════════════════════ -->
-  <div class="mode-content" *ngIf="mode === 'batch'">
-
-    <div class="batch-header">
-      <div>
-        <h3>Batch User Scan</h3>
-        <p>Scans 30 simulated users with mixed normal/anomalous behavior.</p>
-      </div>
-      <button class="scan-btn" (click)="runBatch()" [disabled]="loading || !mlAvailable">
-        {{ loading ? '⟳ Scanning…' : '▶ Run Batch Scan' }}
-      </button>
-    </div>
-
-    <!-- Summary cards -->
-    <div class="summary-cards" *ngIf="batchSummary">
-      <div class="sum-card">
-        <div class="sum-val">{{ batchSummary.total }}</div>
-        <div class="sum-lbl">Users Scanned</div>
-      </div>
-      <div class="sum-card red">
-        <div class="sum-val">{{ batchSummary.anomalies }}</div>
-        <div class="sum-lbl">Anomalies</div>
-      </div>
-      <div class="sum-card green">
-        <div class="sum-val">{{ batchSummary.normal }}</div>
-        <div class="sum-lbl">Normal</div>
-      </div>
-      <div class="sum-card amber">
-        <div class="sum-val">{{ (batchSummary.rate * 100) | number:'1.0-0' }}%</div>
-        <div class="sum-lbl">Anomaly Rate</div>
-      </div>
-    </div>
-
-    <!-- User list -->
-    <div class="user-list" *ngIf="batchResults.length > 0">
-      <div class="user-row" *ngFor="let r of batchResults"
-           [class.anomaly]="r.is_anomaly"
-           (click)="openDetail(r)">
-        <div class="user-id">#{{ r.user_id }}</div>
-        <div class="user-type">
-          <span class="user-icon">{{ getAnomalyIcon(r.anomaly_type) }}</span>
-          {{ r.anomaly_type.replace('_',' ') }}
+        <div class="empty-result" *ngIf="realtimeLog.length === 0">
+          <div class="empty-icon">📡</div>
+          <p>Click <strong>Start</strong> to begin the live detection feed</p>
         </div>
-        <div class="user-bar-wrap">
-          <div class="user-bar-fill"
-               [style.width.%]="getBarWidth(r.ensemble_score)"
-               [style.background]="getRiskColor(r.risk_level)">
-          </div>
-        </div>
-        <div class="user-score" [style.color]="getRiskColor(r.risk_level)">
-          {{ (r.ensemble_score*100)|number:'1.0-0' }}
-        </div>
-        <div class="user-badge" [style.background]="getRiskBg(r.risk_level)"
-             [style.color]="getRiskColor(r.risk_level)">
-          {{ r.risk_label }}
-        </div>
+
       </div>
-    </div>
 
-    <div class="empty-result" *ngIf="!loading && batchResults.length === 0">
-      <div class="empty-icon">📊</div>
-      <p>Click <strong>Run Batch Scan</strong> to analyze users</p>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════ REALTIME ═══════════════════════════ -->
-  <div class="mode-content" *ngIf="mode === 'realtime'">
-
-    <div class="rt-header">
-      <div>
-        <h3>Realtime Detection Feed</h3>
-        <p>Simulates live reservation events every 2 seconds.</p>
-      </div>
-      <button class="rt-btn" [class.stop]="realtimeRunning" (click)="toggleRealtime()">
-        <span class="rt-dot" [class.running]="realtimeRunning"></span>
-        {{ realtimeRunning ? '⏹ Stop' : '▶ Start' }}
-      </button>
-    </div>
-
-    <div class="rt-feed" *ngIf="realtimeLog.length > 0">
-      <div class="rt-entry"
-           *ngFor="let entry of realtimeLog"
-           [class.rt-anomaly]="entry.result.is_anomaly"
-           [@.disabled]="true">
-        <span class="rt-time">{{ entry.time }}</span>
-        <span class="rt-uid">User #{{ entry.result.user_id }}</span>
-        <span class="rt-icon">{{ getAnomalyIcon(entry.result.anomaly_type) }}</span>
-        <span class="rt-type">{{ entry.result.anomaly_type.replace('_',' ') }}</span>
-        <div class="rt-bar">
-          <div [style.width.%]="getBarWidth(entry.result.ensemble_score)"
-               [style.background]="getRiskColor(entry.result.risk_level)"></div>
-        </div>
-        <span class="rt-score" [style.color]="getRiskColor(entry.result.risk_level)">
-          {{ (entry.result.ensemble_score*100)|number:'1.0-0' }}
-        </span>
-        <span class="rt-badge" [style.background]="getRiskBg(entry.result.risk_level)"
-              [style.color]="getRiskColor(entry.result.risk_level)">
-          {{ entry.result.risk_label }}
-        </span>
-      </div>
-    </div>
-
-    <div class="empty-result" *ngIf="realtimeLog.length === 0">
-      <div class="empty-icon">📡</div>
-      <p>Click <strong>Start</strong> to begin the live detection feed</p>
-    </div>
-
-  </div>
-
-  <!-- ══ DETAIL MODAL ══ -->
-  <div class="modal-bg" *ngIf="selectedResult" (click)="closeDetail()">
-    <div class="detail-modal" (click)="$event.stopPropagation()">
-      <button class="modal-close" (click)="closeDetail()">✕</button>
-      <div class="modal-head">
-        <span class="modal-icon">{{ getAnomalyIcon(selectedResult.anomaly_type) }}</span>
-        <div>
-          <div class="modal-title">User #{{ selectedResult.user_id }}</div>
-          <div class="modal-type">{{ selectedResult.anomaly_type.replace('_',' ') }}</div>
-        </div>
-        <div class="modal-score" [style.color]="getRiskColor(selectedResult.risk_level)">
-          {{ (selectedResult.ensemble_score*100)|number:'1.0-0' }}<span>/100</span>
-        </div>
-      </div>
-      <div class="modal-explanation">
-        <div class="expl-row" *ngFor="let f of selectedResult.explanation"
-             [class.flagged]="f.flagged">
-          <span class="expl-flag">{{ f.flagged ? '🚩' : '✓' }}</span>
-          <div class="expl-info">
-            <span class="expl-label">{{ f.label }}</span>
-            <span class="expl-raw">{{ f.raw_value | number:'1.2-2' }}</span>
-          </div>
-          <div class="expl-zbar">
-            <div class="expl-zfill"
-                 [style.width.%]="zBarWidth(f.z_score)"
-                 [style.background]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
+      <!-- ══ DETAIL MODAL ══ -->
+      <div class="modal-bg" *ngIf="selectedResult" (click)="closeDetail()">
+        <div class="detail-modal" (click)="$event.stopPropagation()">
+          <button class="modal-close" (click)="closeDetail()">✕</button>
+          <div class="modal-head">
+            <span class="modal-icon">{{ getAnomalyIcon(selectedResult.anomaly_type) }}</span>
+            <div>
+              <div class="modal-title">User #{{ selectedResult.user_id }}</div>
+              <div class="modal-type">{{ selectedResult.anomaly_type.replace('_',' ') }}</div>
+            </div>
+            <div class="modal-score" [style.color]="getRiskColor(selectedResult.risk_level)">
+              {{ (selectedResult.ensemble_score*100)|number:'1.0-0' }}<span>/100</span>
             </div>
           </div>
-          <span class="expl-z" [style.color]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
-            z={{ f.z_score | number:'1.2-2' }}
-          </span>
+          <div class="modal-explanation">
+            <div class="expl-row" *ngFor="let f of selectedResult.explanation"
+                 [class.flagged]="f.flagged">
+              <span class="expl-flag">{{ f.flagged ? '🚩' : '✓' }}</span>
+              <div class="expl-info">
+                <span class="expl-label">{{ f.label }}</span>
+                <span class="expl-raw">{{ f.raw_value | number:'1.2-2' }}</span>
+              </div>
+              <div class="expl-zbar">
+                <div class="expl-zfill"
+                     [style.width.%]="zBarWidth(f.z_score)"
+                     [style.background]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
+                </div>
+              </div>
+              <span class="expl-z" [style.color]="f.z_score > 0 ? '#c0392b' : '#1e6b45'">
+                z={{ f.z_score | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
+    </div>
+  </main>
 </div>

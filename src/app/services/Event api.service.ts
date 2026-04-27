@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface Event {
@@ -13,6 +14,7 @@ createdBy: any;
   location: string;
   capacity: number;
   status?: 'UPCOMING' | 'ONGOING' | 'CANCELLED' | 'COMPLETED';
+  reservedPlaces?: number;
 }
 
 export interface Reservation {
@@ -26,6 +28,7 @@ export interface Reservation {
 export class EventApiService {
 
   private base = `${environment.apiUrl}/api`;
+  private myReservationsCache$?: Observable<Reservation[]>;
 
   constructor(private http: HttpClient) {}
 
@@ -58,16 +61,35 @@ export class EventApiService {
     return this.http.post<Reservation>(
       `${this.base}/reservations/request/event/${eventId}`,
       {}
+    ).pipe(
+      tap(() => this.clearReservationsCache())
     );
   }
 
-  getMyReservations(): Observable<Reservation[]> {
-    return this.http.get<Reservation[]>(`${this.base}/reservations/my`);
+  getMyReservations(forceRefresh = false): Observable<Reservation[]> {
+    if (!this.myReservationsCache$ || forceRefresh) {
+      this.myReservationsCache$ = this.http.get<Reservation[]>(`${this.base}/reservations/my`).pipe(
+        shareReplay(1)
+      );
+    }
+    return this.myReservationsCache$;
   }
 
   cancelReservation(reservationId: number): Observable<void> {
     // Using PUT .../cancel — the standard Spring Boot soft-cancel pattern.
     // If your backend uses DELETE instead, change this to http.delete<void>(...)
-    return this.http.put<void>(`${this.base}/reservations/${reservationId}/cancel`, {});
+    return this.http.put<void>(`${this.base}/reservations/${reservationId}/cancel`, {}).pipe(
+      tap(() => this.clearReservationsCache())
+    );
   }
+
+  clearReservationsCache(): void {
+    this.myReservationsCache$ = undefined;
+  }
+
+ uploadImage(file: File): Observable<{ url: string }> {
+  const fd = new FormData();
+  fd.append('file', file);
+  return this.http.post<{ url: string }>(`${this.base}/uploads`, fd);
+}
 }
