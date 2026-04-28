@@ -1,0 +1,2 @@
+# Always keep our version of admin dashboard during merges
+src/app/components/admin/admin-dashboard/* merge=ours

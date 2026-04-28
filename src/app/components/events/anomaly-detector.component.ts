@@ -38,9 +38,9 @@ export interface BatchSummary {
   selector: 'app-anomaly-detector',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './Anomaly detector.component.html',
-  styleUrls: ['./Anomaly detector.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+templateUrl: './anomaly-detector.component.html',
+styleUrls: ['./anomaly-detector.component.css'],
+changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AnomalyDetectorComponent implements OnInit, OnDestroy {
 

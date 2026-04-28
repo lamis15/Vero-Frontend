@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PetitionService, Petition } from '../../services/petition.service';
@@ -9,7 +9,9 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './petition-detail.html',
-  styleUrl: './petition-detail.css'
+  styleUrl: './petition-detail.css',
+   encapsulation: ViewEncapsulation.None  // ← AJOUTE
+
 })
 export class PetitionDetail implements OnInit {
 
@@ -23,6 +25,13 @@ export class PetitionDetail implements OnInit {
   hasSigned = false;
   signError = '';
   signSuccess = false;
+
+  // ── Report ─────────────────────────────────────────────────
+  showReportModal = false;
+  reportReason: 'SPAM' | 'INAPPROPRIATE' | 'MISLEADING' | 'OTHER' = 'SPAM';
+  reportDetails = '';
+  reportSubmitting = false;
+  reportDone = false;
 
   mapLoading = false;
   mapPoints: any[] = [];
@@ -106,11 +115,51 @@ export class PetitionDetail implements OnInit {
       - (this.petition?.currentSignatures || 0));
   }
 
+  report(): void {
+    if (this.reportSubmitting || !this.petition?.id) return;
+
+    // ✔ Optimistic : fermer le modal et confirmer immédiatement
+    this.showReportModal  = false;
+    this.reportDone       = true;
+    const savedDetails    = this.reportDetails;
+    const savedReason     = this.reportReason;
+    this.reportDetails    = '';
+    setTimeout(() => this.reportDone = false, 4000);
+
+    // Appel API en arrière-plan (silencieux)
+    this.reportSubmitting = true;
+    this.petitionService.report(
+      this.petition.id,
+      savedReason,
+      savedDetails || undefined
+    ).subscribe({
+      next: () => { this.reportSubmitting = false; },
+      error: () => {
+        // Rollback silencieux (l'utilisateur a déjà vu la confirmation)
+        this.reportSubmitting = false;
+      }
+    });
+  }
+
   sign() {
     if (this.signing || this.hasSigned || !this.petition?.id) return;
-    this.signing = true;
+    if (this.isAdmin) return; // L'admin ne peut pas signer
+    if (this.petition.status !== 'ACTIVE') return; // Uniquement si ACTIVE
+
     this.signError = '';
 
+    // ── Snapshot for rollback ──────────────────────────────────
+    const previousCount  = this.petition.currentSignatures || 0;
+    const previousSigned = this.hasSigned;
+
+    // ── ✅ Optimistic update — instant feedback ────────────────
+    this.hasSigned   = true;
+    this.signSuccess = true;
+    this.petition.currentSignatures = previousCount + 1;
+    this.signed.emit();
+
+    // ── API call in background ────────────────────────────────
+    this.signing = true;
     this.petitionService.sign(
       this.petition.id,
       this.comment || undefined,
@@ -118,18 +167,19 @@ export class PetitionDetail implements OnInit {
     ).subscribe({
       next: () => {
         this.signing = false;
-        this.hasSigned = true;
-        this.signSuccess = true;
-        this.petition.currentSignatures =
-          (this.petition.currentSignatures || 0) + 1;
-        this.signed.emit();
         this.loadMap();
+        this.cdr.markForCheck();
       },
       error: (err: any) => {
-        this.signing = false;
+        // 🔄 Roll back optimistic changes
+        this.hasSigned   = previousSigned;
+        this.signSuccess = false;
+        this.petition.currentSignatures = previousCount;
+        this.signing   = false;
         this.signError = err?.error?.message
           || err?.message
           || 'Error signing petition';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -143,8 +193,10 @@ export class PetitionDetail implements OnInit {
         '_blank'
       );
     } else if (platform === 'facebook') {
+      // Le crawler de Facebook ne peut pas lire "localhost". 
+      // Ajouter "&quote=" permet au moins de pré-remplir le texte de la publication.
       window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`,
         '_blank'
       );
     } else if (platform === 'copy') {

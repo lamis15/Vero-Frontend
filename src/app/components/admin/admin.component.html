@@ -1,0 +1,486 @@
+<!-- ═══ VERO ADMIN — ENTERPRISE CONSOLE ═══ -->
+<div class="vc-app">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="vc-nav">
+    <div class="vc-brand">
+      <span class="vc-mark">V</span>
+      <span class="vc-brand-word">Vero</span>
+      <span class="vc-brand-sub">Admin</span>
+    </div>
+
+    <div class="vc-nav-label">Workspace</div>
+    <nav class="vc-nav-list">
+      <button [class.active]="activeTab === 'users'"
+              (pointerdown)="onTabPointerDown('users')" (click)="setTab('users')">Overview</button>
+      <button [class.active]="activeTab === 'messages'"
+              (pointerdown)="onTabPointerDown('messages')" (click)="setTab('messages')">Conversations</button>
+      <button [class.active]="activeTab === 'add'"
+              (pointerdown)="onTabPointerDown('add')" (click)="setTab('add')">Create user</button>
+      <button [class.active]="activeTab === 'products'"
+              (pointerdown)="onTabPointerDown('products')" (click)="setTab('products')">Products</button>
+      <button [class.active]="activeTab === 'formations'"
+              (pointerdown)="onTabPointerDown('formations')" (click)="setTab('formations')">Trainings</button>
+    </nav>
+
+    <!-- IA Moderation -->
+    <div class="vc-nav-label" style="margin-top:16px;font-size:9px">IA MODERATION</div>
+    <nav class="vc-nav-list">
+      <button [class.active]="activeTab === 'donations'" style="position:relative"
+              (pointerdown)="onTabPointerDown('donations')" (click)="setTab('donations')">
+        💰 Donations
+      </button>
+      <button [class.active]="activeTab === 'petitions'"
+              (pointerdown)="onTabPointerDown('petitions')" (click)="setTab('petitions')">
+        📋 Petitions
+      </button>
+    </nav>
+
+    <div class="vc-nav-art">
+      <img src="assets/images/hero_minimal_leaf.png" alt="" />
+      <div class="vc-nav-art-pill">Eco <em>premium</em></div>
+    </div>
+
+    <div class="vc-nav-foot">
+      @if (adminMe) {
+        <div class="vc-me">
+          <div class="vc-me-avatar">{{ initials(adminMe.fullName) }}</div>
+          <div class="vc-me-body">
+            <strong>{{ adminMe.fullName }}</strong>
+            <small>{{ adminMe.email }}</small>
+          </div>
+        </div>
+      }
+      <button class="vc-link-btn" (click)="logout()">Sign out →</button>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="vc-main">
+
+    <!-- HERO -->
+    <div class="vc-hero" [class.compact]="activeTab !== 'users'">
+      <img class="vc-hero-img" src="assets/images/hero-forest2.png" alt="" />
+      <div class="vc-hero-veil"></div>
+      <div class="vc-hero-inner">
+        <div class="vc-crumb light">Administration ·
+          <span>{{
+            activeTab==='users'?'Directory':
+            activeTab==='messages'?'Conversations':
+            activeTab==='add'?'New user':
+            activeTab==='edit'?'Edit user':
+            activeTab==='products'?'Products':
+            activeTab==='formations'?'Trainings':
+            activeTab==='donations'?'Donations IA':
+            activeTab==='petitions'?'Petitions IA':''
+          }}</span>
+        </div>
+        <div class="vc-hero-row">
+          <div class="vc-hero-text">
+            <h1 class="vc-title light">
+              @switch (activeTab) {
+                @case ('users')      { The <em>Directory</em> }
+                @case ('messages')   { Conversation <em>monitor</em> }
+                @case ('add')        { A <em>new</em> member }
+                @case ('edit')       { Editing a <em>member</em> }
+                @case ('products')   { Eco <em>store</em> }
+                @case ('formations') { Training <em>catalogue</em> }
+                @case ('donations')  { Donation <em>review</em> }
+                @case ('petitions')  { Petition <em>moderation</em> }
+              }
+            </h1>
+            <p class="vc-sub light">
+              @switch (activeTab) {
+                @case ('users')      { Manage accounts, roles and moderation actions. }
+                @case ('messages')   { Inspect private conversations. }
+                @case ('add')        { Provision a new account with the correct role. }
+                @case ('edit')       { Update the selected account in place. }
+                @case ('products')   { Manage the eco-store product catalogue. }
+                @case ('formations') { Manage learning programs and certify members. }
+                @case ('donations')  { Valider ou rejeter les dons analysés par le modèle IA Random Forest. }
+                @case ('petitions')  { Valider ou rejeter les pétitions scorées par EcoGuard-TN TF-IDF. }
+              }
+            </p>
+          </div>
+          <div class="vc-header-actions">
+            <button class="vc-btn ghost-light" (click)="setTab('messages')">Open monitor</button>
+            <button class="vc-btn gold"        (click)="setTab('add')">+ New user</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <section class="vc-stats">
+      <div class="vc-stat"><span class="vc-stat-lbl">Total members</span><strong class="vc-stat-val">{{ totalUsers }}</strong></div>
+      <div class="vc-stat"><span class="vc-stat-lbl">Loaded</span><strong class="vc-stat-val">{{ users.length }}</strong></div>
+      <div class="vc-stat"><span class="vc-stat-lbl">Suspended</span><strong class="vc-stat-val">{{ suspendedOnPage }}</strong></div>
+      <div class="vc-stat"><span class="vc-stat-lbl">Threads</span><strong class="vc-stat-val">{{ monitoredConversationCount }}</strong></div>
+    </section>
+
+    <!-- HEATMAP -->
+    @if (activeTab === 'users' && topicHeatmapTotal > 0) {
+      <section class="vc-heatmap">
+        <div class="vc-heatmap-head">
+          <div><span class="vc-heatmap-kicker">— AI · Topic classifier</span><h3>Conversation <em>heatmap</em></h3></div>
+          <div class="vc-heatmap-total"><strong>{{ topicHeatmapTotal }}</strong><span>tagged messages</span></div>
+        </div>
+        <div class="vc-heatmap-bar">
+          @if (topicHeatmap.eco)       { <span class="vc-heatmap-seg vc-heatmap-eco"       [style.flex]="topicHeatmap.eco"></span> }
+          @if (topicHeatmap.lifestyle) { <span class="vc-heatmap-seg vc-heatmap-lifestyle" [style.flex]="topicHeatmap.lifestyle"></span> }
+          @if (topicHeatmap.product)   { <span class="vc-heatmap-seg vc-heatmap-product"   [style.flex]="topicHeatmap.product"></span> }
+          @if (topicHeatmap.other)     { <span class="vc-heatmap-seg vc-heatmap-other"     [style.flex]="topicHeatmap.other"></span> }
+        </div>
+        <ul class="vc-heatmap-legend">
+          <li><span class="vc-heatmap-dot vc-heatmap-eco"></span> Eco <em>{{ topicPercent('eco') }}%</em> <small>{{ topicHeatmap.eco }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-lifestyle"></span> Lifestyle <em>{{ topicPercent('lifestyle') }}%</em> <small>{{ topicHeatmap.lifestyle }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-product"></span> Product <em>{{ topicPercent('product') }}%</em> <small>{{ topicHeatmap.product }}</small></li>
+          <li><span class="vc-heatmap-dot vc-heatmap-other"></span> Other <em>{{ topicPercent('other') }}%</em> <small>{{ topicHeatmap.other }}</small></li>
+        </ul>
+      </section>
+    }
+
+    <!-- BANNERS -->
+    @if (successMessage) { <div class="vc-banner ok">{{ successMessage }}</div> }
+    @if (errorMessage)   { <div class="vc-banner err">{{ errorMessage }}</div> }
+
+    <!-- DELETE MODAL -->
+    @if (confirmDeleteId) {
+      <div class="vc-modal-overlay" (click)="cancelDelete()">
+        <div class="vc-modal" (click)="$event.stopPropagation()">
+          <h3>Delete this account</h3>
+          <p>This action is permanent.</p>
+          <div class="vc-modal-actions">
+            <button class="vc-btn ghost"  (click)="cancelDelete()">Cancel</button>
+            <button class="vc-btn danger" (click)="confirmDelete()">Delete permanently</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ═══ USERS ═══ -->
+    @if (activeTab === 'users') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div><h2 class="vc-h2">Members</h2><p class="vc-muted">Search, filter and moderate accounts.</p></div>
+          <div class="vc-filters">
+            <input type="text" placeholder="Search users" [(ngModel)]="searchQuery" (input)="onSearchChange()" class="vc-input" />
+            <select [(ngModel)]="selectedRole" (change)="onRoleFilterChange()" class="vc-input">
+              <option value="">All roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="USER">User</option>
+              <option value="PARTNER">Partner</option>
+            </select>
+            <select [(ngModel)]="usersPerPage" (change)="onPageSizeChange()" class="vc-input sm">
+              <option [ngValue]="10">10 / page</option>
+              <option [ngValue]="20">20 / page</option>
+              <option [ngValue]="30">30 / page</option>
+            </select>
+          </div>
+        </div>
+        @if (error) { <p class="vc-empty">{{ error }}</p> }
+        @else if (!loading && users.length === 0) { <p class="vc-empty">No users match.</p> }
+        @else if (users.length > 0 || loading) {
+          <table class="vc-table">
+            <thead><tr><th>Name</th><th>Role</th><th>Status</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+              @for (user of users; track user.id) {
+                <tr [class.suspended]="user.banned">
+                  <td>
+                    <div class="vc-person">
+                      <div class="vc-avatar" [attr.data-role]="user.role">{{ initials(user.fullName) }}</div>
+                      <div><strong>{{ user.fullName }}</strong><small>{{ user.email }}</small></div>
+                    </div>
+                  </td>
+                  <td><span class="vc-tag">{{ user.role }}</span></td>
+                  <td>
+                    <div class="vc-tag-stack">
+                      <span class="vc-tag" [class.ok]="user.verified" [class.warn]="!user.verified">{{ user.verified?'Verified':'Pending' }}</span>
+                      <span class="vc-tag" [class.bad]="user.banned">{{ user.banned?'Suspended':'Active' }}</span>
+                    </div>
+                  </td>
+                  <td class="right">
+                    <div class="vc-row-actions">
+                      <button class="vc-link-btn"        (click)="startEdit(user)">Edit</button>
+                      <button class="vc-link-btn warn"   (click)="toggleBan(user)">{{ user.banned?'Restore':'Suspend' }}</button>
+                      <button class="vc-link-btn danger" (click)="requestDelete(user.id)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <div class="vc-pager">
+            <button class="vc-link-btn" (click)="goToPage(currentPage-1)" [disabled]="currentPage<=1">← Previous</button>
+            <span class="vc-muted">Page {{ currentPage }} of {{ totalPages }}</span>
+            <button class="vc-link-btn" (click)="goToPage(currentPage+1)" [disabled]="currentPage>=totalPages">Next →</button>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ═══ DONATIONS IA — sous-composant ═══ -->
+    @if (activeTab === 'donations') {
+      <app-admin-donations
+        (success)="showSuccess($event)"
+        (error)="showError($event)">
+      </app-admin-donations>
+    }
+
+    <!-- ═══ PETITIONS IA — sous-composant ═══ -->
+    @if (activeTab === 'petitions') {
+      <app-admin-petitions
+        (success)="showSuccess($event)"
+        (error)="showError($event)">
+      </app-admin-petitions>
+    }
+
+    <!-- ═══ ADD USER ═══ -->
+    @if (activeTab === 'add') {
+      <form class="vc-compose" (ngSubmit)="createUser()">
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">01 · Identity</span><h3>Who is joining</h3><p>Public profile information.</p></aside>
+          <div class="vc-group-body">
+            <label class="vc-line"><span>Full name</span><input type="text" [(ngModel)]="newUser.fullName" name="fullName" required placeholder="First &amp; last name" /></label>
+            <label class="vc-line"><span>Email address</span><input type="email" [(ngModel)]="newUser.email" name="email" required placeholder="name@company.com" /></label>
+          </div>
+        </div>
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">02 · Access</span><h3>Credentials</h3></aside>
+          <div class="vc-group-body">
+            <label class="vc-line"><span>Initial password</span><input type="password" [(ngModel)]="newUser.password" name="password" required placeholder="At least 8 characters" /></label>
+            <label class="vc-line"><span>Role</span>
+              <select [(ngModel)]="newUser.role" name="role">
+                <option value="USER">Member</option><option value="ADMIN">Administrator</option><option value="PARTNER">Partner</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">03 · Policy</span><h3>Initial state</h3></aside>
+          <div class="vc-group-body">
+            <label class="vc-switch"><input type="checkbox" [(ngModel)]="newUser.verified" name="verified" /><span class="vc-switch-track"><span class="vc-switch-thumb"></span></span><div><strong>Verified on creation</strong><small>Skip email verification.</small></div></label>
+            <label class="vc-switch"><input type="checkbox" [(ngModel)]="newUser.banned"   name="banned"  /><span class="vc-switch-track"><span class="vc-switch-thumb"></span></span><div><strong>Start suspended</strong></div></label>
+          </div>
+        </div>
+        <footer class="vc-compose-foot">
+          <p class="vc-muted">Creating an account sends no automatic notification.</p>
+          <div class="vc-form-actions">
+            <button class="vc-btn ghost" type="button" (click)="setTab('users')">Cancel</button>
+            <button class="vc-btn primary" type="submit">Create account</button>
+          </div>
+        </footer>
+      </form>
+    }
+
+    <!-- ═══ EDIT USER ═══ -->
+    @if (activeTab === 'edit' && editingUserId) {
+      <form class="vc-compose" (ngSubmit)="saveEdit(editingUserId)">
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">01 · Identity</span><h3>Profile</h3></aside>
+          <div class="vc-group-body">
+            <label class="vc-line"><span>Full name</span><input type="text" [(ngModel)]="editUserForm.fullName" name="editFullName" required /></label>
+            <label class="vc-line"><span>Email address</span><input type="email" [(ngModel)]="editUserForm.email" name="editEmail" required /></label>
+          </div>
+        </div>
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">02 · Access</span><h3>Role</h3></aside>
+          <div class="vc-group-body">
+            <label class="vc-line"><span>Role</span>
+              <select [(ngModel)]="editUserForm.role" name="editRole">
+                <option value="USER">Member</option><option value="ADMIN">Administrator</option><option value="PARTNER">Partner</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="vc-group">
+          <aside class="vc-group-aside"><span class="vc-group-kicker">03 · Policy</span><h3>State</h3></aside>
+          <div class="vc-group-body">
+            <label class="vc-switch"><input type="checkbox" [(ngModel)]="editUserForm.verified" name="editVerified" /><span class="vc-switch-track"><span class="vc-switch-thumb"></span></span><div><strong>Verified</strong></div></label>
+            <label class="vc-switch"><input type="checkbox" [(ngModel)]="editUserForm.banned"   name="editBanned"  /><span class="vc-switch-track"><span class="vc-switch-thumb"></span></span><div><strong>Suspended</strong></div></label>
+          </div>
+        </div>
+        <footer class="vc-compose-foot">
+          <div class="vc-form-actions">
+            <button class="vc-btn ghost" type="button" (click)="cancelEdit()">Cancel</button>
+            <button class="vc-btn primary" type="submit">Save changes</button>
+          </div>
+        </footer>
+      </form>
+    }
+
+    <!-- ═══ CONVERSATIONS ═══ -->
+    @if (activeTab === 'messages') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div><h2 class="vc-h2">Conversation monitor</h2><p class="vc-muted">Compact split view of all private threads.</p></div>
+          <div class="vc-filters">
+            <input type="text" placeholder="Search by user or message" [(ngModel)]="conversationSearch" (input)="filterConversations()" class="vc-input" />
+          </div>
+        </div>
+        <div class="vc-monitor">
+          <div class="vc-monitor-list">
+            @if (!messagesLoading && adminConversations.length === 0) { <p class="vc-empty slim">No conversations yet.</p> }
+            @else {
+              @for (conv of adminConversations; track conv.conversationKey) {
+                <button class="vc-conv" [class.active]="selectedConversation?.conversationKey===conv.conversationKey"
+                        (pointerdown)="onAdminConversationPointerDown(conv)" (click)="openAdminConversation(conv)">
+                  <div class="vc-conv-avatars"><span>{{ initials(conv.userA.fullName) }}</span><span>{{ initials(conv.userB.fullName) }}</span></div>
+                  <div class="vc-conv-copy">
+                    <strong>{{ conv.userA.fullName }} · {{ conv.userB.fullName }}</strong>
+                    <small>{{ conv.lastMessagePreview || 'No messages yet' }}</small>
+                    <time>{{ conv.lastMessageTime | date:'short' }}</time>
+                  </div>
+                </button>
+              }
+            }
+          </div>
+          <div class="vc-monitor-thread">
+            @if (!selectedConversation) { <p class="vc-empty">Select a conversation to review its history.</p> }
+            @else {
+              <div class="vc-thread-head">
+                <h3>{{ selectedConversation.userA.fullName }} &amp; {{ selectedConversation.userB.fullName }}</h3>
+                <small>{{ selectedConversation.userA.email }} · {{ selectedConversation.userB.email }}</small>
+              </div>
+              <div class="vc-thread-feed">
+                @if (!threadLoading && selectedConversationMessages.length === 0) { <p class="vc-empty slim">No messages.</p> }
+                @else {
+                  @for (msg of selectedConversationMessages; track msg.id || $index) {
+                    <div class="vc-msg" [class.outgoing]="msg.sender.id===selectedConversation.userA.id">
+                      <div class="vc-msg-bubble">
+                        <div class="vc-msg-head">
+                          <strong>{{ msg.sender.fullName }}</strong>
+                          @if (msg.topic) { <span class="vc-topic" [attr.data-topic]="msg.topic" [title]="'AI: '+((msg.topicConfidence??0)*100|number:'1.0-0')+'%'">{{ msg.topic }}</span> }
+                        </div>
+                        <p>{{ msg.content }}</p>
+                        <time>{{ msg.timestamp | date:'medium' }}</time>
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ═══ PRODUCTS ═══ (contenu original conservé) -->
+    @if (activeTab === 'products') {
+      <section class="vc-section">
+        <div class="vc-section-head">
+          <div><h2 class="vc-h2">Products</h2><p class="vc-muted">{{ products.length }} items in the eco-store.</p></div>
+          <button class="vc-btn gold" (click)="openProductModal()">+ Add Product</button>
+        </div>
+        @if (productsLoading) {
+          <div class="vc-cards-grid">@for (s of [1,2,3,4,5,6]; track s) { <div class="vc-product-card vc-skeleton"></div> }</div>
+        } @else if (products.length === 0) {
+          <p class="vc-empty">No products found.</p>
+        } @else {
+          <div class="vc-cards-grid">
+            @for (p of products; track p.id) {
+              <div class="vc-product-card">
+                <div class="vc-product-img">
+                  @if (getProductImage(p)) { <img [src]="getProductImage(p)" [alt]="p.name" /> }
+                  @else { <div class="vc-product-img-placeholder">🌿</div> }
+                  @if (p.isEcological) { <span class="vc-eco-badge">Eco</span> }
+                </div>
+                <div class="vc-product-body">
+                  <div class="vc-product-meta">
+                    <span class="vc-tag sm">{{ p.category.replace('_',' ') }}</span>
+                    @if (p.origin) { <span class="vc-product-origin">📍 {{ p.origin }}</span> }
+                  </div>
+                  <h3 class="vc-product-name">{{ p.name }}</h3>
+                  <p class="vc-product-desc">{{ p.description }}</p>
+                  <div class="vc-product-footer">
+                    <div class="vc-product-price-row">
+                      <span class="vc-product-price">{{ p.price | number:'1.2-2' }} €</span>
+                      <span class="vc-product-stock" [class.low]="p.stock < 10">{{ p.stock }} in stock</span>
+                    </div>
+                    <div class="vc-row-actions">
+                      <button class="vc-link-btn" (click)="openProductModal(p)">Edit</button>
+                      <button class="vc-link-btn danger" (click)="deleteProduct(p.id)">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+      @if (showProductModal) {
+        <div class="vc-modal-overlay" (click)="closeProductModal()">
+          <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+            <div class="vc-modal-header"><h3>{{ editingProduct ? 'Edit Product' : 'New Product' }}</h3><button class="vc-modal-close" (click)="closeProductModal()">✕</button></div>
+            <div class="vc-modal-body">
+              <div class="vc-modal-grid">
+                <label class="vc-line"><span>Name *</span><input type="text" [(ngModel)]="productForm.name" /></label>
+                <label class="vc-line"><span>Category</span><select [(ngModel)]="productForm.category">@for (c of productCategories; track c) { <option [value]="c">{{ c.replace(/_/g,' ') }}</option> }</select></label>
+                <label class="vc-line"><span>Price (€) *</span><input type="number" [(ngModel)]="productForm.price" min="0" step="0.01" /></label>
+                <label class="vc-line"><span>Stock</span><input type="number" [(ngModel)]="productForm.stock" min="0" /></label>
+                <label class="vc-line"><span>Country of Origin</span><select [(ngModel)]="productForm.origin" class="vc-country-select"><option value="">— Select country —</option>@for (c of countries; track c.name) { <option [value]="c.name">{{ c.flag }} {{ c.name }}</option> }</select></label>
+                <label class="vc-switch" style="align-self:center;margin-top:1.2rem"><input type="checkbox" [(ngModel)]="productForm.isEcological" /><span class="vc-switch-track"><span class="vc-switch-thumb"></span></span><div><strong>Ecological</strong></div></label>
+              </div>
+              <label class="vc-line" style="margin-top:.75rem"><span>Description</span><textarea [(ngModel)]="productForm.description" rows="3"></textarea></label>
+              <label class="vc-line" style="margin-top:.75rem"><span>Image (max 500KB)</span><input type="file" accept="image/*" (change)="onProductImageSelected($event)" /></label>
+              @if (productForm.image) { <img [src]="productForm.image" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:.5rem" /> }
+            </div>
+            <div class="vc-modal-actions">
+              <button class="vc-btn ghost" (click)="closeProductModal()">Cancel</button>
+              <button class="vc-btn primary" (click)="saveProduct()" [disabled]="productSaving">{{ productSaving?'Saving…':(editingProduct?'Save changes':'Create product') }}</button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ═══ FORMATIONS ═══ (contenu original conservé — abrégé pour longueur) -->
+    @if (activeTab === 'formations') {
+      <div class="tab-section animate-fade-in">
+        <div class="fc-page-header">
+          <div><h2 class="fc-page-title">Catalogue des Formations</h2><p class="fc-page-subtitle">Gérez vos programmes d'apprentissage.</p></div>
+          <button (click)="openFormationModal()" class="vc-btn gold">+ Créer une Formation</button>
+        </div>
+        @if (formationsLoading) {
+          <div class="vc-cards-grid">@for (s of [1,2,3]; track s) { <div class="vc-formation-card vc-skeleton"></div> }</div>
+        } @else {
+          <div class="formations-bento">
+            @for (f of formations; track f.id) {
+              <div class="formation-card-verdant">
+                <div class="fc-header">
+                  <div class="fc-icon-box">🎓</div>
+                  <div class="fc-badges">
+                    @if (f.pinned) { <span class="fc-pin-btn">📌</span> }
+                    <span class="verdant-status-badge" [ngClass]="getFormationStatusClass(f.status)"><span class="status-dot-verdant"></span>{{ f.status }}</span>
+                  </div>
+                </div>
+                <div class="fc-body">
+                  <span class="fc-id-label">ID #{{ f.id }}</span>
+                  <h3 class="fc-title-text">{{ f.title }}</h3>
+                  <p class="fc-desc-text">{{ f.description }}</p>
+                </div>
+                <div class="fc-meta">
+                  <div class="fc-meta-item"><div class="fc-meta-text"><span class="fc-meta-label">Durée</span><span class="fc-meta-val">{{ f.duration }}h</span></div></div>
+                  <div class="fc-meta-item"><div class="fc-meta-text"><span class="fc-meta-label">Prix</span><span class="fc-meta-val">{{ (f.price??0)>0?f.price+' €':'Gratuit' }}</span></div></div>
+                  <div class="fc-meta-item"><div class="fc-meta-text"><span class="fc-meta-label">Inscrits</span><span class="fc-meta-val">{{ f.participantIds?.length||0 }} / {{ f.maxCapacity }}</span></div></div>
+                  <div class="fc-meta-item"><div class="fc-meta-text"><span class="fc-meta-label">Places libres</span><span class="fc-meta-val">{{ f.maxCapacity-(f.participantIds?.length||0) }}</span></div></div>
+                </div>
+                <div class="fc-fill-row"><span class="fc-fill-label">Taux de remplissage</span><span class="fc-fill-pct">{{ f.maxCapacity>0?(((f.participantIds?.length||0)/f.maxCapacity)*100).toFixed(0):0 }}%</span></div>
+                <div class="fc-capacity-bar"><div class="fc-capacity-fill" [style.width.%]="f.maxCapacity>0?((f.participantIds?.length||0)/f.maxCapacity)*100:0" [class.fc-capacity-full]="(f.participantIds?.length||0)>=f.maxCapacity"></div></div>
+                <div class="fc-actions">
+                  <button (click)="viewFormationSessions(f)" class="fc-action-btn fc-action-btn--primary">📅 Sessions</button>
+                  <button (click)="openFormationModal(f)" class="fc-action-btn fc-action-btn--ghost">✏️</button>
+                  <button (click)="togglePin(f)" class="fc-action-btn fc-action-btn--ghost" [class.fc-pinned]="f.pinned">📌</button>
+                  <button (click)="deleteFormation(f.id!)" class="fc-action-btn fc-action-btn--delete">🗑️</button>
+                </div>
+              </div>
+            }
+            @if (formations.length === 0) { <div class="fc-empty"><h3 class="fc-empty-title">Catalogue vide</h3><button (click)="openFormationModal()" class="vc-btn gold">+ Créer</button></div> }
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+
+</div>

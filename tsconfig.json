@@ -24,6 +24,7 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   },
+  
   "files": [],
   "references": [
     {
@@ -32,5 +33,7 @@
     {
       "path": "./tsconfig.spec.json"
     }
+    
   ]
+  
 }

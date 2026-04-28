@@ -7,17 +7,18 @@
   </div>
 
   <nav class="vc-nav-list">
+
     <button id="nav-btn-dashboard" class="vc-nav-item"
-      routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"
+      routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
       [routerLink]="['/admin/dashboard']" title="Dashboard">
       <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 13l9-9 9 9"/><path d="M5 11v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
+        <path d="M3 13l9-9 9 9"/>
+        <path d="M5 11v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
       </svg>
     </button>
 
     <button id="nav-btn-users" class="vc-nav-item"
-      routerLinkActive="active"
-      [routerLink]="['/admin/users']" title="Users">
+      routerLinkActive="active" [routerLink]="['/admin/users']" title="Users">
       <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
         <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -99,6 +100,26 @@
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       </svg>
     </button>
+
+    <button id="nav-btn-petitions" class="vc-nav-item"
+      routerLinkActive="active" [routerLink]="['/admin/petitions']" title="Petitions">
+      <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="3" width="14" height="18" rx="2" />
+        <path d="M9 7h6" />
+        <path d="M9 11h6" />
+        <path d="M9 15h4" />
+      </svg>
+    </button>
+
+    <button id="nav-btn-donations" class="vc-nav-item"
+      routerLinkActive="active" [routerLink]="['/admin/donations']" title="Donations">
+      <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10" />
+        <path d="M9 10c0-1.4 1.3-2.4 3-2.4s3 1 3 2.4c0 1.6-1.5 2-3 2s-3 .5-3 2 1.3 2.4 3 2.4 3-1 3-2.4" />
+      </svg>
+    </button>
+
   </nav>
 
   <div class="vc-nav-foot">
@@ -107,6 +128,7 @@
         {{ initial(admin.fullName) }}
       </div>
     }
+
     <button id="nav-btn-logout" class="vc-nav-item vc-nav-logout" (click)="logout.emit()" title="Sign out">
       <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -115,4 +137,5 @@
       </svg>
     </button>
   </div>
+
 </aside>

@@ -1,20 +1,29 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PetitionService, Petition, PetitionStats } from '../../services/petition.service';
 import { AuthService } from '../../services/auth.service';
+import { EcoModerationService, ModerationResult } from '../../services/eco-moderation.service';
 import { forkJoin } from 'rxjs';
 import { PetitionDetail } from '../petition-detail/petition-detail';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 @Component({
   selector: 'app-petition',
   standalone: true,
-  imports: [CommonModule, FormsModule, PetitionDetail], // ← PetitionDetail
+  imports: [CommonModule, FormsModule, PetitionDetail],
   templateUrl: './petition.html',
-  styleUrl: './petition.css'
+  styleUrl: './petition.css',
+  encapsulation: ViewEncapsulation.None,
 })
-export class PetitionComponent implements OnInit {
+export class PetitionComponent implements OnInit, OnDestroy {
 
+  // ── 3D Tree ──────────────────────────────────────────────────────────────
+  private renderer3D!: THREE.WebGLRenderer;
+  private animFrameId!: number;
+
+  // ── Data ─────────────────────────────────────────────────────────────────
   petitions: Petition[] = [];
   filteredPetitions: Petition[] = [];
   myPetitions: Petition[] = [];
@@ -51,53 +60,197 @@ export class PetitionComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
+  // ── AI Moderation ──────────────────────────────────────────────
+  moderationResult: ModerationResult | null = null;
+  moderationState: 'idle' | 'checking' | 'done' | 'error' = 'idle';
+  private moderationTimer: any;
+
   pendingPetitions: Petition[] = [];
   allPetitions: Petition[] = [];
 
   deletingId: number | null = null;
+  selectedPetition: Petition | null = null;
 
   get isAdmin(): boolean { return this.authService.isAdmin; }
 
   constructor(
     private petitionService: PetitionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private ecoModeration: EcoModerationService
   ) {}
 
- ngOnInit() {
-  this.browseLoading = true;
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  // ✅ Charge TOUT en parallèle dès le démarrage
-  forkJoin([
-    this.petitionService.getActive(),
-    this.petitionService.getStats(),
-    this.petitionService.getMy()
-  ]).subscribe({
-    next: ([petitions, stats, myPetitions]) => {
-      this.petitions = petitions;
-      this.applyFilter();
-      this.stats = stats;
-      this.myPetitions = [...myPetitions];
-      this.myPetitionsLoaded = true;
-      this.browseLoading = false;
-    },
-    error: () => { this.browseLoading = false; }
-  });
-}
+  ngOnInit() {
+    this.browseLoading = true;
 
-loadMyPetitions(forceReload = false) {
-  // ✅ Si déjà chargé et pas de force → ne rien faire du tout
-  if (this.myPetitionsLoaded && !forceReload) return;
+    if (this.isAdmin) {
+      // Admin : charge uniquement pétitions actives + stats (pas getMy)
+      forkJoin([
+        this.petitionService.getActive(),
+        this.petitionService.getStats()
+      ]).subscribe({
+        next: ([petitions, stats]) => {
+          this.petitions = petitions;
+          this.applyFilter();
+          this.stats = stats;
+          this.browseLoading = false;
+        },
+        error: () => { this.browseLoading = false; }
+      });
+    } else {
+      // User : charge pétitions actives + stats + ses propres pétitions
+      forkJoin([
+        this.petitionService.getActive(),
+        this.petitionService.getStats(),
+        this.petitionService.getMy()
+      ]).subscribe({
+        next: ([petitions, stats, myPetitions]) => {
+          this.petitions = petitions;
+          this.applyFilter();
+          this.stats = stats;
+          this.myPetitions = [...myPetitions];
+          this.myPetitionsLoaded = true;
+          this.browseLoading = false;
+        },
+        error: () => { this.browseLoading = false; }
+      });
+    }
 
-  this.myLoading = this.myPetitions.length === 0;
-  this.petitionService.getMy().subscribe({
-    next: (data: Petition[]) => {
-      this.myPetitions = [...data];
-      this.myLoading = false;
-      this.myPetitionsLoaded = true;
-    },
-    error: () => { this.myPetitions = []; this.myLoading = false; }
-  });
-}
+    // Init 3D tree after DOM is ready
+    setTimeout(() => this.initTree3D(), 300);
+  }
+
+  ngOnDestroy() {
+    cancelAnimationFrame(this.animFrameId);
+    this.renderer3D?.dispose();
+  }
+
+  // ── 3D Tree ───────────────────────────────────────────────────────────────
+
+  // ── 3D Tree ───────────────────────────────────────────────────────────────
+
+  private initTree3D() {
+    const canvas = document.getElementById('treeCanvas') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const W = 700, H = 600;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 200);
+    camera.position.set(0, 2, 7);
+    camera.lookAt(0, 1, 0);
+
+    this.renderer3D = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    this.renderer3D.setSize(W, H);
+    this.renderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer3D.outputColorSpace = THREE.SRGBColorSpace;
+
+    // Lumières
+    scene.add(new THREE.AmbientLight(0x3b9ab2, 1.2));
+
+    const key = new THREE.DirectionalLight(0xedda9d, 3.0);
+    key.position.set(5, 10, 5);
+    scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0x1e708a, 2.0);
+    rim.position.set(-5, 3, -5);
+    scene.add(rim);
+
+    const fill = new THREE.DirectionalLight(0x0d4a5e, 1.0);
+    fill.position.set(0, -2, 3);
+    scene.add(fill);
+
+    const loader = new GLTFLoader();
+
+    // Positions des 3 arbres : [x, z, scale, rotY]
+    const treeConfigs = [
+      { x: 0,    z: -0.5, scale: 1.35, rotY: 0 },          // Arbre central — plus grand et légèrement reculé
+      { x: -3.2, z: -1.8, scale: 0.85, rotY: 0.8 },        // Gauche — plus grand, plus excentré
+      { x:  3.1, z: -1.5, scale: 0.92, rotY: -0.5 },       // Droite — plus grand, plus excentré
+    ];
+
+    let loadedCount = 0;
+
+    treeConfigs.forEach((cfg) => {
+      loader.load(
+        'assets/models/tree.glb',
+        (gltf) => {
+          const model = gltf.scene.clone();
+
+          // Centrage
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size   = box.getSize(new THREE.Vector3());
+
+          model.position.sub(center);
+          model.position.y += size.y * 0.5; // pose au sol
+
+          // Scale global pour remplir l'espace + scale individuel
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const baseScale = 3.2 / maxDim;
+          model.scale.setScalar(baseScale * cfg.scale);
+
+          // Position & rotation dans la scène
+          model.position.x += cfg.x;
+          model.position.z += cfg.z;
+          model.rotation.y  = cfg.rotY;
+
+          // Ombres
+          model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          scene.add(model);
+          loadedCount++;
+
+          // Lance l'animation une seule fois quand tout est chargé
+          if (loadedCount === treeConfigs.length) {
+            this.startForestAnimation(scene, camera);
+          }
+        },
+        undefined,
+        (err) => console.warn('tree.glb:', err)
+      );
+    });
+  }
+
+  private startForestAnimation(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
+    let time = 0;
+    const models = scene.children.filter(c => c.type === 'Group');
+
+    const animate = () => {
+      this.animFrameId = requestAnimationFrame(animate);
+      time += 0.008;
+
+      // Rotation lente + oscillation flottante par arbre
+      models.forEach((m, i) => {
+        m.rotation.y += 0.003 + i * 0.001;
+        m.position.y  = Math.sin(time + i * 1.2) * 0.06;
+      });
+
+      this.renderer3D.render(scene, camera);
+    };
+    animate();
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
+  loadMyPetitions(forceReload = false) {
+    if (this.myPetitionsLoaded && !forceReload) return;
+    this.myLoading = this.myPetitions.length === 0;
+    this.petitionService.getMy().subscribe({
+      next: (data: Petition[]) => {
+        this.myPetitions = [...data];
+        this.myLoading = false;
+        this.myPetitionsLoaded = true;
+      },
+      error: () => { this.myPetitions = []; this.myLoading = false; }
+    });
+  }
 
   loadStats() {
     this.petitionService.getStats().subscribe({
@@ -118,10 +271,19 @@ loadMyPetitions(forceReload = false) {
     });
   }
 
-  // ── Admin ──────────────────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────────────────────
 
   goToCreate() {
     this.activeTab = 'create';
+    this.scrollToSection();
+  }
+
+  scrollToBrowse() {
+    this.activeTab = 'browse';
+    this.scrollToSection();
+  }
+
+  private scrollToSection() {
     setTimeout(() => {
       const section = document.querySelector('.petition-section');
       if (section) {
@@ -130,6 +292,8 @@ loadMyPetitions(forceReload = false) {
       }
     }, 100);
   }
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
 
   loadAllPetitions() {
     this.adminLoading = this.allPetitions.length === 0;
@@ -143,7 +307,12 @@ loadMyPetitions(forceReload = false) {
     });
   }
 
-  // ── Filtres ────────────────────────────────────────────────────────────────
+  loadAllPetitionsOnce() {
+    if (this.allPetitions.length > 0) return;
+    this.loadAllPetitions();
+  }
+
+  // ── Filtres ───────────────────────────────────────────────────────────────
 
   filterBy(category: string) { this.activeFilter = category; this.applyFilter(); }
 
@@ -163,10 +332,47 @@ loadMyPetitions(forceReload = false) {
     return this.allPetitions.filter(p => p.status === status).length;
   }
 
-  // ── CRUD ───────────────────────────────────────────────────────────────────
+  // ── CRUD ──────────────────────────────────────────────────────────────────
+
+  // ── Live AI moderation (called on title/description change) ──
+  triggerLiveModeration(): void {
+    clearTimeout(this.moderationTimer);
+    const title = this.newPetition.title?.trim();
+    if (!title || title.length < 5) {
+      this.moderationResult = null;
+      this.moderationState  = 'idle';
+      return;
+    }
+    this.moderationState = 'checking';
+    this.moderationTimer = setTimeout(() => {
+      this.ecoModeration.moderate(title, this.newPetition.description).subscribe(result => {
+        this.moderationResult = result;
+        this.moderationState  = result ? 'done' : 'error';
+      });
+    }, 600);  // debounce 600ms
+  }
+
+  getModerationScoreClass(): string {
+    if (!this.moderationResult) return '';
+    const s = this.moderationResult.score;
+    if (s >= 70) return 'eco-score-green';
+    if (s >= 50) return 'eco-score-orange';
+    return 'eco-score-red';
+  }
+
+  getModerationIcon(): string {
+    if (!this.moderationResult) return '';
+    const d = this.moderationResult.decision;
+    if (d === 'PENDING') return '✅';
+    if (d === 'REVIEW')  return '⚠️';
+    return '❌';
+  }
 
   submitPetition() {
-    if (this.createState !== 'idle') return;
+    if (this.isAdmin) return;
+    if (this.createState !== 'idle' && this.createState !== 'confirmed') return;
+
+    // -- Pre-validation --
     if (!this.newPetition.title.trim() || this.newPetition.title.trim().length < 10) {
       this.errorMessage = 'Title must be at least 10 characters'; return;
     }
@@ -178,37 +384,86 @@ loadMyPetitions(forceReload = false) {
     }
 
     this.errorMessage = '';
-    this.createState = 'processing';
+    clearTimeout(this.moderationTimer);
 
     const petition: Petition = {
       ...this.newPetition,
       deadline: this.deadlineDate ? this.deadlineDate + 'T00:00:00' : undefined
     };
 
+    // -- Optimization: Use cached result if already done (from live typing) --
+    if (this.moderationState === 'done' && this.moderationResult) {
+      this.finalizePetitionSubmission(this.moderationResult, petition);
+      return;
+    }
+
+    // -- Fallback: Run it now if not already done --
+    this.createState     = 'processing';
+    this.moderationState = 'checking';
+
+    this.ecoModeration.moderate(
+      this.newPetition.title,
+      this.newPetition.description
+    ).subscribe(result => {
+      this.finalizePetitionSubmission(result, petition);
+    });
+  }
+
+  private finalizePetitionSubmission(result: ModerationResult | null, petition: Petition) {
+    this.moderationResult = result;
+    this.moderationState  = result ? 'done' : 'error';
+
+    // -- REJECTED → block --
+    if (result?.decision === 'REJECTED') {
+      this.createState  = 'idle';
+      this.errorMessage = `❌ Ecological filter rejected this petition (score: ${result.score}/100). Please write about an environmental topic.`;
+      return;
+    }
+
+    // -- AI passed (PENDING / REVIEW / unavailable) --
+    this.createState = 'processing';
+    
+    const optimisticPetition: Petition = {
+      ...petition,
+      id:                undefined,
+      status:            'PENDING',
+      currentSignatures: 0
+    };
+
+    const previousMy = [...this.myPetitions];
+
+    // -- ✅ Instant success feedback --
+    this.myPetitions       = [optimisticPetition, ...this.myPetitions];
+    this.myPetitionsLoaded = true;
+    this.successMessage    = result
+      ? `🌱 Petition submitted! Ecological score: ${result.score}/100.`
+      : '🌱 Petition submitted! Awaiting admin validation.';
+    
+    this.activeTab      = 'my';
+    this.moderationResult = null;
+    this.moderationState  = 'idle';
+    this.resetForm();
+    setTimeout(() => { this.successMessage = ''; }, 4000);
+
+    // -- Step 3: Backend call in background --
     this.petitionService.create(petition).subscribe({
       next: (created: Petition) => {
-        // ✅ Navigation instantanée
         this.createState = 'idle';
-        this.resetForm();
-
-        // Ajout optimiste immédiat
-        this.myPetitions = [{ ...created, status: 'PENDING' }, ...this.myPetitions];
-        this.myPetitionsLoaded = true;
-
-        this.successMessage = '🌱 Petition submitted! Awaiting admin validation.';
-        this.activeTab = 'my';
-
-        // Rafraîchissement silencieux
+        this.myPetitions = this.myPetitions.map(p =>
+          p === optimisticPetition ? { ...created, status: 'PENDING' } : p
+        );
         setTimeout(() => {
-          this.successMessage = '';
           this.refreshAll();
           this.petitionService.getMy().subscribe({
             next: (data: Petition[]) => { this.myPetitions = [...data]; }
           });
-        }, 2000);
+        }, 1500);
       },
       error: (err: any) => {
-        this.createState = 'idle';
+        this.myPetitions    = previousMy;
+        this.activeTab      = 'create';
+        this.createState    = 'idle';
+        this.successMessage = '';
         const raw = err.message || 'Creation failed';
         this.errorMessage = raw.includes('RuntimeException')
           ? raw.split('RuntimeException:').pop()?.trim() || raw : raw;
@@ -224,23 +479,28 @@ loadMyPetitions(forceReload = false) {
     this.deadlineDate = '';
   }
 
-quickSign(petition: Petition, event: Event) {
-  event.stopPropagation();
-  if (!petition.id) return;
-  this.petitionService.sign(petition.id).subscribe({
-    next: () => {
-      petition.currentSignatures = (petition.currentSignatures || 0) + 1;
-    },
-   error: (err: any) => {
-  const msg = err?.error?.message 
-            || err?.error 
-            || err?.message 
-            || 'Une erreur est survenue';
-  alert(msg);
-}
-  });
-}
+  quickSign(petition: Petition, event: Event) {
+    event.stopPropagation();
+    if (this.isAdmin) return; // L'admin ne signe pas les pétitions
+    if (!petition.id) return;
+    if (petition.status !== 'ACTIVE') return; // Seulement si la pétition est active
+    if ((petition as any)._hasSigned) return;
 
+    this.petitionService.sign(petition.id).subscribe({
+      next: () => {
+        petition.currentSignatures = (petition.currentSignatures || 0) + 1;
+        (petition as any)._hasSigned = true;
+      },
+      error: (err: any) => {
+        const msg = err?.error?.message || err?.error || err?.message || 'Une erreur est survenue';
+        if (typeof msg === 'string' && msg.toLowerCase().includes('déjà signé')) {
+          (petition as any)._hasSigned = true;
+        } else {
+          alert(msg);
+        }
+      }
+    });
+  }
 
   editPetition(p: Petition) {
     this.editingPetition = { ...p };
@@ -312,6 +572,7 @@ quickSign(petition: Petition, event: Event) {
       this.errorMessage = 'Please select a category'; return;
     }
 
+    const petitionId = this.editingPetition.id;
     this.errorMessage = '';
     this.createState = 'processing';
 
@@ -320,30 +581,40 @@ quickSign(petition: Petition, event: Event) {
       deadline: this.deadlineDate ? this.deadlineDate + 'T00:00:00' : undefined
     };
 
-    this.petitionService.update(this.editingPetition.id, petition).subscribe({
+    // -- ✅ Optimistic UI update --
+    const previousMy = [...this.myPetitions];
+    const idx = this.myPetitions.findIndex(p => p.id === petitionId);
+    if (idx !== -1) {
+      this.myPetitions[idx] = {
+        ...this.myPetitions[idx],
+        ...this.newPetition,
+        deadline: petition.deadline
+      };
+    }
+
+    // Immediate feedback
+    this.successMessage = '🌱 Updating petition...';
+    this.activeTab = 'my';
+    const oldEditing = this.editingPetition;
+    this.editingPetition = null;
+    this.resetForm();
+
+    this.petitionService.update(petitionId, petition).subscribe({
       next: () => {
-        // ✅ Mise à jour optimiste
-        const idx = this.myPetitions.findIndex(p => p.id === this.editingPetition!.id);
-        if (idx !== -1) {
-          this.myPetitions[idx] = {
-            ...this.myPetitions[idx],
-            ...this.newPetition,
-            deadline: this.deadlineDate
-              ? this.deadlineDate + 'T00:00:00'
-              : this.myPetitions[idx].deadline
-          };
-        }
-
-        // ✅ Navigation instantanée
         this.createState = 'idle';
-        this.editingPetition = null;
-        this.resetForm();
-        this.activeTab = 'my';
-
-        setTimeout(() => this.refreshAll(), 1000);
+        this.successMessage = '✅ Petition updated!';
+        setTimeout(() => { 
+          this.successMessage = ''; 
+          this.refreshAll();
+        }, 3000);
       },
       error: (err: any) => {
+        // Rollback on failure
+        this.myPetitions = previousMy;
+        this.editingPetition = oldEditing;
+        this.activeTab = 'edit';
         this.createState = 'idle';
+        this.successMessage = '';
         const raw = err.message || 'Update failed';
         this.errorMessage = raw.includes('RuntimeException')
           ? raw.split('RuntimeException:').pop()?.trim() || raw : raw;
@@ -357,7 +628,16 @@ quickSign(petition: Petition, event: Event) {
     this.activeTab = 'my';
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Detail ────────────────────────────────────────────────────────────────
+
+  selectPetition(p: Petition) { this.selectedPetition = p; }
+  closeDetail() { this.selectedPetition = null; }
+  onSigned(p: Petition) {
+    p.currentSignatures = (p.currentSignatures || 0) + 1;
+    this.applyFilter();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   getProgress(p: Petition): number {
     return p.targetSignatures
@@ -384,23 +664,4 @@ quickSign(petition: Petition, event: Event) {
       day: 'numeric', month: 'short'
     });
   }
-  loadAllPetitionsOnce() {
-  // ✅ Ne charge qu'une seule fois
-  if (this.allPetitions.length > 0) return;
-  this.loadAllPetitions();
-}
-selectedPetition: Petition | null = null;
-
-selectPetition(p: Petition) {
-  this.selectedPetition = p;
-}
-
-closeDetail() {
-  this.selectedPetition = null;
-}
-
-onSigned(p: Petition) {
-  p.currentSignatures = (p.currentSignatures || 0) + 1;
-  this.applyFilter();
-}
 }
