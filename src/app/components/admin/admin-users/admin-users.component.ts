@@ -14,6 +14,9 @@ import { NotificationService } from '../../../services/notification.service';
 })
 export class AdminUsersComponent implements OnInit {
   allUsers: AdminUserListItem[] = [];
+navigateToCreate() {
+throw new Error('Method not implemented.');
+}
   loading = false;
   error = '';
 
