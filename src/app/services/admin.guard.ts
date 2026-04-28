@@ -1,5 +1,16 @@
-import { CanActivateFn } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from './auth.service';
 
-// Single-login app: any authenticated visitor can access admin routes.
-// Server-side endpoints still enforce their own checks where needed.
-export const adminGuard: CanActivateFn = () => true;
+export const adminGuard: CanActivateFn = (_route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoggedIn && authService.isAdmin) {
+    return true;
+  }
+
+  return router.createUrlTree(['/login'], {
+    queryParams: { returnUrl: state.url }
+  });
+};

@@ -36,15 +36,19 @@ export class AdminUsersComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.adminService.getAllUsers().subscribe({
-      next: (data) => {
-        this.allUsers = data ?? [];
+      next: (data: any) => {
+        let arr = data ?? [];
+        if (!Array.isArray(arr)) {
+          arr = arr.content || arr.data || arr.users || [];
+        }
+        this.allUsers = arr;
         this.loading = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.loading = false;
         this.error = err?.error?.message || 'Failed to load users.';
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         console.error('[admin-users] load failed', err);
       }
     });
@@ -87,9 +91,12 @@ export class AdminUsersComponent implements OnInit {
       next: () => {
         user.banned = !isBanned;
         this.notificationService.success(isBanned ? 'User unbanned.' : 'User suspended.');
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
-      error: (err) => this.notificationService.error('Failed: ' + (err?.error?.message || err.message))
+      error: (err) => {
+        this.notificationService.error('Failed: ' + (err?.error?.message || err.message));
+        this.cdr.detectChanges();
+      }
     });
   }
 
