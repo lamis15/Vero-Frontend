@@ -46,9 +46,7 @@ app-chatbot {
   width: 100%;
 }
 
-section {
-  padding: 100px 80px;
-}
+
 
 .section-tag {
   display: inline-flex;
@@ -103,11 +101,7 @@ section {
   transform: translateY(0);
 }
 
-@media(max-width: 900px) {
-  section {
-    padding: 60px 24px;
-  }
-}
+
 
 /* ══════════════════════════════════════════════════════════
    ADD THESE RULES TO YOUR GLOBAL styles.css

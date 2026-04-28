@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserResponse } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
+import { UserResponse, AuthService } from '../../services/auth.service';
 import { UserService, EcoProfileResult } from '../../services/user.service';
 import { MessagerieService, TopicCounts } from '../../services/messagerie.service';
 
@@ -12,7 +13,7 @@ import { MessagerieService, TopicCounts } from '../../services/messagerie.servic
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   user: UserResponse | null = null;
   loading = false;
   error = '';
@@ -24,26 +25,64 @@ export class ProfileComponent implements OnInit {
   currentPassword = '';
   newPassword = '';
 
-  activeTab: 'profile' | 'security' = 'profile';
-  setTab(tab: 'profile' | 'security'): void {
+  activeTab: 'profile' | 'edit' = 'profile';
+  setTab(tab: 'profile' | 'edit'): void {
     this.activeTab = tab;
     this.success = '';
     this.error = '';
+  }
+
+  scrollEdit(): void {
+    this.setTab('edit');
   }
 
   ecoStats: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
   ecoProfile: EcoProfileResult | null = null;
   ecoProfileLoading = false;
 
+  private incomingMessageSub?: Subscription;
+
   constructor(
     private userService: UserService,
-    private messagerieService: MessagerieService
+    private messagerieService: MessagerieService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadProfile();
     this.loadEcoStats();
     this.loadEcoProfile();
+    this._subscribeToIncomingMessages();
+  }
+
+  ngOnDestroy(): void {
+    this.incomingMessageSub?.unsubscribe();
+  }
+
+  private _subscribeToIncomingMessages(): void {
+    // Connect to WebSocket if not already connected
+    const currentUser = this.authService.currentUser;
+    if (currentUser) {
+      this.messagerieService.connect(currentUser.id, false);
+    }
+
+    // Subscribe to incoming messages to update eco stats in real-time
+    this.incomingMessageSub = this.messagerieService.incomingMessage$.subscribe((msg) => {
+      if (!msg) return;
+      
+      // Only count messages sent by the current user
+      const myId = this.user?.id || this.authService.currentUser?.id;
+      if (msg.sender.id !== myId) return;
+
+      // Update eco stats based on the message topic
+      const topic = msg.topic as keyof TopicCounts | null;
+      if (topic && topic in this.ecoStats) {
+        this.ecoStats = {
+          ...this.ecoStats,
+          [topic]: (this.ecoStats[topic] || 0) + 1
+        };
+      }
+    });
   }
 
   loadEcoProfile(): void {
@@ -75,6 +114,12 @@ export class ProfileComponent implements OnInit {
   get ecoScore(): number {
     if (!this.ecoTotal) return 0;
     return Math.round((this.ecoStats.eco / this.ecoTotal) * 100);
+  }
+
+  /** Get percentage for any topic category */
+  topicPercent(label: keyof TopicCounts): number {
+    if (!this.ecoTotal) return 0;
+    return Math.round((this.ecoStats[label] / this.ecoTotal) * 100);
   }
 
   loadProfile(): void {
@@ -148,6 +193,12 @@ export class ProfileComponent implements OnInit {
         this.error = 'Password update failed.';
       }
     });
+  }
+
+  get personaTitle(): string {
+    const raw = this.ecoProfile?.profile;
+    if (!raw) return 'Your eco persona';
+    return raw.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   }
 
   get badgeImage(): string | null {

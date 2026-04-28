@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,9 +17,6 @@ import { Formation, FormationResource, FormationStatus, Session, SessionStatus }
   styleUrls: ['./admin-formations.css']
 })
 export class AdminFormationsComponent implements OnInit {
-  @Input() activeTab: string = 'formations';
-  @Output() tabChange = new EventEmitter<string>();
-
   formations: Formation[] = [];
   formationsLoading = false;
   showFormationModal = false;

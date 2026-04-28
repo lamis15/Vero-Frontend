@@ -66,7 +66,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'users',
+        redirectTo: 'dashboard',
         pathMatch: 'full'
       },
       {
@@ -77,19 +77,27 @@ export const routes: Routes = [
       {
         path: 'users/new',
         loadComponent: () =>
-          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
-        data: { mode: 'add' }
+          import('./components/admin/admin-users/admin-user-create.component').then(m => m.AdminUserCreateComponent)
       },
       {
         path: 'users/:id/edit',
         loadComponent: () =>
-          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
-        data: { mode: 'edit' }
+          import('./components/admin/admin-users/admin-user-edit.component').then(m => m.AdminUserEditComponent)
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
       },
       {
         path: 'messages',
         loadComponent: () =>
-          import('./components/messagerie/messagerie.component').then(m => m.MessagerieComponent)
+          import('./components/admin/admin-messages/admin-messages.component').then(m => m.AdminMessagesComponent)
+      },
+      {
+        path: 'forum',
+        loadComponent: () =>
+          import('./components/admin/admin-forum/admin-forum.component').then(m => m.AdminForumComponent)
       },
       {
         path: 'products',
@@ -100,7 +108,8 @@ export const routes: Routes = [
         path: 'formations',
         loadComponent: () =>
           import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
-      }
+      },
+      { path: '**', redirectTo: 'dashboard' }
     ]
   },
   {

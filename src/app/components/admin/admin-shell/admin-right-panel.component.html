@@ -1,0 +1,83 @@
+<aside class="vc-right-panel">
+
+  <!-- Profile Card -->
+  <div class="vc-panel-card">
+    <div class="vc-panel-card-head">
+      <span class="vc-panel-card-title">My Profile</span>
+      <button class="vc-panel-icon-btn" aria-label="Edit profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </button>
+    </div>
+    <div class="vc-profile-center">
+      <div class="vc-profile-avatar">
+        @if (admin) { {{ initial(admin.fullName) }} } @else { A }
+      </div>
+      <div class="vc-profile-name">
+        @if (admin) { {{ admin.fullName }} } @else { Administrator }
+      </div>
+      <div class="vc-profile-role">
+        @if (admin) { {{ admin.role }} } @else { ADMIN }
+      </div>
+      <div class="vc-profile-location">📍 Vero Platform HQ</div>
+    </div>
+    <div class="vc-profile-stats">
+      <div class="vc-profile-stat">
+        <span class="vc-profile-stat-lbl">Since</span>
+        <span class="vc-profile-stat-val">2024</span>
+      </div>
+      <div class="vc-profile-stat-divider"></div>
+      <div class="vc-profile-stat">
+        <span class="vc-profile-stat-lbl">Role</span>
+        <span class="vc-profile-stat-val">Admin</span>
+      </div>
+      <div class="vc-profile-stat-divider"></div>
+      <div class="vc-profile-stat">
+        <span class="vc-profile-stat-lbl">Status</span>
+        <span class="vc-profile-stat-val" style="color:#06d6a0">Active</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Card -->
+  <div class="vc-panel-card">
+    <div class="vc-panel-card-head">
+      <span class="vc-panel-card-title">My Calendar</span>
+      <button class="vc-panel-month-btn">{{ currentMonth }} ▾</button>
+    </div>
+    <div class="vc-cal-days-row">
+      <span>Sun</span><span>Mon</span><span>Tue</span>
+      <span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+    </div>
+    <div class="vc-cal-dates-row">
+      @for (d of calendarDates; track d.num) {
+        <span class="vc-cal-date" [class.today]="d.isToday">{{ d.num }}</span>
+      }
+    </div>
+    <div class="vc-cal-divider"></div>
+    <div class="vc-cal-appointments">
+      <div class="vc-appt">
+        <span class="vc-appt-time">09:00</span>
+        <span class="vc-appt-dot" style="background:#4361ee"></span>
+        <span class="vc-appt-text">Platform review</span>
+      </div>
+      <div class="vc-appt">
+        <span class="vc-appt-time">11:30</span>
+        <span class="vc-appt-dot" style="background:#f72585"></span>
+        <span class="vc-appt-text">New user onboard</span>
+      </div>
+      <div class="vc-appt">
+        <span class="vc-appt-time">14:00</span>
+        <span class="vc-appt-dot" style="background:#06d6a0"></span>
+        <span class="vc-appt-text">Product catalogue</span>
+      </div>
+      <div class="vc-appt">
+        <span class="vc-appt-time">16:30</span>
+        <span class="vc-appt-dot" style="background:#f77f00"></span>
+        <span class="vc-appt-text">Training session</span>
+      </div>
+    </div>
+  </div>
+</aside>

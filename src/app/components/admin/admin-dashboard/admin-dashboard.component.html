@@ -1,0 +1,322 @@
+<!-- HERO BANNER CARD -->
+<div class="vc-hero-card">
+  <div class="vc-hero-left">
+    <div class="vc-hero-date-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+      <span>{{ currentDate }}</span>
+    </div>
+    <h2 class="vc-hero-title">
+      Good Day, @if (adminMe) { {{ adminMe.fullName.split(' ')[0] }} } @else { Admin }!
+    </h2>
+    <p class="vc-hero-sub">Have a great day managing Vero!</p>
+
+    <div class="vc-hero-actions">
+      <button class="vc-btn-hero-primary" [routerLink]="['/admin/users/new']">+ New User</button>
+      <button class="vc-btn-hero-ghost" [routerLink]="['/admin/messages']">Open Monitor</button>
+    </div>
+  </div>
+
+  <div class="vc-hero-right" aria-hidden="true">
+    <span class="vc-float-icon fi-1">🌿</span>
+    <span class="vc-float-icon fi-2">📊</span>
+    <span class="vc-float-icon fi-3">✨</span>
+    <span class="vc-float-icon fi-4">🛍️</span>
+    <span class="vc-float-icon fi-5">💬</span>
+    <div class="vc-hero-avatar-blob">
+      <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+        <defs>
+          <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:rgba(255,255,255,0.3)" />
+            <stop offset="100%" style="stop-color:rgba(255,255,255,0.05)" />
+          </linearGradient>
+        </defs>
+        <circle cx="60" cy="60" r="56" fill="url(#avatarGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+        <text x="60" y="68" text-anchor="middle" font-size="36" font-weight="700" fill="white" font-family="Inter, sans-serif">
+          @if (adminMe) { {{ initials(adminMe.fullName) }} } @else { A }
+        </text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- STATS CARDS ROW -->
+<div class="vc-stats-row">
+
+  <div class="vc-stat-card" id="stat-card-users">
+    <div class="vc-stat-card-head">
+      <span class="vc-stat-card-label">Total Users</span>
+      <button class="vc-stat-menu-btn" aria-label="more options">⋯</button>
+    </div>
+    <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="spark1Fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f72585" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#f72585" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path class="spark-fill" d="M0,10 C10,8 15,14 25,18 C35,22 40,28 50,30 C60,32 70,34 80,36 L80,40 L0,40 Z" fill="url(#spark1Fill)" stroke="none" />
+      <path class="spark-line" d="M0,10 C10,8 15,14 25,18 C35,22 40,28 50,30 C60,32 70,34 80,36" fill="none" stroke="#f72585" stroke-width="2" stroke-linecap="round" />
+    </svg>
+    <div class="vc-stat-number">
+      <span class="vc-stat-number-inner">—</span>
+    </div>
+    <div class="vc-stat-sublabel">registered accounts</div>
+    <div class="vc-stat-trend vc-trend-up">↑ growing platform</div>
+  </div>
+
+  <div class="vc-stat-card" id="stat-card-formations">
+    <div class="vc-stat-card-head">
+      <span class="vc-stat-card-label">Formations</span>
+      <button class="vc-stat-menu-btn" aria-label="more options">⋯</button>
+    </div>
+    <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="spark2Fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#06d6a0" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#06d6a0" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path class="spark-fill" d="M0,32 C5,30 15,28 20,22 C28,14 35,12 45,10 C55,8 65,6 80,4 L80,40 L0,40 Z" fill="url(#spark2Fill)" stroke="none" />
+      <path class="spark-line" d="M0,32 C5,30 15,28 20,22 C28,14 35,12 45,10 C55,8 65,6 80,4" fill="none" stroke="#06d6a0" stroke-width="2" stroke-linecap="round" />
+    </svg>
+    <div class="vc-stat-number">
+      <span class="vc-stat-number-inner">—</span>
+    </div>
+    <div class="vc-stat-sublabel">active programmes</div>
+    <div class="vc-stat-trend vc-trend-up">↑ teams learning</div>
+  </div>
+
+  <div class="vc-stat-card" id="stat-card-products">
+    <div class="vc-stat-card-head">
+      <span class="vc-stat-card-label">Products</span>
+      <button class="vc-stat-menu-btn" aria-label="more options">⋯</button>
+    </div>
+    <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="spark3Fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4361ee" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#4361ee" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path class="spark-fill" d="M0,20 C10,18 20,22 30,20 C40,18 50,22 60,20 C70,18 75,19 80,20 L80,40 L0,40 Z" fill="url(#spark3Fill)" stroke="none" />
+      <path class="spark-line" d="M0,20 C10,18 20,22 30,20 C40,18 50,22 60,20 C70,18 75,19 80,20" fill="none" stroke="#4361ee" stroke-width="2" stroke-linecap="round" />
+    </svg>
+    <div class="vc-stat-number">
+      <span class="vc-stat-number-inner">—</span>
+    </div>
+    <div class="vc-stat-sublabel">eco-store items</div>
+    <div class="vc-stat-trend vc-trend-neutral">→ catalogue stable</div>
+  </div>
+
+  <div class="vc-stat-card" id="stat-card-community">
+    <div class="vc-stat-card-head">
+      <span class="vc-stat-card-label">Community</span>
+      <button class="vc-stat-menu-btn" aria-label="more options">⋯</button>
+    </div>
+    <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="spark4Fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#14C7A5" stop-opacity="0.35" />
+          <stop offset="100%" stop-color="#14C7A5" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path class="spark-fill" d="M0,35 C15,30 25,38 40,25 C55,12 65,18 80,5 L80,40 L0,40 Z" fill="url(#spark4Fill)" stroke="none" />
+      <path class="spark-line" d="M0,35 C15,30 25,38 40,25 C55,12 65,18 80,5" fill="none" stroke="#14C7A5" stroke-width="2" stroke-linecap="round" />
+    </svg>
+    <div class="vc-stat-number">
+      <span class="vc-stat-number-inner">—</span>
+    </div>
+    <div class="vc-stat-sublabel">community dispatches</div>
+    <div class="vc-stat-trend vc-trend-up">↑ active discussions</div>
+  </div>
+
+  <div class="vc-stat-card" id="stat-card-messages">
+    <div class="vc-stat-card-head">
+      <span class="vc-stat-card-label">Conversations</span>
+      <button class="vc-stat-menu-btn" aria-label="more options">⋯</button>
+    </div>
+    <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="spark5Fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#06d6a0" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#06d6a0" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="M0,34 C10,30 15,26 25,22 C35,18 40,14 50,10 C60,6 70,4 80,2" fill="none" stroke="#06d6a0" stroke-width="2" stroke-linecap="round" />
+      <path d="M0,34 C10,30 15,26 25,22 C35,18 40,14 50,10 C60,6 70,4 80,2 L80,40 L0,40 Z" fill="url(#spark5Fill)" />
+    </svg>
+    <div class="vc-stat-number">
+      <span class="vc-stat-number-inner" [routerLink]="['/admin/messages']" style="cursor:pointer">—</span>
+    </div>
+    <div class="vc-stat-sublabel">active conversations</div>
+    <div class="vc-stat-trend vc-trend-up">↑ engagement rising</div>
+  </div>
+
+</div><!-- /stats row -->
+
+<!-- BOTTOM ROW -->
+<div class="vc-bottom-row">
+
+  <!-- AI TOPIC HEATMAP -->
+  <div class="vc-card vc-heatmap-card">
+    <div class="vc-card-head">
+      <span class="vc-card-title">AI Topic Classification</span>
+      <span class="vc-heatmap-total">{{ topicHeatmapTotal }} messages</span>
+    </div>
+    <div class="vc-heatmap-bar">
+      @if (topicHeatmapTotal > 0) {
+        <div class="vc-heatmap-seg eco" [style.width.%]="topicPercent('eco')"></div>
+        <div class="vc-heatmap-seg lifestyle" [style.width.%]="topicPercent('lifestyle')"></div>
+        <div class="vc-heatmap-seg product" [style.width.%]="topicPercent('product')"></div>
+        <div class="vc-heatmap-seg other" [style.width.%]="topicPercent('other')"></div>
+      } @else {
+        <div class="vc-heatmap-seg other" style="width: 100%; opacity: 0.3;"></div>
+      }
+    </div>
+    <div class="vc-heatmap-legend">
+      <div class="vc-heatmap-item">
+        <span class="vc-heatmap-dot eco"></span>
+        <div class="vc-heatmap-info">
+          <span class="vc-heatmap-label">Eco</span>
+          <span class="vc-heatmap-val">{{ topicHeatmap.eco }} <small>({{ topicPercent('eco') }}%)</small></span>
+        </div>
+      </div>
+      <div class="vc-heatmap-item">
+        <span class="vc-heatmap-dot lifestyle"></span>
+        <div class="vc-heatmap-info">
+          <span class="vc-heatmap-label">Lifestyle</span>
+          <span class="vc-heatmap-val">{{ topicHeatmap.lifestyle }} <small>({{ topicPercent('lifestyle') }}%)</small></span>
+        </div>
+      </div>
+      <div class="vc-heatmap-item">
+        <span class="vc-heatmap-dot product"></span>
+        <div class="vc-heatmap-info">
+          <span class="vc-heatmap-label">Product</span>
+          <span class="vc-heatmap-val">{{ topicHeatmap.product }} <small>({{ topicPercent('product') }}%)</small></span>
+        </div>
+      </div>
+      <div class="vc-heatmap-item">
+        <span class="vc-heatmap-dot other"></span>
+        <div class="vc-heatmap-info">
+          <span class="vc-heatmap-label">Other</span>
+          <span class="vc-heatmap-val">{{ topicHeatmap.other }} <small>({{ topicPercent('other') }}%)</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vc-card vc-events-card">
+    <div class="vc-card-head">
+      <span class="vc-card-title">My Scheduled Events</span>
+      <button class="vc-pill-btn">Today ▾</button>
+    </div>
+    <div class="vc-events-body">
+      <div class="vc-ring-wrap">
+        <svg class="vc-ring-svg" viewBox="0 0 120 120" width="120" height="120" aria-label="Busyness 95%">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4361ee" />
+              <stop offset="50%" stop-color="#f72585" />
+              <stop offset="100%" stop-color="#f77f00" />
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#0f1117" stroke-width="10" />
+          <circle cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round" class="vc-ring-progress" style="--circumference:314.16; --progress:15.71" />
+          <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="700" fill="white" font-family="Inter,sans-serif">95%</text>
+          <text x="60" y="72" text-anchor="middle" font-size="8" fill="#8892b0" font-family="Inter,sans-serif" letter-spacing="1.5">BUSYNESS</text>
+        </svg>
+      </div>
+      <div class="vc-event-list">
+        <div class="vc-event-item">
+          <div class="vc-event-num">2</div>
+          <div class="vc-event-lbl">Consultations</div>
+        </div>
+        <div class="vc-event-item">
+          <div class="vc-event-num">10</div>
+          <div class="vc-event-lbl">Listings</div>
+        </div>
+        <div class="vc-event-item">
+          <div class="vc-event-num">3</div>
+          <div class="vc-event-lbl">Meetings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vc-card vc-plans-card">
+    <div class="vc-card-head">
+      <span class="vc-card-title">My Plans Done</span>
+      <button class="vc-pill-btn">Today ▾</button>
+    </div>
+    <div class="vc-plans-list">
+      <div class="vc-plan-item">
+        <div class="vc-plan-header">
+          <span class="vc-plan-label">Products Listed</span>
+          <span class="vc-plan-pct" style="color:#4361ee">64%</span>
+        </div>
+        <div class="vc-progress-track">
+          <div class="vc-progress-fill" style="--target-width:64%; background: linear-gradient(90deg, #4361ee, #7b2ff7)"></div>
+        </div>
+      </div>
+      <div class="vc-plan-item">
+        <div class="vc-plan-header">
+          <span class="vc-plan-label">Conversations</span>
+          <span class="vc-plan-pct" style="color:#f72585">50%</span>
+        </div>
+        <div class="vc-progress-track">
+          <div class="vc-progress-fill" style="--target-width:50%; background: linear-gradient(90deg, #f72585, #f77f00)"></div>
+        </div>
+      </div>
+      <div class="vc-plan-item">
+        <div class="vc-plan-header">
+          <span class="vc-plan-label">Trainings Done</span>
+          <span class="vc-plan-pct" style="color:#06d6a0">33%</span>
+        </div>
+        <div class="vc-progress-track">
+          <div class="vc-progress-fill" style="--target-width:33%; background: linear-gradient(90deg, #06d6a0, #4361ee)"></div>
+        </div>
+      </div>
+      <div class="vc-plan-item">
+        <div class="vc-plan-header">
+          <span class="vc-plan-label">Community Review</span>
+          <span class="vc-plan-pct" style="color:#14C7A5">88%</span>
+        </div>
+        <div class="vc-progress-track">
+          <div class="vc-progress-fill" style="--target-width:88%; background: linear-gradient(90deg, #14C7A5, #06d6a0)"></div>
+        </div>
+      </div>
+    </div>
+    <button class="vc-add-plan-btn" [routerLink]="['/admin/users/new']">+ Add plan</button>
+  </div>
+
+  <div class="vc-card vc-community-card">
+    <div class="vc-card-head">
+      <span class="vc-card-title">Community Oversight</span>
+      <button class="vc-pill-btn" [routerLink]="['/admin/forum']">Manage ▾</button>
+    </div>
+    <div class="vc-community-list">
+      <div class="vc-community-item">
+        <div class="vc-community-dot" style="background: #f72585;"></div>
+        <div class="vc-community-body">
+          <span class="vc-community-label">Flagged Content</span>
+          <span class="vc-community-sub">Awaiting manual moderation</span>
+        </div>
+        <div class="vc-community-count">{{ forumStats.flaggedCount }} items</div>
+      </div>
+      <div class="vc-community-item">
+        <div class="vc-community-dot" style="background: #14C7A5;"></div>
+        <div class="vc-community-body">
+          <span class="vc-community-label">Total Dispatches</span>
+          <span class="vc-community-sub">Engagement across all topics</span>
+        </div>
+        <div class="vc-community-count">{{ forumStats.totalPosts }} posts</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /bottom row -->

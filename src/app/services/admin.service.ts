@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { UserResponse } from './auth.service';
@@ -34,40 +34,22 @@ export interface AdminUserListItem {
   image?: string | null;
 }
 
-export interface PagedResponse<T> {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  number: number;
-  size: number;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AdminService {
   private readonly API = `${environment.apiUrl}/api/users`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  getUsers(page = 0, size = 10, search = '', role = ''): Observable<PagedResponse<AdminUserListItem>> {
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
-
-    if (search.trim()) {
-      params = params.set('search', search.trim());
-    }
-
-    if (role) {
-      params = params.set('role', role);
-    }
-
-    return this.http.get<PagedResponse<AdminUserListItem>>(this.API, { params });
+  getAllUsers(): Observable<AdminUserListItem[]> {
+    return this.http.get<AdminUserListItem[]>(`${this.API}/all`);
   }
 
   createUser(request: AdminCreateUserRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(this.API, request);
+  }
+
+  getUserById(id: number): Observable<UserResponse> {
+    return this.http.get<UserResponse>(`${this.API}/${id}`);
   }
 
   updateUser(id: number, request: AdminUpdateUserRequest): Observable<UserResponse> {

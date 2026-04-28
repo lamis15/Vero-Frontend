@@ -1,0 +1,110 @@
+<!-- ═══ HEADER ═══ -->
+<header class="us-page-head">
+  <div class="us-page-title">
+    <span class="us-page-kicker">Edit account</span>
+    <h1>Edit User</h1>
+    <p class="us-page-sub">Update member profile, role, and account status.</p>
+  </div>
+  <div class="us-page-actions">
+    <button class="us-btn ghost" type="button" (click)="cancel()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      <span>Back to users</span>
+    </button>
+  </div>
+</header>
+
+@if (loading) {
+  <div class="us-empty">
+    <div class="us-spinner"></div>
+    <p>Loading user…</p>
+  </div>
+} @else if (error) {
+  <div class="us-empty err">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <p>{{ error }}</p>
+    <button class="us-btn ghost" type="button" (click)="cancel()">Back to users</button>
+  </div>
+} @else {
+  <form class="vc-compose" (ngSubmit)="save()">
+
+    @if (errorMessage) {
+      <div class="us-empty err" style="padding:14px 18px;flex-direction:row;justify-content:flex-start;gap:10px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p style="margin:0">{{ errorMessage }}</p>
+      </div>
+    }
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">01 · Identity</span>
+        <h3>Profile</h3>
+        <p>Update the information shown to other members across the platform.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Full name</span>
+          <input type="text" [(ngModel)]="editUserForm.fullName" name="editFullName" required placeholder="First & last name" />
+        </label>
+        <label class="vc-line">
+          <span>Email address</span>
+          <input type="email" [(ngModel)]="editUserForm.email" name="editEmail" required placeholder="name@company.com" />
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">02 · Access</span>
+        <h3>Role</h3>
+        <p>Raising or lowering a role takes effect on the next sign-in.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-line">
+          <span>Role</span>
+          <select [(ngModel)]="editUserForm.role" name="editRole">
+            <option value="USER">Member — standard access</option>
+            <option value="ADMIN">Administrator — full platform access</option>
+            <option value="PARTNER">Partner — managed account</option>
+            <option value="TRAINER">Trainer — training content access</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="vc-group">
+      <aside class="vc-group-aside">
+        <span class="vc-group-kicker">03 · Policy</span>
+        <h3>Account state</h3>
+        <p>Toggle verification and suspension without leaving the directory.</p>
+      </aside>
+      <div class="vc-group-body">
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="editUserForm.verified" name="editVerified" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Verified</strong>
+            <small>Account passes the email verification requirement.</small>
+          </div>
+        </label>
+        <label class="vc-switch">
+          <input type="checkbox" [(ngModel)]="editUserForm.banned" name="editBanned" />
+          <span class="vc-switch-track"><span class="vc-switch-thumb"></span></span>
+          <div>
+            <strong>Suspended</strong>
+            <small>Block access until the account is restored.</small>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <footer class="vc-compose-foot">
+      <p class="vc-muted">Changes apply immediately. Email notifications are not sent automatically.</p>
+      <div class="vc-form-actions">
+        <button class="vc-btn ghost" type="button" (click)="cancel()">Cancel</button>
+        <button class="vc-btn primary" type="submit" [disabled]="submitting">
+          {{ submitting ? 'Saving…' : 'Save changes' }}
+        </button>
+      </div>
+    </footer>
+  </form>
+}

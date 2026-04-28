@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ForumService } from '../../../services/forum.service';
@@ -13,9 +13,6 @@ import { NotificationService } from '../../../services/notification.service';
   styleUrls: ['./admin-forum.css']
 })
 export class AdminForumComponent implements OnInit {
-  @Input() activeTab: string = 'forum';
-  @Output() tabChange = new EventEmitter<string>();
-
   posts: Post[] = [];
   loading = false;
 
