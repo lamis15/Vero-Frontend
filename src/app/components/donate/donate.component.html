@@ -128,7 +128,7 @@
         <div class="p-card-badge" [ngClass]="getEventStatusClass(ev.status)">{{ ev.status }}</div>
         <div class="p-card-body">
           <h3 class="p-card-title">{{ ev.title }}</h3>
-          <p class="p-card-desc">{{ ev.description | slice:0:100 }}{{ (ev.description?.length || 0) > 100 ? '…' : '' }}
+          <p class="p-card-desc">{{ ev.description | slice:0:100 }}{{ ev.description.length > 100 ? '…' : '' }}
           </p>
         </div>
         <div class="p-card-location" *ngIf="ev.location">📍 {{ ev.location }}</div>
