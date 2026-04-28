@@ -1158,7 +1158,7 @@ export class AdminFormationsComponent implements OnInit {
    * @returns Classe CSS correspondante
    */
   getFormationStatusClass(status: FormationStatus): string {
-    const statusClasses = {
+    const statusClasses: Record<FormationStatus, string> = {
       [FormationStatus.PLANNED]: 'formation-status-planned',
       [FormationStatus.IN_PROGRESS]: 'formation-status-in-progress',
       [FormationStatus.COMPLETED]: 'formation-status-completed'
@@ -1172,7 +1172,7 @@ export class AdminFormationsComponent implements OnInit {
    * @returns Icône correspondante
    */
   getFormationStatusIcon(status: FormationStatus): string {
-    const statusIcons = {
+    const statusIcons: Record<FormationStatus, string> = {
       [FormationStatus.PLANNED]: '📅',
       [FormationStatus.IN_PROGRESS]: '🚀',
       [FormationStatus.COMPLETED]: '✅'
@@ -1186,7 +1186,7 @@ export class AdminFormationsComponent implements OnInit {
    * @returns Label correspondant
    */
   getFormationStatusLabel(status: FormationStatus): string {
-    const statusLabels = {
+    const statusLabels: Record<FormationStatus, string> = {
       [FormationStatus.PLANNED]: 'Planifiée',
       [FormationStatus.IN_PROGRESS]: 'En cours',
       [FormationStatus.COMPLETED]: 'Terminée'
