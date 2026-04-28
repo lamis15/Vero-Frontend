@@ -231,7 +231,10 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.forumService.reportPost(this.reportingPostId).subscribe({
       next: () => {
-        this.reportSubmitted = true;
+        this.ngZone.run(() => {
+          this.reportSubmitted = true;
+          this.cdr.markForCheck();
+        });
         setTimeout(() => {
           this.closeReportModal();
           this.loadPosts(); // Reload to see flagging status if admin
