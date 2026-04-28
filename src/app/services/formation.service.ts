@@ -142,4 +142,27 @@ export class FormationService {
       { params: { numQuestions: numQuestions.toString() } }
     );
   }
+
+  // Waitlist
+  joinWaitlist(formationId: number, userId: number): Observable<any> {
+    return this.http.post<any>(
+      `${this.API}/${formationId}/waitlist/join`,
+      null,
+      { params: { userId: userId.toString() } }
+    );
+  }
+
+  leaveWaitlist(formationId: number, userId: number): Observable<any> {
+    return this.http.delete<any>(
+      `${this.API}/${formationId}/waitlist/leave`,
+      { params: { userId: userId.toString() } }
+    );
+  }
+
+  getWaitlistStatus(formationId: number, userId: number): Observable<{ inWaitlist: boolean; position: number }> {
+    return this.http.get<{ inWaitlist: boolean; position: number }>(
+      `${this.API}/${formationId}/waitlist/status`,
+      { params: { userId: userId.toString() } }
+    );
+  }
 }

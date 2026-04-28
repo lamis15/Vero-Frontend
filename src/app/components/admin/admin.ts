@@ -28,7 +28,7 @@ export class Admin implements OnInit {
     private authService: AuthService,
     private messagerieService: MessagerieService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const cached = this.authService.currentUser;
@@ -40,7 +40,7 @@ export class Admin implements OnInit {
         this.messagerieService.connect(me.id, me.role === 'ADMIN');
         this._ensureNotificationPermission();
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -52,7 +52,7 @@ export class Admin implements OnInit {
   private _ensureNotificationPermission(): void {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
+      Notification.requestPermission().catch(() => { });
     }
   }
 }

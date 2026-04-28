@@ -58,6 +58,14 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   private resizeHandler: (() => void) | null = null;
   private islandBaseY = 0;
 
+  // ─── Mouse Interaction ───
+  private mousePos = { x: 0, y: 0 };
+  private lastMousePos = { x: 0, y: 0 };
+  private targetRotation = { x: 0, y: 0 };
+  private currentRotation = { x: 0, y: 0 };
+  private isDragging = false;
+  private dragSensitivity = 0.005;
+
   // ─── Goals ───
   activeGoals: CarbonGoal[] = [];
   showGoalForm = false;
@@ -138,6 +146,16 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     // Clean up Three.js
     if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
     if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);
+
+    // Clean up mouse events
+    const canvas = this.islandCanvas?.nativeElement;
+    if (canvas) {
+      canvas.removeEventListener('mousedown', this.onMouseDown);
+      canvas.removeEventListener('mousemove', this.onMouseMove);
+      canvas.removeEventListener('mouseup', this.onMouseUp);
+      canvas.removeEventListener('mouseleave', this.onMouseUp);
+    }
+
     if (this.threeRenderer) {
       this.threeRenderer.dispose();
       this.threeRenderer = null;
@@ -234,6 +252,41 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     window.addEventListener('resize', this.resizeHandler);
 
+    // Drag interaction handlers
+    this.onMouseDown = (e: MouseEvent) => {
+      this.isDragging = true;
+      this.lastMousePos.x = e.clientX;
+      this.lastMousePos.y = e.clientY;
+      canvas.style.cursor = 'grabbing';
+    };
+
+    this.onMouseMove = (e: MouseEvent) => {
+      if (!this.isDragging || !this.islandModel) return;
+
+      const deltaX = e.clientX - this.lastMousePos.x;
+      const deltaY = e.clientY - this.lastMousePos.y;
+
+      this.targetRotation.y += deltaX * this.dragSensitivity;
+      this.targetRotation.x += deltaY * this.dragSensitivity;
+
+      // Clamp vertical rotation to prevent flipping
+      this.targetRotation.x = Math.max(-0.5, Math.min(0.5, this.targetRotation.x));
+
+      this.lastMousePos.x = e.clientX;
+      this.lastMousePos.y = e.clientY;
+    };
+
+    this.onMouseUp = () => {
+      this.isDragging = false;
+      canvas.style.cursor = 'grab';
+    };
+
+    canvas.addEventListener('mousedown', this.onMouseDown);
+    canvas.addEventListener('mousemove', this.onMouseMove);
+    canvas.addEventListener('mouseup', this.onMouseUp);
+    canvas.addEventListener('mouseleave', this.onMouseUp);
+    canvas.style.cursor = 'grab';
+
     // Animation loop
     const clock = new THREE.Clock();
     const animate = () => {
@@ -241,7 +294,14 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       const elapsed = clock.getElapsedTime();
 
       if (this.islandModel) {
-        this.islandModel.rotation.y += 0.002;
+        // Smooth interpolation (lerp) for fluid movement
+        const smoothFactor = 0.1;
+        this.currentRotation.x += (this.targetRotation.x - this.currentRotation.x) * smoothFactor;
+        this.currentRotation.y += (this.targetRotation.y - this.currentRotation.y) * smoothFactor;
+
+        // Apply rotations + idle floating
+        this.islandModel.rotation.x = this.currentRotation.x;
+        this.islandModel.rotation.y = this.currentRotation.y + Math.sin(elapsed * 0.3) * 0.05; // Subtle idle sway
         this.islandModel.position.y = this.islandBaseY + Math.sin(elapsed * 0.5) * 0.15;
       }
 
@@ -251,6 +311,10 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     animate();
   }
+
+  private onMouseDown!: (e: MouseEvent) => void;
+  private onMouseMove!: (e: MouseEvent) => void;
+  private onMouseUp!: () => void;
 
   // ─── Data Loading ───
 

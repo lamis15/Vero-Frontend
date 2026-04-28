@@ -86,7 +86,8 @@
 
         <div class="prod-actions">
           <button type="button" class="prod-edit-btn" (click)="openProductModal(p)">✏️ Edit</button>
-          <button type="button" class="prod-delete-btn" (click)="deleteProduct(p.id)" title="Delete product">🗑️</button>
+          <button type="button" class="prod-delete-btn" (click)="deleteProduct(p.id)"
+            title="Delete product">🗑️</button>
         </div>
       </div>
     </div>
@@ -104,7 +105,8 @@
 <div class="prod-confirm-modal" (click)="$event.stopPropagation()">
   <div class="prod-confirm-icon">🗑️</div>
   <h3 class="prod-confirm-title">Delete Product?</h3>
-  <p class="prod-confirm-text">This action cannot be undone. The product will be permanently removed from the catalogue.</p>
+  <p class="prod-confirm-text">This action cannot be undone. The product will be permanently removed from the catalogue.
+  </p>
   <div class="prod-confirm-actions">
     <button class="prod-btn-ghost" (click)="cancelDelete()">Cancel</button>
     <button class="prod-btn-danger" (click)="confirmDelete()">Yes, Delete</button>
@@ -183,20 +185,46 @@
     </label>
 
     <div class="prod-field prod-field-full">
-      <span class="prod-field-label">Product Image <span class="prod-field-hint">(max 500 KB)</span></span>
+      <span class="prod-field-label">Product Image <span class="prod-field-hint">(max 10 MB)</span></span>
+
+      <!-- Image Preview Area -->
       <label class="prod-upload-area">
         <input type="file" accept="image/*" class="prod-file-input" (change)="onProductImageSelected($event)" />
-        @if (productForm.image) {
-        <img [src]="productForm.image" class="prod-upload-preview" alt="Preview" />
+        @if (imagePreview) {
+        <img [src]="imagePreview" class="prod-upload-preview" alt="Preview" />
         <div class="prod-upload-overlay"><span>Click to change image</span></div>
         } @else {
         <div class="prod-upload-placeholder">
           <span class="prod-upload-icon">📷</span>
           <span class="prod-upload-text">Click to upload image</span>
-          <span class="prod-upload-sub">PNG, JPG, WEBP — max 500 KB</span>
+          <span class="prod-upload-sub">PNG, JPG, WEBP — max 10 MB</span>
         </div>
         }
       </label>
+
+      <!-- Upload to Cloudinary Button -->
+      @if (selectedImageFile && !uploadingImage && !productForm.image) {
+      <button type="button" class="prod-btn-upload" (click)="uploadImageToCloudinary()">
+        ☁️ Upload to Cloudinary
+      </button>
+      }
+
+      <!-- Upload Progress -->
+      @if (uploadingImage) {
+      <div class="prod-upload-progress">
+        <div class="prod-progress-bar">
+          <div class="prod-progress-fill" [style.width.%]="uploadProgress"></div>
+        </div>
+        <span class="prod-progress-text">Uploading... {{ uploadProgress }}%</span>
+      </div>
+      }
+
+      <!-- Remove Image Button -->
+      @if (productForm.image) {
+      <button type="button" class="prod-btn-remove" (click)="removeImage()">
+        🗑️ Remove Image
+      </button>
+      }
     </div>
 
   </div>
@@ -213,4 +241,4 @@
   </div>
 
 </div>
-}
+}

@@ -46,7 +46,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private messagerieService: MessagerieService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadProfile();
@@ -69,7 +69,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Subscribe to incoming messages to update eco stats in real-time
     this.incomingMessageSub = this.messagerieService.incomingMessage$.subscribe((msg) => {
       if (!msg) return;
-      
+
       // Only count messages sent by the current user
       const myId = this.user?.id || this.authService.currentUser?.id;
       if (msg.sender.id !== myId) return;

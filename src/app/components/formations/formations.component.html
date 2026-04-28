@@ -1,5 +1,34 @@
 <section class="fp-root">
 
+  <!-- ░░ CERTIFICATE HERO SECTION (Style Shop) ░░ -->
+  <section class="hero-section">
+    <div class="hero-media">
+      <img src="assets/images/certificate-hero.jpg" alt="Certificate of Achievement" class="hero-img" />
+      <div class="hero-gradient"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-inner">
+        <div class="hero-eyebrow">
+          <span class="hero-dot"></span>
+          <span class="hero-eyebrow-text">🏆 Certification Officielle</span>
+          <span class="hero-dot"></span>
+        </div>
+        <h2 class="hero-title">
+          Obtenez votre <em>Certificat</em><br>
+          de <em>Réussite</em>
+        </h2>
+        <p class="hero-desc">Validez vos compétences avec un <strong>certificat reconnu</strong> par les professionnels du secteur.</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="stat-num">2,400+</span><span class="stat-label">Certifiés</span></div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat"><span class="stat-num">98%</span><span class="stat-label">Satisfaction</span></div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat"><span class="stat-num">100%</span><span class="stat-label">Reconnu</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ░░ HERO ░░ -->
   <div class="fp-hero">
     <div class="fp-hero__bg">
@@ -12,18 +41,36 @@
         <span class="fp-pill__dot"></span>
         {{ formations.length }} formations disponibles
       </span>
-      <h1 class="fp-hero__title">
-        Élevez vos<br>
-        <em>compétences</em><br>
-        au niveau supérieur.
-      </h1>
-      <p class="fp-hero__sub">
-        Des programmes d'excellence conçus par des experts certifiés pour transformer votre carrière.
-      </p>
       <div class="fp-hero__badges">
-        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Certifié</div>
-        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Flexible</div>
-        <div class="fp-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> 2.4k+ apprenants</div>
+        <div class="fp-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg> 
+          Certifié Premium
+        </div>
+        <div class="fp-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg> 
+          100% Flexible
+        </div>
+        <div class="fp-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg> 
+          2.4k+ Apprenants
+        </div>
+        <div class="fp-badge">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg> 
+          Garantie Qualité
+        </div>
       </div>
     </div>
     <div class="fp-hero__scroll-hint">
@@ -32,31 +79,37 @@
     </div>
   </div>
 
-  <!-- ░░ MENTORS ░░ -->
-  <div class="fp-mentors">
-    <div class="fp-section-head">
-      <h2 class="fp-section-title">Vos formateurs</h2>
-      <div class="fp-scroll-btns">
-        <button class="fp-scroll-btn" (click)="scrollTrainers('left')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button class="fp-scroll-btn" (click)="scrollTrainers('right')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
+  <!-- ░░ SEARCH BAR ░░ -->
+  <div class="fp-search">
+    <div class="fp-search__container">
+      <div class="fp-search__input-wrapper">
+        <svg class="fp-search__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input 
+          type="text" 
+          class="fp-search__input"
+          placeholder="Rechercher une formation..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+        />
+        @if (searchQuery) {
+          <button class="fp-search__clear" (click)="clearSearch()" title="Effacer la recherche">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        }
       </div>
-    </div>
-    <div class="fp-mentors__track" #trainersScroll>
-      @for (trainer of trainers; track trainer.id) {
-        <div class="fp-mentor">
-          <div class="fp-mentor__avatar">
-            <img [src]="trainer.imageUrl" [alt]="trainer.name" />
-            <span class="fp-mentor__online"></span>
-          </div>
-          <div class="fp-mentor__body">
-            <p class="fp-mentor__name">{{ trainer.name }}</p>
-            <p class="fp-mentor__role">{{ trainer.role }}</p>
-            <span class="fp-mentor__tag">{{ trainer.specialty }}</span>
-          </div>
+      @if (searchQuery && filteredFormations().length === 0) {
+        <div class="fp-search__no-results">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Aucune formation trouvée pour "{{ searchQuery }}"</span>
         </div>
       }
     </div>
@@ -70,7 +123,45 @@
       <button class="fp-chip" [class.fp-chip--on]="filter==='IN_PROGRESS'" (click)="filter='IN_PROGRESS'">En cours</button>
       <button class="fp-chip" [class.fp-chip--on]="filter==='COMPLETED'"   (click)="filter='COMPLETED'">Terminée</button>
     </div>
-    <span class="fp-count">{{ filteredFormations().length }} résultat{{ filteredFormations().length > 1 ? 's' : '' }}</span>
+    <div class="fp-filters__right">
+      <!-- Currency Toggle Button -->
+      <button class="fp-currency-toggle" (click)="toggleCurrency()" [title]="'Convertir en ' + (currency === 'EUR' ? 'DT' : 'EUR')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          <path d="M2 12h20"/>
+        </svg>
+        <span class="fp-currency-toggle__text">{{ currency }}</span>
+        <svg class="fp-currency-toggle__arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="7 13 12 18 17 13"/>
+          <polyline points="7 6 12 11 17 6"/>
+        </svg>
+      </button>
+      
+      @if (authService.isLoggedIn) {
+        <button class="fp-my-formations" 
+                [class.fp-my-formations--on]="showOnlyMyFormations"
+                (click)="toggleMyFormations()"
+                [title]="showOnlyMyFormations ? 'Afficher toutes les formations' : 'Afficher mes formations'">
+          <div class="fp-my-formations__icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            @if (getMyFormationsCount() > 0) {
+              <span class="fp-my-formations__badge">{{ getMyFormationsCount() }}</span>
+            }
+          </div>
+          <span class="fp-my-formations__text">Mes formations</span>
+          @if (showOnlyMyFormations) {
+            <svg class="fp-my-formations__check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          }
+        </button>
+      }
+      <span class="fp-count">{{ filteredFormations().length }} résultat{{ filteredFormations().length > 1 ? 's' : '' }}</span>
+    </div>
   </div>
 
   <!-- ░░ STATES ░░ -->
@@ -100,18 +191,23 @@
               <span class="fp-card__status" [ngClass]="'status--'+f.status.toLowerCase()">
                 {{ badgeLabel(f.status) }}
               </span>
-              <button class="fp-card__pin" [class.fp-card__pin--on]="isPinned(f)"
-                      (click)="$event.stopPropagation(); togglePin(f)"
-                      [title]="isPinned(f) ? 'Désépingler' : 'Épingler'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
-                </svg>
-              </button>
+              
+              <!-- Pin button (only show for logged in users) -->
+              @if (authService.isLoggedIn) {
+                <button class="fp-card__pin" 
+                        [class.fp-card__pin--active]="f.pinned"
+                        (click)="togglePin($event, f)"
+                        [title]="f.pinned ? 'Désépingler cette formation' : 'Épingler cette formation'">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </button>
+              }
             </div>
 
             <!-- price -->
             <div class="fp-card__price" [class.fp-card__price--free]="!hasPrice(f)">
-              {{ hasPrice(f) ? '€' + f.price!.toFixed(2) : 'Gratuit' }}
+              {{ getDisplayPrice(f) }}
             </div>
           </div>
 

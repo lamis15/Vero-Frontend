@@ -519,7 +519,7 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #06d6a0;
+  color: #00C8FF;
   font-family: monospace;
   margin: 0 0 4px;
 }
@@ -632,9 +632,9 @@
 
 .prod-input:focus {
   outline: none;
-  border-color: rgba(67, 97, 238, 0.6);
-  background: rgba(67, 97, 238, 0.07);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.14);
+  border-color: rgba(0, 200, 255, 0.6);
+  background: rgba(0, 200, 255, 0.07);
+  box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.14);
 }
 
 .prod-input option {
@@ -689,8 +689,8 @@
 }
 
 .prod-switch input:checked+.prod-switch-track {
-  background: #06d6a0;
-  border-color: #06d6a0;
+  background: #00C8FF;
+  border-color: #00C8FF;
 }
 
 .prod-switch input:checked+.prod-switch-track .prod-switch-thumb {
@@ -715,8 +715,8 @@
 }
 
 .prod-upload-area:hover {
-  border-color: rgba(67, 97, 238, 0.45);
-  background: rgba(67, 97, 238, 0.04);
+  border-color: rgba(0, 200, 255, 0.45);
+  background: rgba(0, 200, 255, 0.04);
 }
 
 .prod-file-input {
@@ -779,6 +779,77 @@
   opacity: 1;
 }
 
+/* ── Upload Buttons ── */
+.prod-btn-upload {
+  width: 100%;
+  background: linear-gradient(135deg, #0066FF, #00C8FF);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 4px 16px rgba(0, 102, 255, 0.3);
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.prod-btn-upload:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.prod-btn-remove {
+  width: 100%;
+  background: rgba(247, 37, 133, 0.12);
+  border: 1px solid rgba(247, 37, 133, 0.28);
+  color: #f72585;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.prod-btn-remove:hover {
+  background: rgba(247, 37, 133, 0.22);
+  transform: scale(1.02);
+}
+
+/* ── Upload Progress ── */
+.prod-upload-progress {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prod-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.prod-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0066FF, #00C8FF);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.prod-progress-text {
+  font-size: 12px;
+  color: #a0a4b8;
+  text-align: center;
+}
+
 /* ── Modal Footer ── */
 .prod-modal-foot {
   display: flex;
@@ -814,7 +885,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #4361ee, #00b4a6);
+  background: linear-gradient(135deg, #0066FF, #00C8FF);
   color: #fff;
   border: none;
   padding: 10px 24px;
@@ -823,14 +894,14 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 102, 255, 0.3);
   transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .prod-btn-primary:hover:not(:disabled) {
   filter: brightness(1.12);
   transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(67, 97, 238, 0.45);
+  box-shadow: 0 6px 22px rgba(0, 102, 255, 0.45);
 }
 
 .prod-btn-primary:active:not(:disabled) {
@@ -909,6 +980,7 @@
     filter: none !important;
   }
 }
+
 /* -- Delete Confirm Modal -- */
 .prod-confirm-modal {
   position: fixed;
@@ -989,4 +1061,3 @@
 .prod-btn-danger:active {
   transform: scale(0.97);
 }
-

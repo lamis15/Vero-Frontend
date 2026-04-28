@@ -1,0 +1,209 @@
+<!-- ═══ ADMIN MESSAGES COMPONENT ═══ -->
+<div class="messages-container">
+
+  <!-- Page Header -->
+  <div class="messages-page-header">
+    <div class="messages-header-content">
+      <div class="messages-header-text">
+        <h2 class="messages-page-title">Conversation Monitor</h2>
+        <p class="messages-page-subtitle">Compact split view of all private threads with real-time updates.</p>
+      </div>
+      <div class="messages-header-stats">
+        <div class="messages-stat-card">
+          <span class="messages-stat-label">Active Conversations</span>
+          <strong class="messages-stat-value">{{ monitoredConversationCount }}</strong>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search and Filters -->
+    <div class="messages-filters">
+      <div class="messages-search-box">
+        <svg class="messages-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input 
+          type="text" 
+          [(ngModel)]="conversationSearch" 
+          (input)="filterConversations()"
+          class="messages-search-input" 
+          placeholder="Search by user or message content..."
+        />
+        @if (conversationSearch) {
+          <button class="messages-search-clear" (click)="conversationSearch = ''; filterConversations()" title="Clear search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Topic Heatmap -->
+  <div class="messages-topic-heatmap">
+    <h3 class="messages-heatmap-title">Topic Distribution</h3>
+    <div class="messages-heatmap-grid">
+      @for (topic of topicKeys; track topic) {
+        <div class="messages-topic-card" [style.border-color]="getTopicColor(topic)">
+          <div class="messages-topic-icon" [style.background-color]="getTopicColor(topic)">
+            @switch (topic) {
+              @case ('eco') { 🌱 }
+              @case ('lifestyle') { 🏠 }
+              @case ('product') { 🛍️ }
+              @case ('other') { 💬 }
+            }
+          </div>
+          <div class="messages-topic-info">
+            <span class="messages-topic-label">{{ getTopicLabel(topic) }}</span>
+            <strong class="messages-topic-count">{{ topicHeatmap[topic] }}</strong>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Main Monitor Interface -->
+  <div class="messages-monitor">
+    
+    <!-- Conversations List -->
+    <div class="messages-monitor-list">
+      <div class="messages-list-header">
+        <h3>Conversations</h3>
+        @if (messagesLoading) {
+          <div class="messages-loading-indicator">
+            <svg class="messages-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 11-6.219-8.56"/>
+            </svg>
+            Loading...
+          </div>
+        }
+      </div>
+
+      <div class="messages-conversations-scroll">
+        @if (!messagesLoading && adminConversations.length === 0) {
+          <div class="messages-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <h4>No conversations found</h4>
+            <p>{{ conversationSearch ? 'Try a different search term' : 'No conversations yet' }}</p>
+          </div>
+        } @else {
+          @for (conversation of adminConversations; track conversation.conversationKey) {
+            <button 
+              class="messages-conversation-card" 
+              [class.active]="selectedConversation?.conversationKey === conversation.conversationKey"
+              (click)="openAdminConversation(conversation)">
+              
+              <div class="messages-conv-avatars">
+                <div class="messages-avatar">{{ initials(conversation.userA.fullName) }}</div>
+                <div class="messages-avatar">{{ initials(conversation.userB.fullName) }}</div>
+              </div>
+              
+              <div class="messages-conv-content">
+                <div class="messages-conv-header">
+                  <strong class="messages-conv-names">
+                    {{ conversation.userA.fullName }} · {{ conversation.userB.fullName }}
+                  </strong>
+                  <time class="messages-conv-time">
+                    {{ formatMessageTime(conversation.lastMessageTime) }}
+                  </time>
+                </div>
+                <p class="messages-conv-preview">
+                  {{ conversation.lastMessagePreview || 'No messages yet' }}
+                </p>
+                <div class="messages-conv-meta">
+                  <span class="messages-conv-emails">
+                    {{ conversation.userA.email }} · {{ conversation.userB.email }}
+                  </span>
+                </div>
+              </div>
+            </button>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Messages Thread -->
+    <div class="messages-monitor-thread">
+      @if (!selectedConversation) {
+        <div class="messages-thread-empty">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <circle cx="9" cy="9" r="1"></circle>
+            <circle cx="15" cy="9" r="1"></circle>
+            <circle cx="12" cy="15" r="1"></circle>
+          </svg>
+          <h3>Select a conversation</h3>
+          <p>Choose a conversation from the list to review its message history</p>
+        </div>
+      } @else {
+        <!-- Thread Header -->
+        <div class="messages-thread-header">
+          <div class="messages-thread-participants">
+            <div class="messages-thread-avatars">
+              <div class="messages-avatar large">{{ initials(selectedConversation.userA.fullName) }}</div>
+              <div class="messages-avatar large">{{ initials(selectedConversation.userB.fullName) }}</div>
+            </div>
+            <div class="messages-thread-info">
+              <h3 class="messages-thread-title">
+                {{ selectedConversation.userA.fullName }} &amp; {{ selectedConversation.userB.fullName }}
+              </h3>
+              <p class="messages-thread-emails">
+                {{ selectedConversation.userA.email }} · {{ selectedConversation.userB.email }}
+              </p>
+            </div>
+          </div>
+          
+          @if (threadLoading) {
+            <div class="messages-thread-loading">
+              <svg class="messages-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+              </svg>
+              Loading messages...
+            </div>
+          }
+        </div>
+
+        <!-- Messages Feed -->
+        <div class="messages-thread-feed">
+          @if (!threadLoading && selectedConversationMessages.length === 0) {
+            <div class="messages-thread-empty-messages">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <p>No messages in this conversation yet</p>
+            </div>
+          } @else {
+            @for (msg of selectedConversationMessages; track msg.id || $index) {
+              <div class="messages-message" [class.outgoing]="msg.sender.id === selectedConversation.userA.id">
+                <div class="messages-message-avatar">
+                  {{ initials(msg.sender.fullName) }}
+                </div>
+                <div class="messages-message-bubble">
+                  <div class="messages-message-header">
+                    <strong class="messages-sender-name">{{ msg.sender.fullName }}</strong>
+                    @if (msg.topic) {
+                      <span 
+                        class="messages-topic-tag" 
+                        [attr.data-topic]="msg.topic"
+                        [style.background-color]="getTopicColor(msg.topic!)"
+                        [title]="'AI confidence: ' + ((msg.topicConfidence ?? 0) * 100 | number:'1.0-0') + '%'">
+                        {{ getTopicLabel(msg.topic!) }}
+                      </span>
+                    }
+                    <time class="messages-message-time">{{ msg.timestamp | date:'medium' }}</time>
+                  </div>
+                  <p class="messages-message-content">{{ msg.content }}</p>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

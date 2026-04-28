@@ -14,6 +14,7 @@ export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
   currency: 'EUR' | 'TND' = 'EUR';
   private readonly EUR_TO_TND = 3.37;
+  private imageCache = new Map<number, string>();
 
   constructor(
     private cartService: CartService,
@@ -21,10 +22,25 @@ export class CartComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.loadImageCache();
     this.loadCart();
     this.cartService.cartItems$.subscribe(items => {
       this.cartItems = items;
     });
+  }
+
+  private loadImageCache(): void {
+    try {
+      const raw = localStorage.getItem('vero_product_images');
+      if (raw) {
+        const obj = JSON.parse(raw) as Record<string, string>;
+        Object.entries(obj).forEach(([k, v]) => this.imageCache.set(Number(k), v));
+      }
+    } catch { /* ignore */ }
+  }
+
+  getImage(productId: number, fallbackImage?: string): string | null {
+    return this.imageCache.get(productId) ?? fallbackImage ?? null;
   }
 
   toggleCurrency() {

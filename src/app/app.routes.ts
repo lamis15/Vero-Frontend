@@ -109,6 +109,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
       },
+      {
+        path: 'events',
+        loadComponent: () =>
+          import('./components/admin-events/Admin events.component').then(m => m.AdminEventsComponent)
+      },
+      {
+        path: 'reservations',
+        loadComponent: () =>
+          import('./components/admin-events/Admin reservations.component').then(m => m.AdminReservationsComponent)
+      },
+      {
+        path: 'anomaly',
+        loadComponent: () =>
+          import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
+      },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },

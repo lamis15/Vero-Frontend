@@ -32,7 +32,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   toxicError = '';
-  
+
   // Reporting state
   reportingPostId: number | null = null;
   reportReason: string = 'SPAM';
@@ -44,7 +44,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.isLoggedIn = this.authService.isLoggedIn;
@@ -90,7 +90,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 600);
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { }
 
   likePost(id?: number) {
     if (!this.isLoggedIn || !id) return;
@@ -104,12 +104,28 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   deletePost(id: number, event: Event) {
     event.stopPropagation();
-    event.preventDefault(); // Prevents the router link
+    event.preventDefault();
     if (!confirm('Are you sure you want to delete this discussion?')) return;
+
+    const targetId = Number(id);
     
-    this.forumService.deletePost(id).subscribe(() => {
-      this.posts = this.posts.filter(p => p.id !== id);
-      this.cdr.markForCheck();
+    // Optimistic UI update
+    const originalPosts = [...this.posts];
+    this.posts = this.posts.filter(p => p.id != targetId);
+    this.cdr.markForCheck();
+
+    this.forumService.deletePost(targetId).subscribe({
+      next: () => {
+        // Success
+      },
+      error: (err) => {
+        if (err.status !== 204 && err.status !== 200) {
+          // Revert on real error
+          this.posts = originalPosts;
+          this.cdr.markForCheck();
+          console.error('Failed to delete post:', err);
+        }
+      }
     });
   }
 
@@ -148,9 +164,9 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
           console.log('Posts retrieved:', data);
           console.log('Current user email inside component:', this.currentUserEmail);
           if (data && data.length > 0) {
-             console.log('First post user email:', data[0].user?.email);
+            console.log('First post user email:', data[0].user?.email);
           }
-          this.posts = data.sort((a,b) => new Date(b.createdAt||'').getTime() - new Date(a.createdAt||'').getTime());
+          this.posts = data.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime());
           this.loading = false;
           this.cdr.markForCheck();
         });
@@ -166,7 +182,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   submitPost() {
     this.toxicError = '';
-    if(!this.newPost.title || !this.newPost.content) return;
+    if (!this.newPost.title || !this.newPost.content) return;
 
     this.forumService.createPost(this.newPost).subscribe({
       next: () => {
@@ -178,7 +194,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.ngZone.run(() => {
-          if(err.error && typeof err.error === 'string' && err.error.includes('bloqué')) {
+          if (err.error && typeof err.error === 'string' && err.error.includes('bloqué')) {
             this.toxicError = err.error;
           } else {
             this.toxicError = 'An error occurred while posting.';
@@ -192,7 +208,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   formatDate(d?: string) {
-    if(!d) return '';
+    if (!d) return '';
     return new Date(d).toLocaleDateString();
   }
 
@@ -212,7 +228,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   submitReport() {
     if (!this.reportingPostId) return;
-    
+
     this.forumService.reportPost(this.reportingPostId).subscribe({
       next: () => {
         this.reportSubmitted = true;

@@ -1,32 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════
-   ROOT — community palette
+   MODERN TEAL PALETTE - PROFESSIONAL DESIGN (Harmonized)
 ═══════════════════════════════════════ */
 .fco-root {
-  --c-bg:      #050B14;
-  --c-mid:     #0A2B33;
-  --c-deep:    #0e4c49;
-  --c-card:    rgba(255,255,255,0.04);
-  --c-border:  rgba(255,255,255,0.07);
-  --c-teal:    #14C7A5;
-  --c-teal-d:  rgba(20,199,165,0.15);
-  --c-gold:    #edda9d;
-  --c-cream:   #f5f0e8;
-  --c-muted:   rgba(255,255,255,0.5);
-  --c-text:    rgba(255,255,255,0.92);
-  --c-danger:  #ff6b6b;
-  --font-serif: 'Playfair Display', serif;
-  --font-sans:  'DM Sans', sans-serif;
-  --font-mono:  'DM Mono', monospace;
+  /* Teal Monochrome Palette - Same as Formations */
+  --c-bg:           #00586A;  /* Deep Sea Teal */
+  --c-surface:      #004551;  /* Charcoal Teal */
+  --c-card:         #003C47;  /* Night Teal */
+  --c-accent:       #00697C;  /* Midnight Teal */
+  --c-highlight:    #008080;  /* Dusty Teal */
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #00586A 0%, #004551 50%, #003C47 100%);
+  --gradient-card:    linear-gradient(145deg, #004551 0%, #003C47 100%);
+  --gradient-accent:  linear-gradient(135deg, #008080 0%, #00697C 100%);
+  
+  /* Text & UI */
+  --c-text:         #E8F4F8;
+  --c-text-muted:   #B0D4DB;
+  --c-text-dim:     #7A9CA5;
+  --c-border:       rgba(232, 244, 248, 0.08);
+  --c-border-hover: rgba(232, 244, 248, 0.15);
+  
+  /* Interactive */
+  --c-primary:      #14C7A5;
+  --c-primary-dim:  #0FA085;
+  --c-success:      #10B981;
+  --c-warning:      #F59E0B;
+  --c-error:        #EF4444;
+  
+  /* Shadows & Effects */
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md:      0 8px 32px rgba(0, 0, 0, 0.25);
+  --shadow-lg:      0 16px 64px rgba(0, 0, 0, 0.35);
+  --shadow-glow:    0 0 32px rgba(20, 199, 165, 0.15);
+  
+  /* Typography */
+  --font-head:      'Syne', sans-serif;
+  --font-body:      'Inter', sans-serif;
+  --font-mono:      'JetBrains Mono', monospace;
 
   position: relative;
   min-height: 100vh;
-  background: radial-gradient(ellipse at top left, var(--c-bg) 0%, var(--c-mid) 55%, var(--c-deep) 100%);
+  background: var(--gradient-primary);
   color: var(--c-text);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   padding-top: 80px;
   overflow: hidden;
+}
+
+/* Global backdrop blur effect */
+.fco-root::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(20, 199, 165, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 105, 124, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(0, 60, 71, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* glows */
@@ -44,7 +81,7 @@
 }
 .fco-glow--2 {
   width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(14,76,73,0.25), transparent 70%);
+  background: radial-gradient(circle, rgba(0, 105, 124, 0.25), transparent 70%);
   bottom: -100px; left: -80px;
 }
 
@@ -63,14 +100,15 @@
   position: relative; z-index: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-height: 80vh; gap: 16px;
-  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; color: var(--c-muted);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; color: var(--c-text-muted);
 }
 .fco-spinner {
   width: 44px; height: 44px;
-  border: 2px solid rgba(255,255,255,0.08);
-  border-top-color: var(--c-teal);
+  border: 2px solid rgba(20, 199, 165, 0.15);
+  border-top-color: var(--c-primary);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
+  box-shadow: 0 0 20px rgba(20, 199, 165, 0.2);
 }
 
 /* ── SUCCESS ── */
@@ -86,15 +124,15 @@
   background: rgba(20,199,165,0.12);
   border: 2px solid rgba(20,199,165,0.3);
   display: flex; align-items: center; justify-content: center;
-  color: var(--c-teal);
+  color: var(--c-primary);
 }
 .fco-success__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 36px; font-weight: 700;
-  color: var(--c-cream); margin: 0;
+  color: var(--c-text); margin: 0;
 }
 .fco-success__sub {
-  font-size: 16px; color: var(--c-muted); margin: 0; max-width: 400px; line-height: 1.7;
+  font-size: 16px; color: var(--c-text-muted); margin: 0; max-width: 400px; line-height: 1.7;
 }
 
 /* ═══════════════════════════════════════
@@ -116,26 +154,26 @@
    SUMMARY (left)
 ═══════════════════════════════════════ */
 .fco-summary__inner {
-  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  background: var(--gradient-card);
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--c-border);
   border-radius: 24px;
   padding: 32px;
   position: sticky;
   top: 100px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .fco-eyebrow {
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
-  color: var(--c-teal); margin: 0 0 20px;
+  color: var(--c-primary); margin: 0 0 20px;
 }
 
 .fco-summary__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 22px; font-weight: 700; line-height: 1.25;
-  color: var(--c-cream); margin: 0 0 28px;
+  color: var(--c-text); margin: 0 0 28px;
 }
 
 .fco-summary__stats {
@@ -154,42 +192,42 @@
   width: 34px; height: 34px; border-radius: 10px;
   background: rgba(20,199,165,0.1); border: 1px solid rgba(20,199,165,0.2);
   display: flex; align-items: center; justify-content: center;
-  color: var(--c-teal); flex-shrink: 0;
+  color: var(--c-primary); flex-shrink: 0;
 }
 .fco-stat__label {
   display: block; font-family: var(--font-mono); font-size: 9px;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 2px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-text-muted); margin-bottom: 2px;
 }
 .fco-stat__val {
-  font-family: var(--font-serif); font-size: 18px; font-weight: 700; color: var(--c-cream);
+  font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--c-text);
 }
-.fco-stat__val--price { color: var(--c-teal); }
+.fco-stat__val--price { color: var(--c-primary); }
 
 /* total */
 .fco-total {
   display: flex; justify-content: space-between; align-items: center;
   padding: 18px 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
   margin-bottom: 24px;
 }
 .fco-total__label {
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--c-muted);
+  text-transform: uppercase; color: var(--c-text-muted);
 }
 .fco-total__amount {
-  font-family: var(--font-serif); font-size: 26px; font-weight: 700; color: var(--c-teal);
+  font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--c-primary);
 }
 
 /* back btn */
 .fco-btn-back {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--c-muted); background: transparent;
+  color: var(--c-text-muted); background: transparent;
   border: 1px solid var(--c-border); padding: 8px 16px; border-radius: 100px;
   cursor: pointer; transition: all 0.2s;
 }
-.fco-btn-back:hover { border-color: var(--c-teal); color: var(--c-teal); transform: translateX(-3px); }
+.fco-btn-back:hover { border-color: var(--c-primary); color: var(--c-primary); transform: translateX(-3px); }
 
 /* ═══════════════════════════════════════
    MAIN (right)
@@ -199,13 +237,13 @@
 /* ── CARD ── */
 .fco-card {
   position: relative;
-  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  background: var(--gradient-card);
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--c-border);
   border-radius: 24px;
   padding: 32px;
   overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-md);
 }
 
 /* wave bottom */
@@ -223,46 +261,46 @@
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 14px;
   margin-bottom: 28px; padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--c-border);
 }
 .fco-card__head-icon {
   width: 40px; height: 40px; border-radius: 12px;
   background: rgba(20,199,165,0.1); border: 1px solid rgba(20,199,165,0.2);
-  display: flex; align-items: center; justify-content: center; color: var(--c-teal); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--c-primary); flex-shrink: 0;
 }
 .fco-card__head-icon--free {
-  background: rgba(237,218,157,0.1); border-color: rgba(237,218,157,0.2); color: var(--c-gold);
+  background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: var(--c-warning);
 }
 .fco-card__title {
-  font-family: var(--font-serif); font-size: 22px; font-weight: 700; margin: 0; color: var(--c-cream);
+  font-family: var(--font-head); font-size: 22px; font-weight: 700; margin: 0; color: var(--c-text);
 }
 
 /* ── FORM ── */
 .fco-form-group { position: relative; z-index: 1; margin-bottom: 24px; }
 .fco-label {
   display: block; font-family: var(--font-mono); font-size: 10px;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--c-text-muted); margin-bottom: 10px;
 }
 .fco-card-element {
   padding: 16px;
   border: 1px solid rgba(20,199,165,0.2);
   border-radius: 14px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(232, 244, 248, 0.03);
   min-height: 52px;
   width: 100%; box-sizing: border-box;
   transition: border-color 0.2s;
 }
-.fco-card-element:focus-within { border-color: var(--c-teal); }
+.fco-card-element:focus-within { border-color: var(--c-primary); }
 .StripeElement { width: 100%; display: block; }
-.StripeElement--focus { border-color: var(--c-teal); }
-.StripeElement--invalid { border-color: var(--c-danger); }
+.StripeElement--focus { border-color: var(--c-primary); }
+.StripeElement--invalid { border-color: var(--c-error); }
 
 /* ── ERROR ── */
 .fco-error {
   position: relative; z-index: 1;
   display: flex; align-items: center; gap: 8px;
-  background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.2);
-  color: var(--c-danger); padding: 12px 16px; border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--c-error); padding: 12px 16px; border-radius: 12px;
   font-size: 14px; margin-bottom: 20px;
 }
 
@@ -331,17 +369,17 @@
   animation: shimmer 3s ease-in-out infinite;
   pointer-events: none;
 }
-.fco-card--enrolled svg { color: var(--c-teal); flex-shrink: 0; position: relative; z-index: 1; }
-.fco-card--enrolled strong { display: block; font-size: 16px; font-weight: 700; color: var(--c-teal); position: relative; z-index: 1; }
-.fco-card--enrolled span  { display: block; font-size: 13px; color: var(--c-muted); margin-top: 3px; position: relative; z-index: 1; }
+.fco-card--enrolled svg { color: var(--c-primary); flex-shrink: 0; position: relative; z-index: 1; }
+.fco-card--enrolled strong { display: block; font-size: 16px; font-weight: 700; color: var(--c-primary); position: relative; z-index: 1; }
+.fco-card--enrolled span  { display: block; font-size: 13px; color: var(--c-text-muted); margin-top: 3px; position: relative; z-index: 1; }
 
 .fco-btn-secondary {
   position: relative; z-index: 1;
   margin-left: auto;
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(20,199,165,0.1); color: var(--c-teal);
+  background: rgba(20,199,165,0.1); color: var(--c-primary);
   border: 1px solid rgba(20,199,165,0.25); padding: 10px 20px; border-radius: 100px;
-  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
   cursor: pointer; transition: all 0.2s;
 }
 .fco-btn-secondary:hover { background: rgba(20,199,165,0.2); }

@@ -26,7 +26,7 @@ export class AdminUsersComponent implements OnInit {
     private notificationService: NotificationService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadUsers();
@@ -36,15 +36,19 @@ export class AdminUsersComponent implements OnInit {
     this.loading = true;
     this.error = '';
     this.adminService.getAllUsers().subscribe({
-      next: (data) => {
-        this.allUsers = data ?? [];
+      next: (data: any) => {
+        let arr = data ?? [];
+        if (!Array.isArray(arr)) {
+          arr = arr.content || arr.data || arr.users || [];
+        }
+        this.allUsers = arr;
         this.loading = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.loading = false;
         this.error = err?.error?.message || 'Failed to load users.';
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         console.error('[admin-users] load failed', err);
       }
     });
@@ -72,10 +76,10 @@ export class AdminUsersComponent implements OnInit {
     this.router.navigate(['/admin/users', user.id, 'edit']);
   }
 
-  onSearchChange(): void {}
-  onRoleFilterChange(): void {}
-  onPageSizeChange(): void {}
-  goToPage(_: number): void {}
+  onSearchChange(): void { }
+  onRoleFilterChange(): void { }
+  onPageSizeChange(): void { }
+  goToPage(_: number): void { }
 
   toggleBan(user: AdminUserListItem): void {
     const isBanned = user.banned;
@@ -87,9 +91,12 @@ export class AdminUsersComponent implements OnInit {
       next: () => {
         user.banned = !isBanned;
         this.notificationService.success(isBanned ? 'User unbanned.' : 'User suspended.');
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       },
-      error: (err) => this.notificationService.error('Failed: ' + (err?.error?.message || err.message))
+      error: (err) => {
+        this.notificationService.error('Failed: ' + (err?.error?.message || err.message));
+        this.cdr.detectChanges();
+      }
     });
   }
 

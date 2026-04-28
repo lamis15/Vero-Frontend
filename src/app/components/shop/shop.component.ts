@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { FadeInDirective } from '../../fade-in.directive';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
@@ -30,6 +31,9 @@ export class ShopComponent implements OnInit, AfterViewInit {
   filteredProducts: ProductDisplay[] = [];
   loading = true;
   error: string | null = null;
+  cartItemCount = 0;
+  currency: 'EUR' | 'TND' = 'EUR';
+  private readonly EUR_TO_TND = 3.37;
 
   // Search and filter properties
   searchKeyword = '';
@@ -69,7 +73,8 @@ export class ShopComponent implements OnInit, AfterViewInit {
     private productService: ProductService,
     private cartService: CartService,
     private recommendationService: RecommendationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngAfterViewInit() {
@@ -84,6 +89,11 @@ export class ShopComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.loadImageCache();
     this.loadProducts();
+    
+    // Subscribe to cart count changes
+    this.cartService.cartCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
   }
 
   private imageCache = new Map<number, string>();
@@ -287,19 +297,15 @@ export class ShopComponent implements OnInit, AfterViewInit {
     link.click();
   }
 
-  // Currency
-  currency: 'EUR' | 'TND' = 'EUR';
-  private readonly EUR_TO_TND = 3.37;
-
-  toggleCurrency() {
-    this.currency = this.currency === 'EUR' ? 'TND' : 'EUR';
-  }
-
   formatPrice(price: number): string {
     if (this.currency === 'TND') {
       return (price * this.EUR_TO_TND).toFixed(3) + ' DT';
     }
     return '€' + price.toFixed(2);
+  }
+
+  toggleCurrency() {
+    this.currency = this.currency === 'EUR' ? 'TND' : 'EUR';
   }
 
   getRecommendations() {
@@ -330,5 +336,9 @@ export class ShopComponent implements OnInit, AfterViewInit {
         console.error('Error getting recommendations:', err);
       }
     });
+  }
+
+  goToCart() {
+    this.router.navigate(['/cart']);
   }
 }

@@ -81,8 +81,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   private _loadStats(): void {
-    this.adminService.getAllUsers().subscribe(d => {
-      this.userCount = d.length;
+    this.adminService.getAllUsers().subscribe((d: any) => {
+      let arr = d ?? [];
+      if (!Array.isArray(arr)) arr = arr.content || arr.data || arr.users || [];
+      this.userCount = arr.length;
       this._animateCounter('stat-card-users', this.userCount);
     });
     this.productService.getAll().subscribe(p => {
@@ -99,9 +101,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
       this._animateCounter('stat-card-community', this.forumStats.totalPosts);
     });
     this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts) => {
-        this.topicHeatmap = counts;
-        this.topicHeatmapTotal = (counts.eco || 0) + (counts.lifestyle || 0) + (counts.product || 0) + (counts.other || 0);
+      next: (counts: TopicCounts | any) => {
+        this.topicHeatmap = {
+          eco: counts?.eco || 0,
+          lifestyle: counts?.lifestyle || 0,
+          product: counts?.product || 0,
+          other: counts?.other || 0
+        };
+        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
         this._animateCounter('stat-card-messages', this.topicHeatmapTotal);
         this.cdr.markForCheck();
       },
@@ -111,7 +118,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
 
   topicPercent(label: keyof TopicCounts): number {
     if (!this.topicHeatmapTotal) return 0;
-    return Math.round((this.topicHeatmap[label] / this.topicHeatmapTotal) * 100);
+    const count = this.topicHeatmap[label] || 0;
+    return Math.round((count / this.topicHeatmapTotal) * 100);
   }
 
   private _subscribeToAdminMessages(): void {
@@ -134,9 +142,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
 
   private _refreshHeatmap(): void {
     this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts) => {
-        this.topicHeatmap = counts;
-        this.topicHeatmapTotal = (counts.eco || 0) + (counts.lifestyle || 0) + (counts.product || 0) + (counts.other || 0);
+      next: (counts: TopicCounts | any) => {
+        this.topicHeatmap = {
+          eco: counts?.eco || 0,
+          lifestyle: counts?.lifestyle || 0,
+          product: counts?.product || 0,
+          other: counts?.other || 0
+        };
+        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
         this.cdr.detectChanges();
       },
       error: () => {}
