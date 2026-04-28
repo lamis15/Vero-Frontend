@@ -1,0 +1,260 @@
+<div class="pet-page">
+
+  <div class="pet-page-header">
+    <div class="pet-page-header-left">
+      <div class="pet-page-icon">📋</div>
+
+      <div>
+        <h1 class="pet-page-title">Modération des Pétitions</h1>
+        <p class="pet-page-desc">
+          <strong>EcoGuard-TN</strong> · TF-IDF + Régression Logistique ·
+          <span class="pet-tag pet-tag-ok">Score ≥70 Clean</span>
+          <span class="pet-tag pet-tag-warn">55–69 Review</span>
+          <span class="pet-tag pet-tag-bad">&lt;55 Rejected</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="pet-header-actions">
+      <span class="pet-header-badge" *ngIf="getFlagged() > 0">
+        🔔 {{ getFlagged() }} à réviser
+      </span>
+
+      <button class="pet-btn-ghost" (click)="load()">
+        ⟳ Actualiser
+      </button>
+
+      <button class="pet-btn-excel" (click)="downloadExcel()">
+        Export Excel
+      </button>
+    </div>
+  </div>
+
+  <div class="pet-kpi-strip">
+    <div class="pet-kpi">
+      <span class="pet-kpi-num">{{ petitions.length }}</span>
+      <span class="pet-kpi-lbl">Total</span>
+    </div>
+
+    <div class="pet-kpi pet-kpi-warn">
+      <span class="pet-kpi-num">{{ getFlagged() }}</span>
+      <span class="pet-kpi-lbl">À réviser</span>
+    </div>
+
+    <div class="pet-kpi">
+      <span class="pet-kpi-num">{{ getCount('PENDING') }}</span>
+      <span class="pet-kpi-lbl">En attente</span>
+    </div>
+
+    <div class="pet-kpi pet-kpi-ok">
+      <span class="pet-kpi-num">{{ getCount('ACTIVE') }}</span>
+      <span class="pet-kpi-lbl">Actives</span>
+    </div>
+
+    <div class="pet-kpi pet-kpi-bad">
+      <span class="pet-kpi-num">{{ getCount('REJECTED') }}</span>
+      <span class="pet-kpi-lbl">Rejetées</span>
+    </div>
+
+    <div class="pet-kpi pet-kpi-sig">
+      <span class="pet-kpi-num">{{ getTotalSigs() | number }}</span>
+      <span class="pet-kpi-lbl">Signatures</span>
+    </div>
+  </div>
+
+  <div class="pet-toolbar">
+    <div class="pet-tabs">
+      <button class="pet-tab" [class.on]="filter === 'ALL'" (click)="setFilter('ALL')">
+        Toutes <span class="pet-tab-count">{{ petitions.length }}</span>
+      </button>
+
+      <button class="pet-tab" [class.on]="filter === 'PENDING'" (click)="setFilter('PENDING')">
+        En attente
+      </button>
+
+      <button class="pet-tab pet-tab-warn" [class.on]="filter === 'REVIEW'" (click)="setFilter('REVIEW')">
+        Signalées
+        <span class="pet-badge" *ngIf="getFlagged() > 0">{{ getFlagged() }}</span>
+      </button>
+
+      <button class="pet-tab" [class.on]="filter === 'ACTIVE'" (click)="setFilter('ACTIVE')">
+        Actives
+      </button>
+
+      <button class="pet-tab" [class.on]="filter === 'REJECTED'" (click)="setFilter('REJECTED')">
+        Rejetées
+      </button>
+
+      <button class="pet-tab" [class.on]="filter === 'CLOSED'" (click)="setFilter('CLOSED')">
+        Fermées
+      </button>
+    </div>
+
+    <div class="pet-toolbar-right">
+      <select class="pet-select" [(ngModel)]="sortBy">
+        <option value="NEWEST">Plus récentes</option>
+        <option value="SCORE_DESC">Score IA élevé</option>
+        <option value="SCORE_ASC">Score IA faible</option>
+        <option value="SIGNATURES">Plus signées</option>
+      </select>
+
+      <span class="pet-count">
+        {{ filteredView.length }} pétition{{ filteredView.length > 1 ? 's' : '' }}
+      </span>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="pet-state">
+      <div class="pet-spinner"></div>
+      <div>
+        <strong>Chargement des pétitions...</strong>
+        <small>Analyse EcoGuard et données de modération en cours</small>
+      </div>
+    </div>
+  }
+
+  @else if (filteredView.length === 0) {
+    <div class="pet-empty">
+      <span class="pet-empty-icon">📋</span>
+      <p>Aucune pétition pour ce filtre</p>
+    </div>
+  }
+
+  @else {
+    <div class="pet-cards-grid">
+
+      @for (pet of filteredView; track pet.id) {
+
+        <article
+          class="pet-review-card"
+          [class.is-review]="pet.moderationScore !== null && pet.moderationScore! >= 55 && pet.moderationScore! < 70"
+          [class.is-active]="pet.status === 'ACTIVE'"
+          [class.is-rejected]="pet.status === 'REJECTED'"
+          [class.is-pending]="pet.status === 'PENDING'">
+
+          <div class="pet-card-top">
+            <div class="pet-card-icon">
+              {{ initials(pet.userName) }}
+            </div>
+
+            <div class="pet-card-main">
+              <div class="pet-card-title-row">
+                <h3 class="pet-card-title">
+                  {{ pet.title | slice:0:76 }}{{ pet.title.length > 76 ? '…' : '' }}
+                </h3>
+
+                <span class="pet-status" [ngClass]="statusClass(pet.status)">
+                  <span class="pet-dot"></span>
+                  {{ statusLabel(pet.status) }}
+                </span>
+              </div>
+
+              <span class="pet-ai-badge" [ngClass]="scoreClass(pet.moderationScore)">
+                🤖 {{ scoreLabel(pet.moderationScore) }}
+              </span>
+
+              <p class="pet-card-desc">
+                {{ pet.description | slice:0:150 }}{{ pet.description.length > 150 ? '…' : '' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="pet-card-meta">
+            <span>{{ pet.category || 'Catégorie inconnue' }}</span>
+            <span *ngIf="pet.city">📍 {{ pet.city }}</span>
+            <span>{{ pet.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <div class="pet-card-body">
+            <div class="pet-score-panel">
+              <div class="pet-score-head">
+                <span>Score EcoGuard</span>
+                <strong [ngClass]="scoreClass(pet.moderationScore)">
+                  {{ pet.moderationScore !== null && pet.moderationScore !== undefined
+                    ? (pet.moderationScore | number:'1.0-0') + '/100'
+                    : '—' }}
+                </strong>
+              </div>
+
+              <div class="pet-score-track">
+                <div
+                  class="pet-score-fill"
+                  [ngClass]="scoreBarClass(pet.moderationScore)"
+                  [style.width.%]="pet.moderationScore || 0">
+                </div>
+              </div>
+
+              <small>{{ scoreLabel(pet.moderationScore) }}</small>
+            </div>
+
+            <div class="pet-sig-panel">
+              <div class="pet-score-head">
+                <span>Signatures</span>
+                <strong>{{ sigPct(pet) }}%</strong>
+              </div>
+
+              <div class="pet-sig-track">
+                <div
+                  class="pet-sig-fill"
+                  [style.width.%]="sigPct(pet)">
+                </div>
+              </div>
+
+              <small>
+                {{ pet.signatureCount | number }} / {{ pet.signatureGoal | number }}
+              </small>
+            </div>
+          </div>
+
+          <div class="pet-card-footer">
+            <div class="pet-author">
+              <div class="pet-av">
+                {{ initials(pet.userName) }}
+              </div>
+
+              <div class="pet-author-info">
+                <span class="pet-author-name">
+                  {{ pet.userName || 'Utilisateur inconnu' }}
+                </span>
+                <small>Créateur de la pétition</small>
+              </div>
+            </div>
+
+            <div class="pet-actions">
+              <button
+                class="pet-act pet-act-ok"
+                *ngIf="pet.status === 'PENDING'"
+                (click)="validate(pet.id)">
+                ✓ Valider
+              </button>
+
+              <button
+                class="pet-act pet-act-no"
+                *ngIf="pet.status === 'PENDING'"
+                (click)="reject(pet.id)">
+                ✕ Rejeter
+              </button>
+
+              <button
+                class="pet-act pet-act-close"
+                *ngIf="pet.status === 'ACTIVE'"
+                (click)="close(pet.id)">
+                🔒 Fermer
+              </button>
+
+              <span
+                class="pet-nil"
+                *ngIf="pet.status !== 'PENDING' && pet.status !== 'ACTIVE'">
+                Aucune action
+              </span>
+            </div>
+          </div>
+
+        </article>
+      }
+
+    </div>
+  }
+
+</div>

@@ -16,6 +16,20 @@
 
   --nav-h: 72px;
   --nav-height: 72px;
+    --bg-main: #050B14;
+  --bg-secondary: #0A2B33;
+  --bg-accent: #0e4c49;
+
+  --primary: #14C7A5;
+  --accent: #EDDA9D;
+
+  --text-main: rgba(255,255,255,0.95);
+  --text-secondary: rgba(255,255,255,0.65);
+
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+
+  --radius: 20px;
 }
 
 * {

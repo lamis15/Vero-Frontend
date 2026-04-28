@@ -1,13 +1,36 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewEncapsulation, ElementRef, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  AfterViewInit,
+  ViewEncapsulation,
+  ElementRef,
+  ChangeDetectorRef,
+  EventEmitter,
+  Output
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
+
 import { AdminService } from '../../../services/admin.service';
 import { ProductService } from '../../../services/product.service';
 import { FormationService } from '../../../services/formation.service';
 import { ForumService } from '../../../services/forum.service';
 import { MessagerieService, TopicCounts } from '../../../services/messagerie.service';
 import { AuthService, UserResponse } from '../../../services/auth.service';
+
+export type AdminTab =
+  | 'users'
+  | 'add'
+  | 'settings'
+  | 'edit'
+  | 'products'
+  | 'formations'
+  | 'forum'
+  | 'petitions'
+  | 'donations';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -18,15 +41,32 @@ import { AuthService, UserResponse } from '../../../services/auth.service';
   encapsulation: ViewEncapsulation.None
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit {
+
+  @Output() tabChange = new EventEmitter<AdminTab>();
+
   adminMe: UserResponse | null = null;
 
   userCount = 0;
   productCount = 0;
   formationCount = 0;
-  forumStats = { totalPosts: 0, flaggedCount: 0 };
-  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
-  topicHeatmapTotal = 0;
+  messageCount = 0;
 
+  petitionCount = 0;
+  donationCount = 0;
+
+  forumStats = {
+    totalPosts: 0,
+    flaggedCount: 0
+  };
+
+  topicHeatmap: TopicCounts = {
+    eco: 0,
+    lifestyle: 0,
+    product: 0,
+    other: 0
+  };
+
+  topicHeatmapTotal = 0;
   currentDate = '';
 
   private adminMessageSub?: Subscription;
@@ -43,77 +83,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
   ) {}
 
   ngOnInit(): void {
-    this.currentDate = new Date().toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-    });
+    this.initDate();
+    this.loadAdmin();
+    this.loadStats();
+  }
 
-    const cached = this.authService.currentUser;
-    if (cached) this.adminMe = cached;
-    this.authService.getMe().subscribe({
-      next: (me) => {
-        this.adminMe = me;
-        // Connect to WebSocket as admin to receive all messages
-        this.messagerieService.connect(me.id, true);
-        this._subscribeToAdminMessages();
-      },
-      error: () => {}
-    });
-
-    this._loadStats();
+  ngAfterViewInit(): void {
+    setTimeout(() => this.animateAllCounters(), 500);
   }
 
   ngOnDestroy(): void {
     this.adminMessageSub?.unsubscribe();
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this._animateCounter('stat-card-users', this.userCount);
-      this._animateCounter('stat-card-formations', this.formationCount);
-      this._animateCounter('stat-card-products', this.productCount);
-      this._animateCounter('stat-card-community', this.forumStats.totalPosts);
-      this._animateCounter('stat-card-messages', this.topicHeatmapTotal);
-    }, 400);
+  setTab(tab: AdminTab): void {
+    this.tabChange.emit(tab);
   }
 
   initials(name?: string): string {
     return (name || '?').trim().charAt(0).toUpperCase();
-  }
-
-  private _loadStats(): void {
-    this.adminService.getAllUsers().subscribe((d: any) => {
-      let arr = d ?? [];
-      if (!Array.isArray(arr)) arr = arr.content || arr.data || arr.users || [];
-      this.userCount = arr.length;
-      this._animateCounter('stat-card-users', this.userCount);
-    });
-    this.productService.getAll().subscribe(p => {
-      this.productCount = p.length;
-      this._animateCounter('stat-card-products', this.productCount);
-    });
-    this.formationService.getAll().subscribe(f => {
-      this.formationCount = f.length;
-      this._animateCounter('stat-card-formations', this.formationCount);
-    });
-    this.forumService.getAllPosts().subscribe(posts => {
-      this.forumStats.totalPosts = posts.length;
-      this.forumStats.flaggedCount = posts.filter(p => p.isFlagged).length;
-      this._animateCounter('stat-card-community', this.forumStats.totalPosts);
-    });
-    this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts | any) => {
-        this.topicHeatmap = {
-          eco: counts?.eco || 0,
-          lifestyle: counts?.lifestyle || 0,
-          product: counts?.product || 0,
-          other: counts?.other || 0
-        };
-        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
-        this._animateCounter('stat-card-messages', this.topicHeatmapTotal);
-        this.cdr.markForCheck();
-      },
-      error: () => {}
-    });
   }
 
   topicPercent(label: keyof TopicCounts): number {
@@ -122,25 +110,84 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
     return Math.round((count / this.topicHeatmapTotal) * 100);
   }
 
-  private _subscribeToAdminMessages(): void {
-    // Subscribe to admin incoming messages to update heatmap in real-time
-    this.adminMessageSub = this.messagerieService.adminIncoming$.subscribe((msg) => {
-      if (!msg) return;
-      
-      // Update heatmap counts based on the message topic
-      const topic = msg.topic as keyof TopicCounts | null;
-      if (topic && topic in this.topicHeatmap) {
-        this.topicHeatmap[topic] = (this.topicHeatmap[topic] || 0) + 1;
-        this.topicHeatmapTotal = (this.topicHeatmap.eco || 0) + 
-                                  (this.topicHeatmap.lifestyle || 0) + 
-                                  (this.topicHeatmap.product || 0) + 
-                                  (this.topicHeatmap.other || 0);
+  private initDate(): void {
+    this.currentDate = new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }
+
+  private loadAdmin(): void {
+    const cached = this.authService.currentUser;
+
+    if (cached) {
+      this.adminMe = cached;
+    }
+
+    this.authService.getMe().subscribe({
+      next: (me) => {
+        this.adminMe = me;
+        this.messagerieService.connect(me.id, me.role === 'ADMIN');
+
+        if (me.role === 'ADMIN') {
+          this.subscribeToAdminMessages();
+        }
+
         this.cdr.detectChanges();
+      },
+      error: () => {
+        if (cached) this.adminMe = cached;
       }
     });
   }
 
-  private _refreshHeatmap(): void {
+  private loadStats(): void {
+    this.adminService.getAllUsers().subscribe({
+      next: (data: any) => {
+        let users = data ?? [];
+
+        if (!Array.isArray(users)) {
+          users = users.content || users.data || users.users || [];
+        }
+
+        this.userCount = users.length;
+        this.animateCounter('stat-card-users', this.userCount);
+      },
+      error: () => {}
+    });
+
+    this.productService.getAll().subscribe({
+      next: (products: any[]) => {
+        this.productCount = products?.length || 0;
+        this.animateCounter('stat-card-products', this.productCount);
+      },
+      error: () => {}
+    });
+
+    this.formationService.getAll().subscribe({
+      next: (formations: any[]) => {
+        this.formationCount = formations?.length || 0;
+        this.animateCounter('stat-card-formations', this.formationCount);
+      },
+      error: () => {}
+    });
+
+    this.forumService.getAllPosts().subscribe({
+      next: (posts: any[]) => {
+        const list = posts || [];
+        this.forumStats.totalPosts = list.length;
+        this.forumStats.flaggedCount = list.filter((p: any) => p.isFlagged).length;
+        this.animateCounter('stat-card-community', this.forumStats.totalPosts);
+      },
+      error: () => {}
+    });
+
+    this.refreshHeatmap();
+  }
+
+  private refreshHeatmap(): void {
     this.messagerieService.loadTopicHeatmap().subscribe({
       next: (counts: TopicCounts | any) => {
         this.topicHeatmap = {
@@ -149,19 +196,65 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
           product: counts?.product || 0,
           other: counts?.other || 0
         };
-        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
+
+        this.topicHeatmapTotal =
+          this.topicHeatmap.eco +
+          this.topicHeatmap.lifestyle +
+          this.topicHeatmap.product +
+          this.topicHeatmap.other;
+
+        this.messageCount = this.topicHeatmapTotal;
+
+        this.animateCounter('stat-card-messages', this.messageCount);
         this.cdr.detectChanges();
       },
       error: () => {}
     });
   }
 
-  private _animateCounter(cardId: string, target: number): void {
+  private subscribeToAdminMessages(): void {
+    this.adminMessageSub?.unsubscribe();
+
+    this.adminMessageSub = this.messagerieService.adminIncoming$.subscribe((msg) => {
+      if (!msg) return;
+
+      const topic = msg.topic as keyof TopicCounts | null;
+
+      if (topic && topic in this.topicHeatmap) {
+        this.topicHeatmap[topic] = (this.topicHeatmap[topic] || 0) + 1;
+
+        this.topicHeatmapTotal =
+          this.topicHeatmap.eco +
+          this.topicHeatmap.lifestyle +
+          this.topicHeatmap.product +
+          this.topicHeatmap.other;
+
+        this.messageCount = this.topicHeatmapTotal;
+
+        this.animateCounter('stat-card-messages', this.messageCount);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private animateAllCounters(): void {
+    this.animateCounter('stat-card-users', this.userCount);
+    this.animateCounter('stat-card-formations', this.formationCount);
+    this.animateCounter('stat-card-products', this.productCount);
+    this.animateCounter('stat-card-community', this.forumStats.totalPosts);
+    this.animateCounter('stat-card-messages', this.messageCount);
+  }
+
+  private animateCounter(cardId: string, target: number): void {
     const card = this.host.nativeElement.querySelector<HTMLElement>(`#${cardId}`);
     const span = card?.querySelector<HTMLElement>('.vc-stat-number-inner');
+
     if (!span) return;
 
-    if (target === 0) { span.textContent = '0'; return; }
+    if (!target || target <= 0) {
+      span.textContent = '0';
+      return;
+    }
 
     const duration = 1200;
     const start = performance.now();
@@ -170,10 +263,16 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
     const tick = (now: number) => {
       const elapsed = Math.min(now - start, duration);
       const progress = easeOut(elapsed / duration);
+
       span.textContent = Math.round(progress * target).toLocaleString();
-      if (elapsed < duration) requestAnimationFrame(tick);
-      else span.textContent = target.toLocaleString();
+
+      if (elapsed < duration) {
+        requestAnimationFrame(tick);
+      } else {
+        span.textContent = target.toLocaleString();
+      }
     };
+
     requestAnimationFrame(tick);
   }
 }

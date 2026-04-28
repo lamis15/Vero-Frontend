@@ -67,4 +67,17 @@ export class AdminService {
   unbanUser(id: number): Observable<UserResponse> {
     return this.http.put<UserResponse>(`${this.API}/${id}/unban`, {});
   }
+  getUsers(page: number = 0, size: number = 10, search: string = '', role: string = '') {
+  let url = `http://localhost:8080/api/admin/users?page=${page}&size=${size}`;
+
+  if (search) {
+    url += `&search=${encodeURIComponent(search)}`;
+  }
+
+  if (role && role !== 'ALL') {
+    url += `&role=${encodeURIComponent(role)}`;
+  }
+
+  return this.http.get<any>(url);
+}
 }
