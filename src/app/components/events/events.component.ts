@@ -3,17 +3,17 @@
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { Event, Reservation, EventApiService } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
 import { EventRatingService, RatingResponse } from '../../services/Event rating.service';
 import { environment } from '../../../environments/environment';
 
-interface Leaf   { style: string; color: string; }
+interface Leaf    { style: string; color: string; }
 interface Octopus { style: string; color: string; }
 interface Bubble  { style: string; }
-interface Turtle { x: number; y: number; speed: number; size: number; delay: number; flipped: boolean; }
+interface Turtle  { x: number; y: number; speed: number; size: number; delay: number; flipped: boolean; }
 
 @Component({
   selector: 'app-events',
@@ -24,6 +24,7 @@ interface Turtle { x: number; y: number; speed: number; size: number; delay: num
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EventsComponent implements OnInit, OnDestroy {
+
   showVismeModal = false;
 
   // ── HuggingFace API ───────────────────────────────────────────────────────
@@ -74,10 +75,10 @@ export class EventsComponent implements OnInit, OnDestroy {
   confirmDeleteId?: number;
 
   // ── Animations ────────────────────────────────────────────────────────────
-  leaves:  Leaf[]   = [];
+  leaves:    Leaf[]    = [];
   octopuses: Octopus[] = [];
-  bubbles: Bubble[] = [];
-  turtles: Turtle[] = [];
+  bubbles:   Bubble[]  = [];
+  turtles:   Turtle[]  = [];
 
   // ── Flip Card ─────────────────────────────────────────────────────────────
   flippedId: number | null = null;
@@ -97,24 +98,24 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   // ── Categories ────────────────────────────────────────────────────────────
   categories = [
-    { key: 'Cleanup',        label: 'Cleanup',          emoji: '🧹', desc: 'Clean beaches, parks, forests & streets' },
-    { key: 'Planting',       label: 'Planting',         emoji: '🌱', desc: 'Plant trees, flowers & restore green spaces' },
-    { key: 'Workshop',       label: 'Workshop',         emoji: '🎨', desc: 'Learn and share eco-friendly skills' },
-    { key: 'Conservation',   label: 'Conservation',     emoji: '🦋', desc: 'Protect animals, biodiversity & natural habitats' },
-    { key: 'Recycling',      label: 'Recycling',        emoji: '♻️', desc: 'Reduce waste, recycle materials & promote reuse' },
-    { key: 'Awareness',      label: 'Awareness',        emoji: '📢', desc: 'Raise awareness about environmental issues' },
-    { key: 'Energy',         label: 'Renewable Energy', emoji: '☀️', desc: 'Promote solar, wind and clean energy solutions' },
-    { key: 'Water',          label: 'Water Protection', emoji: '💧', desc: 'Protect water resources, rivers, lakes and oceans' },
-    { key: 'Climate',        label: 'Climate Action',   emoji: '🌍', desc: 'Fight climate change and reduce carbon impact' },
-    { key: 'SustainableFood',label: 'Sustainable Food', emoji: '🥦', desc: 'Promote local, organic and sustainable food' },
-    { key: 'EcoMobility',    label: 'Eco Mobility',     emoji: '🚲', desc: 'Encourage biking, walking and green transport' },
-    { key: 'Community',      label: 'Community Action', emoji: '🤝', desc: 'Local eco initiatives and community projects' }
+    { key: 'Cleanup',         label: 'Cleanup',          emoji: '🧹', desc: 'Clean beaches, parks, forests & streets' },
+    { key: 'Planting',        label: 'Planting',         emoji: '🌱', desc: 'Plant trees, flowers & restore green spaces' },
+    { key: 'Workshop',        label: 'Workshop',         emoji: '🎨', desc: 'Learn and share eco-friendly skills' },
+    { key: 'Conservation',    label: 'Conservation',     emoji: '🦋', desc: 'Protect animals, biodiversity & natural habitats' },
+    { key: 'Recycling',       label: 'Recycling',        emoji: '♻️', desc: 'Reduce waste, recycle materials & promote reuse' },
+    { key: 'Awareness',       label: 'Awareness',        emoji: '📢', desc: 'Raise awareness about environmental issues' },
+    { key: 'Energy',          label: 'Renewable Energy', emoji: '☀️', desc: 'Promote solar, wind and clean energy solutions' },
+    { key: 'Water',           label: 'Water Protection', emoji: '💧', desc: 'Protect water resources, rivers, lakes and oceans' },
+    { key: 'Climate',         label: 'Climate Action',   emoji: '🌍', desc: 'Fight climate change and reduce carbon impact' },
+    { key: 'SustainableFood', label: 'Sustainable Food', emoji: '🥦', desc: 'Promote local, organic and sustainable food' },
+    { key: 'EcoMobility',     label: 'Eco Mobility',     emoji: '🚲', desc: 'Encourage biking, walking and green transport' },
+    { key: 'Community',       label: 'Community Action', emoji: '🤝', desc: 'Local eco initiatives and community projects' }
   ];
 
   private roleSub!: Subscription;
 
   // ── Popularity Predictor ──────────────────────────────────────────────────
-  popAvailable       = true;   // HF toujours disponible
+  popAvailable       = true;
   popPredicting      = false;
   popResult: any     = null;
   popAnimFill        = 0;
@@ -123,7 +124,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   private popFillTimer: any;
 
   // ── AI Success Predictor ──────────────────────────────────────────────────
-  mlAvailable       = true;   // HF toujours disponible
+  mlAvailable       = true;
   predicting        = false;
   predStep          = 0;
   predResult: any   = null;
@@ -147,6 +148,10 @@ export class EventsComponent implements OnInit, OnDestroy {
     private ratingService: EventRatingService
   ) {}
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LIFECYCLE
+  // ═══════════════════════════════════════════════════════════════════════════
+
   ngOnInit(): void {
     this.generateLeaves();
     this.generateOctopuses();
@@ -160,7 +165,6 @@ export class EventsComponent implements OnInit, OnDestroy {
 
     this.load();
 
-    // HuggingFace Spaces — toujours disponible, pas besoin de health check
     this.mlAvailable  = true;
     this.popAvailable = true;
     this.cdr.markForCheck();
@@ -176,28 +180,34 @@ export class EventsComponent implements OnInit, OnDestroy {
     clearInterval(this.popFillTimer);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANIMATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   generateLeaves(): void {
     const colors = ['#74c69d','#52b788','#40916c','#95d5b2','#b7e4c7','#d8f3dc'];
     this.leaves = Array.from({ length: 14 }, () => {
-      const left = Math.random() * 100, duration = 8 + Math.random() * 12, delay = Math.random() * 15, size = 12 + Math.random() * 12;
+      const left = Math.random() * 100, duration = 8 + Math.random() * 12,
+            delay = Math.random() * 15, size = 12 + Math.random() * 12;
       const color = colors[Math.floor(Math.random() * colors.length)];
-      return { color, style: `left:${left}%;width:${size}px;height:${size*1.3}px;animation-duration:${duration}s;animation-delay:${delay}s` };
+      return { color, style: `left:${left}%;width:${size}px;height:${size * 1.3}px;animation-duration:${duration}s;animation-delay:${delay}s` };
     });
   }
 
   generateTurtles(): void {
-    this.turtles = Array.from({ length: 4 }, (_, i) => ({ x: -120 - i * 220, y: 18 + Math.random() * 24, speed: 0.3 + Math.random() * 0.3, size: 52 + Math.random() * 28, delay: i * 4, flipped: false }));
+    this.turtles = Array.from({ length: 4 }, (_, i) => ({
+      x: -120 - i * 220, y: 18 + Math.random() * 24,
+      speed: 0.3 + Math.random() * 0.3, size: 52 + Math.random() * 28,
+      delay: i * 4, flipped: false
+    }));
   }
 
   generateOctopuses(): void {
     const colors = ['#00b4d8', '#48cae4', '#0096c7', '#90e0ef'];
     this.octopuses = Array.from({ length: 7 }, () => {
-      const left = Math.random() * 100;
-      const duration = 16 + Math.random() * 16;
-      const delay = Math.random() * 18;
-      const size = 38 + Math.random() * 34;
-      const sway = -55 + Math.random() * 110;
-      const opacity = 0.22 + Math.random() * 0.28;
+      const left = Math.random() * 100, duration = 16 + Math.random() * 16,
+            delay = Math.random() * 18, size = 38 + Math.random() * 34,
+            sway = -55 + Math.random() * 110, opacity = 0.22 + Math.random() * 0.28;
       const color = colors[Math.floor(Math.random() * colors.length)];
       return { color, style: `left:${left}%;width:${size}px;height:${size * 1.1}px;color:${color};--sway:${sway}px;--op:${opacity};animation-duration:${duration}s;animation-delay:${delay}s` };
     });
@@ -205,14 +215,16 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   generateBubbles(): void {
     this.bubbles = Array.from({ length: 22 }, () => {
-      const left = Math.random() * 100;
-      const size = 5 + Math.random() * 14;
-      const duration = 9 + Math.random() * 16;
-      const delay = Math.random() * 12;
-      const sway = -30 + Math.random() * 60;
+      const left = Math.random() * 100, size = 5 + Math.random() * 14,
+            duration = 9 + Math.random() * 16, delay = Math.random() * 12,
+            sway = -30 + Math.random() * 60;
       return { style: `left:${left}%;width:${size}px;height:${size}px;--bsway:${sway}px;animation-duration:${duration}s;animation-delay:${delay}s` };
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATA LOADING
+  // ═══════════════════════════════════════════════════════════════════════════
 
   load(): void {
     this.loading = true; this.loadError = false;
@@ -233,32 +245,57 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FILTER / PAGINATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
   get filteredEvents(): Event[] {
     return this.events.filter(ev => {
       const matchFilter = this.activeFilter === 'ALL' || this.getCategoryLabel(ev) === this.activeFilter;
-      const matchSearch = !this.searchQuery || ev.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || ev.location.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const matchSearch = !this.searchQuery ||
+        ev.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        ev.location.toLowerCase().includes(this.searchQuery.toLowerCase());
       return matchFilter && matchSearch;
     });
   }
 
   resetPage(): void { this.currentPage = 0; this.cdr.markForCheck(); }
-  get pagedEvents(): Event[] { const s = this.currentPage * this.pageSize; return this.filteredEvents.slice(s, s + this.pageSize); }
+
+  get pagedEvents(): Event[] {
+    const s = this.currentPage * this.pageSize;
+    return this.filteredEvents.slice(s, s + this.pageSize);
+  }
+
   get totalPages(): number { return Math.ceil(this.filteredEvents.length / this.pageSize); }
   get pagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i); }
-  prevPage(): void { if (this.currentPage > 0) { this.currentPage--; this.flippedId = null; this.cdr.markForCheck(); } }
-  nextPage(): void { if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.flippedId = null; this.cdr.markForCheck(); } }
+
+  prevPage(): void {
+    if (this.currentPage > 0) { this.currentPage--; this.flippedId = null; this.cdr.markForCheck(); }
+  }
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.flippedId = null; this.cdr.markForCheck(); }
+  }
   goToPage(page: number): void { this.currentPage = page; this.flippedId = null; this.cdr.markForCheck(); }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ROLES
+  // ═══════════════════════════════════════════════════════════════════════════
 
   isAdmin():   boolean { return this.auth.isAdmin; }
   isPartner(): boolean { return this.auth.isPartner; }
   isUser():    boolean { return !this.auth.isAdmin && !this.auth.isPartner; }
   canManage(): boolean { return this.auth.canManageEvents; }
 
-  openDetail(ev: Event): void { this.detailEvent = ev; this.joinLoading = false; this.showDetail = true; }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DETAIL MODAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  openDetail(ev: Event): void {
+    this.detailEvent = ev; this.joinLoading = false; this.showDetail = true;
+  }
 
   confirmJoin(): void {
     if (!this.detailEvent?.id || this.joinLoading) return;
-
     this.joinLoading = true;
     const id = this.detailEvent.id;
 
@@ -288,6 +325,10 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   hasJoined(id: number): boolean { return this.joinedEventIds.has(id); }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FLIP CARD / RATINGS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   flipCard(eventId: number): void {
     if (this.flippedId === eventId) { this.flippedId = null; }
     else { this.flippedId = eventId; if (!this.eventRatings[eventId]) this.loadRatingsForEvent(eventId); }
@@ -302,7 +343,8 @@ export class EventsComponent implements OnInit, OnDestroy {
       this.ratingSubs[eventId] = this.ratingService.subscribeToRatings(eventId).subscribe((newRating: RatingResponse) => {
         if (!this.eventRatings[eventId]) this.eventRatings[eventId] = [];
         const idx = this.eventRatings[eventId].findIndex(r => r.id === newRating.id);
-        if (idx >= 0) { this.eventRatings[eventId][idx] = newRating; } else { this.eventRatings[eventId] = [newRating, ...this.eventRatings[eventId]]; }
+        if (idx >= 0) { this.eventRatings[eventId][idx] = newRating; }
+        else { this.eventRatings[eventId] = [newRating, ...this.eventRatings[eventId]]; }
         this.latestRatingIds[eventId] = newRating.id;
         setTimeout(() => { this.latestRatingIds[eventId] = null; this.cdr.markForCheck(); }, 1000);
         this.cdr.markForCheck();
@@ -311,7 +353,9 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   getEventRatings(eventId: number): RatingResponse[] { return this.eventRatings[eventId] || []; }
-  getEventAvg(eventId: number): number { const r = this.getEventRatings(eventId); return r.length === 0 ? 0 : r[0].averageStars; }
+  getEventAvg(eventId: number): number {
+    const r = this.getEventRatings(eventId); return r.length === 0 ? 0 : r[0].averageStars;
+  }
   getEventAvgRounded(eventId: number): number { return Math.round(this.getEventAvg(eventId)); }
 
   resolveRatingImageUrl(url: string): string {
@@ -319,11 +363,15 @@ export class EventsComponent implements OnInit, OnDestroy {
     return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
   }
   openRatingLightbox(url: string, author: string = ''): void {
-    this.ratingLightboxUrl    = url;
-    this.ratingLightboxAuthor = author;
-    this.cdr.markForCheck();
+    this.ratingLightboxUrl = url; this.ratingLightboxAuthor = author; this.cdr.markForCheck();
   }
-  closeRatingLightbox(): void { this.ratingLightboxUrl = ''; this.ratingLightboxAuthor = ''; this.cdr.markForCheck(); }
+  closeRatingLightbox(): void {
+    this.ratingLightboxUrl = ''; this.ratingLightboxAuthor = ''; this.cdr.markForCheck();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // IMAGE UPLOAD
+  // ═══════════════════════════════════════════════════════════════════════════
 
   onImageSelected(event: any): void {
     const file: File = event.target.files[0]; if (!file) return;
@@ -336,11 +384,24 @@ export class EventsComponent implements OnInit, OnDestroy {
   uploadImage(): Promise<string> {
     return new Promise((resolve) => {
       if (!this.uploadedImageFile) { resolve(''); return; }
-      this.api.uploadImage(this.uploadedImageFile).subscribe({ next: (res) => resolve(res.url || ''), error: () => resolve('') });
+      this.api.uploadImage(this.uploadedImageFile).subscribe({
+        next: (res) => resolve(res.url || ''),
+        error: () => resolve('')
+      });
     });
   }
 
-  resetForm(): any { return { title: '', description: '', location: '', capacity: 50, startDate: '', endDate: '', status: 'UPCOMING', category: 'Cleanup', imageUrl: '' }; }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FORM MODAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  resetForm(): any {
+    return {
+      title: '', description: '', location: '',
+      capacity: 50, startDate: '', endDate: '',
+      status: 'UPCOMING', category: 'Cleanup', imageUrl: ''
+    };
+  }
 
   openCreate(): void {
     this.editMode = false; this.selectedId = undefined;
@@ -357,8 +418,8 @@ export class EventsComponent implements OnInit, OnDestroy {
     const rawUrl = (ev as any).imageUrl || '';
     this.uploadPreview = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${environment.apiUrl}${rawUrl}`) : '';
     this.uploadedImageFile = null;
-    if (ev.startDate) { this.formDate = ev.startDate.substring(0,10); this.formTime = ev.startDate.substring(11,16); }
-    if (ev.endDate)   { this.formEndDate = ev.endDate.substring(0,10); this.formEndTime = ev.endDate.substring(11,16); }
+    if (ev.startDate) { this.formDate = ev.startDate.substring(0, 10); this.formTime = ev.startDate.substring(11, 16); }
+    if (ev.endDate)   { this.formEndDate = ev.endDate.substring(0, 10); this.formEndTime = ev.endDate.substring(11, 16); }
     this.formStep = 1; this.showFormModal = true;
     this._resetAllML();
   }
@@ -371,23 +432,63 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   nextStep(): void {
-    if (this.formStep === 1 && !this.form.title?.trim()) { this.showToast('', 'Title is required.', true); return; }
-    if (this.formStep === 2) { this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`; this.form.endDate = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`; }
+    if (this.formStep === 1 && !this.form.title?.trim()) {
+      this.showToast('', 'Title is required.', true); return;
+    }
+    if (this.formStep === 2) {
+      // ← Recalcul des dates à chaque passage sur l'étape 2
+      this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`;
+      this.form.endDate   = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`;
+    }
     this.formStep++;
     if (this.formStep === 3) { this.popResult = null; this.popPredicting = false; this.popAnimFill = 0; }
     if (this.formStep === 6) { this.predResult = null; this.predicting = false; this.predStep = 0; }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SUBMIT FORM  ← FIX PRINCIPAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
   async submitForm(): Promise<void> {
     this.saveLoading = true;
 
+    // ── Recalcul des dates (garanti même si l'user n'est pas repassé par step 2)
+    if (this.formDate) {
+      this.form.startDate = `${this.formDate}T${this.formTime || '00:00'}:00`;
+      this.form.endDate   = `${this.formEndDate || this.formDate}T${this.formEndTime || '23:59'}:00`;
+    }
+
+    // ── Upload image si sélectionnée
     if (this.uploadedImageFile) {
       const url = await this.uploadImage();
       if (url) this.form.imageUrl = url;
     }
 
-    const payload = { ...this.form };
-    delete payload.category;
+    // ── Payload propre — SANS reservedPlaces (champ @Transient calculé côté backend)
+    const payload: any = {
+      title:       (this.form.title || '').trim(),
+      description: this.form.description || '',
+      location:    this.form.location || '',
+      capacity:    Number(this.form.capacity) || 50,   // jamais null/NaN
+      startDate:   this.form.startDate || '',
+      endDate:     this.form.endDate   || '',
+      status:      this.form.status    || 'UPCOMING',
+      imageUrl:    this.form.imageUrl  || ''
+    };
+
+    // ── Guard : dates obligatoires
+    if (!payload.startDate || !payload.endDate) {
+      this.showToast('Validation error', 'Start date and end date are required.', true);
+      this.saveLoading = false;
+      return;
+    }
+
+    // ── Guard : capacity doit être un nombre positif
+    if (isNaN(payload.capacity) || payload.capacity <= 0) {
+      this.showToast('Validation error', 'Capacity must be a positive number.', true);
+      this.saveLoading = false;
+      return;
+    }
 
     const obs = this.editMode && this.selectedId
       ? this.api.update(this.selectedId, payload)
@@ -413,13 +514,25 @@ export class EventsComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.saveLoading = false;
-        this.showToast('Validation error', this.getErrorMessage(err), true);
+        console.error('submitForm error:', err);
+        const status = (err as HttpErrorResponse)?.status;
+        const title =
+          status && status >= 500           ? 'Server error'
+          : status && (status === 400 || status === 409 || status === 422) ? 'Validation error'
+          : 'Error';
+        this.showToast(title, this.getErrorMessage(err), true);
         this.cdr.markForCheck();
       }
     });
   }
 
-  askDelete(ev: Event): void { this.confirmEventName = ev.title; this.confirmDeleteId = ev.id; this.showConfirm = true; }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DELETE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  askDelete(ev: Event): void {
+    this.confirmEventName = ev.title; this.confirmDeleteId = ev.id; this.showConfirm = true;
+  }
 
   doDelete(): void {
     if (!this.confirmDeleteId) return;
@@ -445,33 +558,61 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   private getErrorMessage(err: any): string {
-    if (err?.error?.message) return err.error.message;
-    if (typeof err?.error === 'string') return err.error;
-    if (err?.message?.includes('Http failure')) return 'A server error occurred. Please try again.';
+    const httpErr = err as HttpErrorResponse;
+
+    if (httpErr?.status === 0) {
+      return 'Cannot reach the server (network/CORS). Check API URL and backend availability.';
+    }
+
+    const e: any = httpErr?.error ?? err?.error;
+    if (e?.message)         return e.message;
+    if (typeof e === 'string') return e;
+
+    const details = e?.errors || e?.error || e?.details || e?.violations;
+    if (Array.isArray(details)) {
+      const first = details[0];
+      if (typeof first === 'string') return first;
+      if (first?.message)            return first.message;
+    }
+    if (details && typeof details === 'object') {
+      const firstKey = Object.keys(details)[0];
+      const firstVal = details[firstKey];
+      if (Array.isArray(firstVal)) return String(firstVal[0]);
+      if (firstVal)                return String(firstVal);
+    }
+
+    if (httpErr?.status === 401) return 'You are not authenticated.';
+    if (httpErr?.status === 403) return 'You are not allowed to perform this action.';
+    if (httpErr?.status >= 500)  return 'A server error occurred. Please try again.';
+    if (httpErr?.message?.includes('Http failure')) return 'A server error occurred. Please try again.';
     return 'An error occurred.';
   }
 
   showToast(title: string, msg: string, isError = false): void {
-    this.toastTitle = title || (isError ? 'Error' : 'Succès');
-    this.toastMsg = msg || 'Une erreur est survenue.';
+    this.toastTitle   = title || (isError ? 'Error' : 'Success');
+    this.toastMsg     = msg   || 'An error occurred.';
     this.toastIsError = isError;
     setTimeout(() => { this.toastMsg = ''; this.toastTitle = ''; this.cdr.markForCheck(); }, 4500);
   }
 
   getCategoryLabel(ev: Event): string {
     const t = (ev.title + ' ' + (ev.description || '')).toLowerCase();
-    if (t.includes('recycl') || t.includes('waste') || t.includes('plastic') || t.includes('reuse')) return 'Recycling';
-    if (t.includes('water') || t.includes('river') || t.includes('lake') || t.includes('ocean') || t.includes('sea')) return 'Water';
-    if (t.includes('climate') || t.includes('carbon') || t.includes('co2') || t.includes('global warming')) return 'Climate';
-    if (t.includes('solar') || t.includes('wind') || t.includes('energy') || t.includes('renewable')) return 'Energy';
-    if (t.includes('food') || t.includes('organic') || t.includes('farm') || t.includes('compost')) return 'SustainableFood';
-    if (t.includes('bike') || t.includes('bicycle') || t.includes('mobility') || t.includes('transport')) return 'EcoMobility';
-    if (t.includes('awareness') || t.includes('campaign') || t.includes('education') || t.includes('conference')) return 'Awareness';
-    if (t.includes('community') || t.includes('volunteer') || t.includes('local')) return 'Community';
-    if (t.includes('plant') || t.includes('tree') || t.includes('forest') || t.includes('garden')) return 'Planting';
-    if (t.includes('workshop') || t.includes('training') || t.includes('learn')) return 'Workshop';
-    if (t.includes('animal') || t.includes('wildlife') || t.includes('biodiversity') || t.includes('conservation')) return 'Conservation';
+    if (t.includes('recycl') || t.includes('waste') || t.includes('plastic') || t.includes('reuse'))         return 'Recycling';
+    if (t.includes('water')  || t.includes('river') || t.includes('lake')    || t.includes('ocean') || t.includes('sea')) return 'Water';
+    if (t.includes('climate')|| t.includes('carbon')|| t.includes('co2')     || t.includes('global warming')) return 'Climate';
+    if (t.includes('solar')  || t.includes('wind')  || t.includes('energy')  || t.includes('renewable'))      return 'Energy';
+    if (t.includes('food')   || t.includes('organic')|| t.includes('farm')   || t.includes('compost'))        return 'SustainableFood';
+    if (t.includes('bike')   || t.includes('bicycle')|| t.includes('mobility')|| t.includes('transport'))     return 'EcoMobility';
+    if (t.includes('awareness')|| t.includes('campaign')|| t.includes('education')|| t.includes('conference'))return 'Awareness';
+    if (t.includes('community')|| t.includes('volunteer')|| t.includes('local'))                              return 'Community';
+    if (t.includes('plant')  || t.includes('tree')  || t.includes('forest')  || t.includes('garden'))        return 'Planting';
+    if (t.includes('workshop')|| t.includes('training')|| t.includes('learn'))                                return 'Workshop';
+    if (t.includes('animal') || t.includes('wildlife')|| t.includes('biodiversity')|| t.includes('conservation')) return 'Conservation';
     return 'Cleanup';
   }
 
@@ -479,15 +620,18 @@ export class EventsComponent implements OnInit, OnDestroy {
     const imageUrl = (ev as any).imageUrl;
     if (imageUrl) return imageUrl.startsWith('http') ? imageUrl : `${environment.apiUrl}${imageUrl}`;
     const cat = this.getCategoryLabel(ev);
-    const images: any = { Planting: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800', Cleanup: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800', Workshop: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800', Conservation: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800' };
+    const images: any = {
+      Planting:     'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800',
+      Cleanup:      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+      Workshop:     'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800',
+      Conservation: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800'
+    };
     return images[cat] || images['Cleanup'];
   }
 
-  getFilledSpots(ev: Event): number { return Number(ev.reservedPlaces || 0); }
-
-  getSpotsLeft(ev: Event): number { return Math.max(0, Number(ev.capacity || 0) - this.getFilledSpots(ev)); }
-
-  getFillPercent(ev: Event): number {
+  getFilledSpots(ev: Event): number  { return Number(ev.reservedPlaces || 0); }
+  getSpotsLeft(ev: Event):  number   { return Math.max(0, Number(ev.capacity || 0) - this.getFilledSpots(ev)); }
+  getFillPercent(ev: Event): number  {
     const capacity = Number(ev.capacity || 0);
     if (capacity <= 0) return 0;
     return Math.min(100, Math.round((this.getFilledSpots(ev) / capacity) * 100));
@@ -495,45 +639,34 @@ export class EventsComponent implements OnInit, OnDestroy {
 
   trackById(_: number, ev: Event): number { return ev.id!; }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // POPULARITY PREDICTOR — HuggingFace fn_index: 2
-  // predict_popularity(capacity, theme_pop, loc_acc, comm_eng, social,
-  //                    has_sponsor, org_rep, similar, hist_fill,
-  //                    days_pub, is_wknd, start_h, event_type, location, season)
-  // ─────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // POPULARITY PREDICTOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
   _computedSeason = '';
   get popSeason(): string { return this._computedSeason || this._seasonFromDate(this.formDate); }
 
   private _seasonFromDate(d: string): string {
     const m = d ? new Date(d).getMonth() + 1 : new Date().getMonth() + 1;
-    if ([3,4,5].includes(m)) return 'Spring';
-    if ([6,7,8].includes(m)) return 'Summer';
+    if ([3,4,5].includes(m))  return 'Spring';
+    if ([6,7,8].includes(m))  return 'Summer';
     if ([9,10,11].includes(m)) return 'Autumn';
     return 'Winter';
   }
 
-  // Mapping catégories Angular → types HF
   private readonly CAT_TO_HF: Record<string, string> = {
-    'Cleanup':        'Eco Workshop',
-    'Planting':       'Eco Workshop',
-    'Workshop':       'Conference',
-    'Conservation':   'Eco Workshop',
-    'Recycling':      'Eco Workshop',
-    'Awareness':      'Conference',
-    'Community':      'Eco Workshop',
-    'Energy':         'Eco Workshop',
-    'Water':          'Eco Workshop',
-    'Climate':        'Conference',
-    'SustainableFood':'Food & Drink Fair',
-    'EcoMobility':    'Eco Workshop'
+    'Cleanup':        'Eco Workshop', 'Planting':       'Eco Workshop',
+    'Workshop':       'Conference',   'Conservation':   'Eco Workshop',
+    'Recycling':      'Eco Workshop', 'Awareness':      'Conference',
+    'Community':      'Eco Workshop', 'Energy':         'Eco Workshop',
+    'Water':          'Eco Workshop', 'Climate':        'Conference',
+    'SustainableFood':'Food & Drink Fair', 'EcoMobility':'Eco Workshop'
   };
 
-  // Mapping ville (texte libre) → valeur HF exacte
   private readonly LOC_TO_HF: Record<string, string> = {
-    'tunis':    'Tunis',    'sousse':   'Sousse',   'sfax':     'Sfax',
-    'monastir': 'Monastir', 'bizerte':  'Bizerte',  'nabeul':   'Nabeul',
-    'hammamet': 'Hammamet', 'djerba':   'Djerba',   'kairouan': 'Kairouan',
-    'gafsa':    'Gafsa'
+    'tunis': 'Tunis', 'sousse': 'Sousse', 'sfax': 'Sfax', 'monastir': 'Monastir',
+    'bizerte': 'Bizerte', 'nabeul': 'Nabeul', 'hammamet': 'Hammamet',
+    'djerba': 'Djerba', 'kairouan': 'Kairouan', 'gafsa': 'Gafsa'
   };
 
   runPopularityPrediction(): void {
@@ -542,42 +675,27 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.capacityApplied = false;
     this.reservationApplied = false;
 
-    const today    = new Date();
-    const eventDay = this.formDate ? new Date(this.formDate) : today;
+    const today     = new Date();
+    const eventDay  = this.formDate ? new Date(this.formDate) : today;
     const daysBeforePublish = Math.max(1, Math.ceil((eventDay.getTime() - today.getTime()) / 86400000));
     const startHour = this.formTime ? parseInt(this.formTime.split(':')[0], 10) : 18;
     const isWeekend = (eventDay.getDay() === 0 || eventDay.getDay() === 6);
 
     this._computedSeason = this._seasonFromDate(this.formDate);
 
-    const rawCat  = (this.form.category || '').toString().trim();
-    const rawLoc  = (this.form.location || 'Tunis').split(',')[0].trim().toLowerCase();
+    const rawCat    = (this.form.category || '').toString().trim();
+    const rawLoc    = (this.form.location  || 'Tunis').split(',')[0].trim().toLowerCase();
     const eventType = this.CAT_TO_HF[rawCat] || 'Eco Workshop';
-    const location  = this.LOC_TO_HF[rawLoc]  || 'Tunis';
+    const location  = this.LOC_TO_HF[rawLoc] || 'Tunis';
     const season    = this._computedSeason;
 
-    // Ordre exact des paramètres de predict_popularity dans app.py :
-    // capacity, theme_pop, loc_acc, comm_eng, social, has_sponsor,
-    // org_rep, similar, hist_fill, days_pub, is_wknd, start_h,
-    // event_type, location, season
     this.http.post<any>(`${this.HF_API}/api/ml/predict`, {
       fn_index: 2,
       data: [
-        this.form.capacity,  // capacity
-        65,                  // theme_pop
-        0.75,                // loc_acc
-        0.50,                // comm_eng
-        0.45,                // social
-        false,               // has_sponsor
-        3.8,                 // org_rep
-        5,                   // similar
-        0.70,                // hist_fill
-        daysBeforePublish,   // days_pub
-        isWeekend,           // is_wknd
-        startHour,           // start_h
-        eventType,           // event_type
-        location,            // location
-        season               // season
+        this.form.capacity, 65, 0.75, 0.50, 0.45,
+        false, 3.8, 5, 0.70,
+        daysBeforePublish, isWeekend, startHour,
+        eventType, location, season
       ]
     }).subscribe({
       next: res => {
@@ -597,60 +715,37 @@ export class EventsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /**
-   * Parse le Markdown retourné par predict_popularity :
-   *
-   * ## 📊 Prévision de Fréquentation
-   * **Capacité totale :** `200` places
-   * | 🌲 Gradient Boosting | `140` | `70.0%` |
-   * | 📐 Ridge Regression  | `130` | `65.0%` |
-   * | 🎯 Moyenne           | `135` | `67.5%` |
-   * **R² GB :** `0.923` | **R² LR :** `0.891` | **MAE GB :** `12.3`
-   */
   private _parsePopularityMarkdown(md: string, capacity: number): any {
-    const num = (re: RegExp): number => { const m = md.match(re); return m ? parseFloat(m[1]) : 0; };
+    const gbMatch = md.match(/Gradient Boosting\s*\|\s*`(\d+)`\s*\|\s*`([\d.]+)%`/);
+    const lrMatch = md.match(/Ridge Regression\s*\|\s*`(\d+)`\s*\|\s*`([\d.]+)%`/);
 
-    // Extraire gb_pred depuis la ligne Gradient Boosting
-    const gbMatch  = md.match(/Gradient Boosting\s*\|\s*`(\d+)`\s*\|\s*`([\d.]+)%`/);
-    const lrMatch  = md.match(/Ridge Regression\s*\|\s*`(\d+)`\s*\|\s*`([\d.]+)%`/);
-
-    const gbPred   = gbMatch ? parseInt(gbMatch[1]) : Math.round(capacity * 0.7);
-    const gbFill   = gbMatch ? parseFloat(gbMatch[2]) : (gbPred / capacity) * 100;
-    const lrPred   = lrMatch ? parseInt(lrMatch[1]) : Math.round(capacity * 0.65);
-    const lrFill   = lrMatch ? parseFloat(lrMatch[2]) : (lrPred / capacity) * 100;
+    const gbPred  = gbMatch ? parseInt(gbMatch[1])    : Math.round(capacity * 0.7);
+    const gbFill  = gbMatch ? parseFloat(gbMatch[2])  : (gbPred / capacity) * 100;
+    const lrPred  = lrMatch ? parseInt(lrMatch[1])    : Math.round(capacity * 0.65);
+    const lrFill  = lrMatch ? parseFloat(lrMatch[2])  : (lrPred / capacity) * 100;
 
     const fillRate = parseFloat(((gbFill + lrFill) / 2).toFixed(1));
 
-    // Conseils capacité basés sur le fill rate
-    let advice: string;
-    let suggested: number;
-    if (fillRate >= 90) {
-      advice = 'increase'; suggested = Math.round(capacity * 1.2);
-    } else if (fillRate >= 60) {
-      advice = 'optimal';  suggested = capacity;
-    } else if (fillRate >= 35) {
-      advice = 'reduce';   suggested = Math.round(capacity * 0.8);
-    } else {
-      advice = 'review';   suggested = Math.round(capacity * 0.7);
-    }
+    let advice: string; let suggested: number;
+    if      (fillRate >= 90) { advice = 'increase'; suggested = Math.round(capacity * 1.2); }
+    else if (fillRate >= 60) { advice = 'optimal';  suggested = capacity; }
+    else if (fillRate >= 35) { advice = 'reduce';   suggested = Math.round(capacity * 0.8); }
+    else                     { advice = 'review';   suggested = Math.round(capacity * 0.7); }
 
-    // Métriques R²
-    const r2gb = num(/R² GB[^`]*`([\d.]+)`/);
-    const r2lr = num(/R² LR[^`]*`([\d.]+)`/);
+    const num = (re: RegExp): number => { const m = md.match(re); return m ? parseFloat(m[1]) : 0; };
+    const r2gb  = num(/R² GB[^`]*`([\d.]+)`/);
+    const r2lr  = num(/R² LR[^`]*`([\d.]+)`/);
     const maeGb = num(/MAE GB[^`]*`([\d.]+)`/);
 
-    // SHAP features (non présent dans popularity mais on garde la structure)
-    const shapFeatures: any[] = [];
-
     return {
-      fill_rate_pct:    fillRate,
-      gb_prediction:    gbPred,
-      lr_prediction:    lrPred,
-      capacity_advice:  advice,
+      fill_rate_pct:      fillRate,
+      gb_prediction:      gbPred,
+      lr_prediction:      lrPred,
+      capacity_advice:    advice,
       suggested_capacity: suggested,
-      shap_top_features: shapFeatures,
-      r2_gb: r2gb,
-      r2_lr: r2lr,
+      shap_top_features:  [],
+      r2_gb:  r2gb,
+      r2_lr:  r2lr,
       mae_gb: maeGb,
       raw_markdown: md
     };
@@ -666,9 +761,14 @@ export class EventsComponent implements OnInit, OnDestroy {
     }, 16);
   }
 
+  // ── Apply capacity suggérée (bouton Apply) ─────────────────────────────────
   applyPopCapacity(suggested: number | string): void {
     if (this.capacityApplied) return;
     const val = Math.round(Number(suggested));
+    if (isNaN(val) || val <= 0) {
+      this.showToast('Error', 'Invalid suggested capacity.', true);
+      return;
+    }
     this.form.capacity = val;
     this.capacityApplied = true;
     this.showToast('Capacity adjusted ✅', `Capacity updated to ${val} seats.`);
@@ -737,12 +837,9 @@ export class EventsComponent implements OnInit, OnDestroy {
       is_weekend: 'Date & timing (weekend)', start_hour: 'Event start time'
     };
     if (m[name]) return m[name];
-    if (name.startsWith('event_type_')) {
-      const cl: Record<string, string> = { 'Cleanup': 'Event type: Cleanup', 'Planting': 'Event type: Planting', 'Workshop': 'Event type: Workshop', 'Conservation': 'Event type: Conservation' };
-      return cl[this.form.category] || `Event type: ${name.replace('event_type_', '')}`;
-    }
-    if (name.startsWith('location_')) return `Location: ${name.replace('location_', '')}`;
-    if (name.startsWith('season_')) return `Season: ${name.replace('season_', '')}`;
+    if (name.startsWith('event_type_')) return `Event type: ${name.replace('event_type_', '')}`;
+    if (name.startsWith('location_'))   return `Location: ${name.replace('location_', '')}`;
+    if (name.startsWith('season_'))     return `Season: ${name.replace('season_', '')}`;
     return name;
   }
 
@@ -765,81 +862,55 @@ export class EventsComponent implements OnInit, OnDestroy {
     return `Low expected attendance (${f}%). Review date, location or pricing.`;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // AI SUCCESS PREDICTOR — HuggingFace fn_index: 0
-  // predict_event(weather, trend, calendar, competition, capacity, duration,
-  //               start_hour, days_until, is_outdoor, is_weekend, month,
-  //               city_appeal, audience_score, time_score, capacity_score,
-  //               has_social, has_sponsor, organizer_exp, category, city)
-  // ─────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AI SUCCESS PREDICTOR
+  // ═══════════════════════════════════════════════════════════════════════════
+
   async runPrediction(): Promise<void> {
     this.predicting = true;
     this.predStep   = 0;
     this.predResult = null;
     this.cdr.markForCheck();
 
-    const today    = new Date();
-    const eventDay = this.formDate ? new Date(this.formDate) : today;
+    const today     = new Date();
+    const eventDay  = this.formDate ? new Date(this.formDate) : today;
     const daysUntil = Math.max(1, Math.ceil((eventDay.getTime() - today.getTime()) / 86400000));
     const startHour = this.formTime ? parseInt(this.formTime.split(':')[0], 10) : 9;
     const isWeekend = (eventDay.getDay() === 0 || eventDay.getDay() === 6);
     const month     = eventDay.getMonth() + 1;
 
-    // Mapping catégorie → valeur HF exacte
     const catMap: Record<string, string> = {
       'Cleanup': 'Cleanup', 'Planting': 'Planting', 'Workshop': 'Workshop',
       'Conservation': 'Conservation', 'Recycling': 'Cleanup', 'Awareness': 'Workshop',
       'Community': 'Cleanup', 'Energy': 'Workshop', 'Water': 'Cleanup',
       'Climate': 'Workshop', 'SustainableFood': 'Workshop', 'EcoMobility': 'Marathon'
     };
-
-    // Mapping ville → valeur HF exacte
     const cityMap: Record<string, string> = {
       'tunis': 'Tunis', 'sousse': 'Sousse', 'sfax': 'Sfax', 'djerba': 'Djerba',
       'nabeul': 'Nabeul', 'bizerte': 'Bizerte', 'monastir': 'Monastir',
       'mahdia': 'Mahdia', 'gafsa': 'Gafsa', 'tozeur': 'Tozeur'
     };
 
-    const rawCat  = (this.form.category || '').toString().trim();
-    const rawCity = (this.form.location || 'Tunis').split(',')[0].trim().toLowerCase();
-    const category = catMap[rawCat]  || 'Workshop';
+    const rawCat   = (this.form.category || '').toString().trim();
+    const rawCity  = (this.form.location  || 'Tunis').split(',')[0].trim().toLowerCase();
+    const category = catMap[rawCat]   || 'Workshop';
     const city     = cityMap[rawCity] || 'Tunis';
 
-    // Animation des étapes (UI)
     for (let i = 0; i < this.predSteps.length; i++) {
       await new Promise(r => setTimeout(r, 550 + Math.random() * 300));
       this.predStep = i + 1;
       this.cdr.markForCheck();
     }
 
-    // Ordre exact des paramètres de predict_event dans app.py :
-    // weather, trend, calendar, competition, capacity, duration,
-    // start_hour, days_until, is_outdoor, is_weekend, month,
-    // city_appeal, audience_score, time_score, capacity_score,
-    // has_social, has_sponsor, organizer_exp, category, city
     this.http.post<any>(`${this.HF_API}/api/ml/predict`, {
       fn_index: 0,
       data: [
-        65,           // weather_score
-        60,           // trend_score
-        70,           // calendar_score
-        55,           // competition_score
-        this.form.capacity, // capacity
-        2,            // duration_hours
-        startHour,    // start_hour
-        daysUntil,    // days_until
-        true,         // is_outdoor
-        isWeekend,    // is_weekend
-        month,        // month
-        0.7,          // city_appeal
-        0.7,          // audience_score
-        0.75,         // time_score
-        0.72,         // capacity_score
-        true,         // has_social_media
-        false,        // has_sponsor
-        5,            // organizer_exp
-        category,     // category
-        city          // city
+        65, 60, 70, 55,
+        this.form.capacity, 2, startHour, daysUntil,
+        true, isWeekend, month,
+        0.7, 0.7, 0.75, 0.72,
+        true, false, 5,
+        category, city
       ]
     }).subscribe({
       next: res => {
@@ -857,29 +928,16 @@ export class EventsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Parse le Markdown retourné par predict_event :
-   *
-   * ## ✅ Succès prédit
-   * **Probabilité de succès :** `78.3%`
-   * **Métriques modèle :** Accuracy `0.847` | AUC `0.912`
-   * ### 🔍 Top 3 facteurs SHAP
-   * - **weather_score** : `+0.234`
-   * - **days_until** : `-0.187`
-   * - **capacity** : `+0.143`
-   */
   private _parseEventMarkdown(md: string): any {
     const probaMatch = md.match(/Probabilité de succès[^`]*`([\d.]+)%`/);
-    const score = probaMatch ? parseFloat(probaMatch[1]) : 50;
-
-    const isSuccess = md.includes('✅') || md.toLowerCase().includes('succès prédit');
+    const score      = probaMatch ? parseFloat(probaMatch[1]) : 50;
+    const isSuccess  = md.includes('✅') || md.toLowerCase().includes('succès prédit');
 
     const accMatch = md.match(/Accuracy\s*`([\d.]+)`/);
     const aucMatch = md.match(/AUC\s*`([\d.]+)`/);
     const accuracy = accMatch ? parseFloat(accMatch[1]) : null;
     const auc      = aucMatch ? parseFloat(aucMatch[1]) : null;
 
-    // SHAP features
     const shapFeatures: any[] = [];
     const shapRegex = /\*\*([^*]+)\*\*\s*:\s*`([+-]?[\d.]+)`/g;
     let m;
@@ -887,17 +945,15 @@ export class EventsComponent implements OnInit, OnDestroy {
       shapFeatures.push({ feature: m[1].trim(), impact: parseFloat(m[2]) });
     }
 
-    // Construire des signaux lisibles pour l'UI
     const signals = [
-      { label: 'Weather',     status: score >= 60 ? 'good' : 'warning',  value: '65/100' },
-      { label: 'Trends',      status: score >= 50 ? 'good' : 'bad',      value: '60/100' },
-      { label: 'Calendar',    status: 'good',                             value: '70/100' },
-      { label: 'Competition', status: score >= 55 ? 'good' : 'warning',  value: '55/100' },
+      { label: 'Weather',     status: score >= 60 ? 'good' : 'warning', value: '65/100' },
+      { label: 'Trends',      status: score >= 50 ? 'good' : 'bad',     value: '60/100' },
+      { label: 'Calendar',    status: 'good',                            value: '70/100' },
+      { label: 'Competition', status: score >= 55 ? 'good' : 'warning', value: '55/100' },
     ];
 
-    // Recommandations basées sur le score
     const recommendations = score >= 75
-      ? [{ priority: 'low',  text: 'Strong event profile — promote early on social media.' }]
+      ? [{ priority: 'low',    text: 'Strong event profile — promote early on social media.' }]
       : score >= 55
         ? [
             { priority: 'medium', text: 'Increase social media presence before the event.' },
@@ -908,16 +964,7 @@ export class EventsComponent implements OnInit, OnDestroy {
             { priority: 'high', text: 'Strengthen community engagement before launch.' }
           ];
 
-    return {
-      success: isSuccess,
-      score,
-      accuracy,
-      auc,
-      shap: shapFeatures,
-      signals,
-      recommendations,
-      raw_markdown: md
-    };
+    return { success: isSuccess, score, accuracy, auc, shap: shapFeatures, signals, recommendations, raw_markdown: md };
   }
 
   private animPredScore(target: number): void {
@@ -931,12 +978,12 @@ export class EventsComponent implements OnInit, OnDestroy {
   }
 
   predScoreColor(s: number): string { return s >= 75 ? '#1e6b45' : s >= 55 ? '#c47d0e' : '#c0392b'; }
-  predScoreDash(s: number): string  { const c = 2 * Math.PI * 54; return `${(s / 100) * c} ${c - (s / 100) * c}`; }
-  predSigBg(st: string): string     { return st === 'good' ? 'rgba(30,107,69,.08)' : st === 'warning' ? 'rgba(196,125,14,.08)' : 'rgba(192,57,43,.08)'; }
-  predSigColor(st: string): string  { return st === 'good' ? '#1e6b45' : st === 'warning' ? '#c47d0e' : '#c0392b'; }
-  predShapColor(v: number): string  { return v > 0 ? '#1e6b45' : '#c0392b'; }
-  predShapWidth(v: number): number  { return Math.min(100, Math.abs(v) * 80); }
-  predPrioColor(p: string): string  { return p === 'high' ? '#c0392b' : p === 'medium' ? '#c47d0e' : '#1e6b45'; }
+  predScoreDash(s: number):  string { const c = 2 * Math.PI * 54; return `${(s / 100) * c} ${c - (s / 100) * c}`; }
+  predSigBg(st: string):     string { return st === 'good' ? 'rgba(30,107,69,.08)' : st === 'warning' ? 'rgba(196,125,14,.08)' : 'rgba(192,57,43,.08)'; }
+  predSigColor(st: string):  string { return st === 'good' ? '#1e6b45' : st === 'warning' ? '#c47d0e' : '#c0392b'; }
+  predShapColor(v: number):  string { return v > 0 ? '#1e6b45' : '#c0392b'; }
+  predShapWidth(v: number):  number { return Math.min(100, Math.abs(v) * 80); }
+  predPrioColor(p: string):  string { return p === 'high' ? '#c0392b' : p === 'medium' ? '#c47d0e' : '#1e6b45'; }
 
   skipPrediction(): void {
     this.predResult = null; this.predicting = false; this.predStep = 0; this.predAnimScore = 0;
