@@ -3245,3 +3245,57 @@
     grid-column: span 1;
   }
 }
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(0, 229, 255, 0.18);
+  background: rgba(0, 229, 255, 0.05);
+  color: rgba(190, 240, 248, 0.8);
+  font-weight: 800;
+  cursor: pointer;
+  transition: .25s ease;
+}
+
+.filter-chip:hover {
+  transform: translateY(-2px);
+  border-color: #00d9ff;
+  color: #dffcff;
+}
+
+.filter-chip.active,
+.filter-all.active {
+  background: #18cdea;
+  border-color: #18cdea;
+  color: #021b22;
+}
+
+.emoji {
+  font-size: 15px;
+}
+
+/* couleurs par catégorie */
+.cat-Cleanup { --cat: #18cdea; }
+.cat-Planting { --cat: #52e0a0; }
+.cat-Workshop { --cat: #b78cff; }
+.cat-Conservation { --cat: #7dd3fc; }
+.cat-Recycling { --cat: #68e1b8; }
+.cat-Awareness { --cat: #f8c471; }
+.cat-Energy { --cat: #ffd166; }
+.cat-Water { --cat: #48cae4; }
+.cat-Climate { --cat: #4cc9f0; }
+.cat-SustainableFood { --cat: #9ef01a; }
+.cat-EcoMobility { --cat: #90e0ef; }
+.cat-Community { --cat: #80ffdb; }
+
+.filter-chip:not(.filter-all) {
+  border-color: color-mix(in srgb, var(--cat) 45%, transparent);
+}
+
+.filter-chip:not(.filter-all).active {
+  background: var(--cat);
+  border-color: var(--cat);
+  color: #021b22;
+}

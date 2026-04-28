@@ -112,16 +112,48 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="search-box">
-        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="resetPage()" placeholder="Search events or locations…" />
-      </div>
-      <div class="filter-group">
-        <button class="filter-chip" [class.active]="activeFilter==='ALL'" (click)="activeFilter='ALL'; resetPage()">All</button>
-        <button class="filter-chip" *ngFor="let cat of categories" [class.active]="activeFilter===cat.key" (click)="activeFilter=cat.key; resetPage()">{{ cat.label }}</button>
-      </div>
-    </div>
+   <!-- TOOLBAR -->
+<!-- TOOLBAR -->
+<div class="toolbar">
+
+  <div class="search-box">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.35-4.35"/>
+    </svg>
+
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="resetPage()"
+      placeholder="Search events or locations…" />
+  </div>
+
+  <div class="filter-group">
+
+    <button
+      class="filter-chip filter-all"
+      [class.active]="activeFilter === 'ALL'"
+      (click)="activeFilter='ALL'; resetPage()">
+      All
+    </button>
+
+    <button
+      class="filter-chip"
+      *ngFor="let cat of categories"
+      [class.active]="activeFilter === cat.key"
+      [ngClass]="'cat-' + cat.key"
+      (click)="activeFilter = cat.key; resetPage()">
+
+      <span class="emoji">{{ cat.emoji }}</span>
+      {{ cat.label }}
+
+    </button>
+
+  </div>
+
+</div>
 
     <!-- Loading -->
     <div class="skeleton-grid" *ngIf="loading">
