@@ -58,6 +58,9 @@ export class AdminDonationsComponent implements OnInit {
   filter: DonationFilter = 'ALL';
   processingIds = new Set<number>();
 
+  currentPage = 1;
+  readonly pageSize = 6;
+
   stats: DonationStats = {
     total: 0,
     pending: 0,
@@ -147,6 +150,32 @@ export class AdminDonationsComponent implements OnInit {
 
   setFilter(value: DonationFilter): void {
     this.filter = value;
+    this.currentPage = 1;
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filtered.length / this.pageSize));
+  }
+
+  get pagedDonations(): AdminDonation[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filtered.slice(start, start + this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: number[] = [1];
+    if (this.currentPage > 3) pages.push(-1);
+    for (let i = Math.max(2, this.currentPage - 1); i <= Math.min(total - 1, this.currentPage + 1); i++) pages.push(i);
+    if (this.currentPage < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
+  }
+
+  goToPage(p: number): void {
+    if (p < 1 || p > this.totalPages) return;
+    this.currentPage = p;
   }
 
   isProcessing(id: number): boolean {
