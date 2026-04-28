@@ -88,7 +88,21 @@
     <path d="M16 15l1.5 1.5L21 13" />
   </svg>
 </button>
-
+<button id="nav-btn-anomaly" class="vc-nav-item"
+  [class.active]="activeTab === 'anomaly'"
+  (click)="setTab('anomaly')" title="Anomaly Detector">
+  <svg class="vc-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 3a3 3 0 0 0-3 3v1a3 3 0 0 0 0 6v1a4 4 0 0 0 4 4h1" />
+    <path d="M15 3a3 3 0 0 1 3 3v1a3 3 0 0 1 0 6v1a4 4 0 0 1-4 4h-1" />
+    <path d="M12 4v16" />
+    <path d="M8 8h2" />
+    <path d="M14 8h2" />
+    <path d="M8 13h2" />
+    <path d="M14 13h2" />
+    <path d="M10 20h4" />
+  </svg>
+</button>
     </nav>
 
     <!-- Bottom: avatar + logout -->
@@ -563,6 +577,10 @@
 
     @if (activeTab === 'reservations') {
       <app-admin-reservations></app-admin-reservations>
+    }
+
+    @if (activeTab === 'anomaly') {
+      <app-anomaly-detector></app-anomaly-detector>
     }
 
     @if (activeTab === 'formations') {

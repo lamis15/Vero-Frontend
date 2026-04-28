@@ -16,6 +16,7 @@ import { AdminFormationsComponent } from './admin-formations/admin-formations.co
 import { AdminForumComponent } from './admin-forum/admin-forum.component';
 import { AdminEventsComponent } from '../admin-events/Admin events.component';
 import { AdminReservationsComponent } from '../admin-events/Admin reservations.component';
+import { AnomalyDetectorComponent } from '../events/Anomaly detector.component';
 
 @Component({
   selector: 'app-admin',
@@ -29,7 +30,8 @@ import { AdminReservationsComponent } from '../admin-events/Admin reservations.c
     AdminFormationsComponent,
     AdminForumComponent,
     AdminEventsComponent,
-    AdminReservationsComponent
+    AdminReservationsComponent,
+    AnomalyDetectorComponent
   ],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css'],
@@ -61,6 +63,7 @@ activeTab:
     | 'products'
     | 'events'
     | 'reservations'
+    | 'anomaly'
     | 'formations'
     | 'forum' = 'users';
 
@@ -164,11 +167,20 @@ activeTab:
         this.setTab('events');
       } else if (params['tab'] === 'reservations' || params['tab'] === 'bookings') {
         this.setTab('reservations');
+      } else if (params['tab'] === 'anomaly') {
+        this.setTab('anomaly');
       }
     });
 
     const url = this.router.url;
-    if (url.includes('/admin/events') || url.includes('/admin/reservations') || url.includes('/admin/anomaly')) {
+    if (url.includes('/admin/events')) {
+      this.activeTab = 'events';
+      this.eventsMenuOpen = true;
+    } else if (url.includes('/admin/reservations')) {
+      this.activeTab = 'reservations';
+      this.eventsMenuOpen = true;
+    } else if (url.includes('/admin/anomaly')) {
+      this.activeTab = 'anomaly';
       this.eventsMenuOpen = true;
     }
 
@@ -432,11 +444,26 @@ activeTab:
 
   // ── Tab navigation ────────────────────────────────────────────────────────
   setTab(tab: string): void {
-    if (tab === this.activeTab) return;
     this.activeTab = tab as any;
     this.addMessage = '';
 
-    if (tab === 'users') {
+    const routeMap: Record<string, string> = {
+      users: '/admin/users',
+      add: '/admin/users/new',
+      messages: '/admin/messages',
+      products: '/admin/products',
+      formations: '/admin/formations',
+      events: '/admin/events',
+      reservations: '/admin/reservations',
+      anomaly: '/admin/anomaly'
+    };
+
+    const targetUrl = routeMap[tab];
+    if (targetUrl && this.router.url !== targetUrl) {
+      this.router.navigateByUrl(targetUrl);
+    }
+
+    if (tab === 'users' || tab === 'add' || tab === 'edit') {
       this.loadUsers();
       this.startUsersLiveSync();
       if (this.adminLiveSyncInterval != null) {

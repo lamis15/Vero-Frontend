@@ -100,6 +100,21 @@ export const routes: Routes = [
         path: 'formations',
         loadComponent: () =>
           import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
+      },
+      {
+        path: 'events',
+        loadComponent: () =>
+          import('./components/admin-events/Admin events.component').then(m => m.AdminEventsComponent)
+      },
+      {
+        path: 'reservations',
+        loadComponent: () =>
+          import('./components/admin-events/Admin reservations.component').then(m => m.AdminReservationsComponent)
+      },
+      {
+        path: 'anomaly',
+        loadComponent: () =>
+          import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
       }
     ]
   },
@@ -136,41 +151,6 @@ export const routes: Routes = [
     path: 'petitions',
     loadComponent: () =>
       import('./components/petition/petition').then(m => m.PetitionComponent)
-  },
-  {
-    path: 'anomaly',
-    loadComponent: () =>
-      import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
-  },
-
-  // ══ Routes admin/sous-pages EN PREMIER — avant la route 'admin' ══
-  {
-    path: 'admin/anomaly',
-    canActivate: [adminGuard],
-    loadComponent: () =>
-      import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
-  },
-  {
-    path: 'admin/events',
-    canActivate: [adminGuard],
-    loadComponent: () =>
-      import('./components/admin-events/Admin events.component').then(m => m.AdminEventsComponent)
-  },
-  {
-    path: 'admin/reservations',
-    canActivate: [adminGuard],
-    loadComponent: () =>
-      import('./components/admin-events/Admin reservations.component').then(m => m.AdminReservationsComponent)
-  },
-  {
-    path: 'my-reservations',
-    loadComponent: () =>
-      import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
-  },
-  {
-    path: 'petitions',
-    loadComponent: () => import('./components/petition/petition')
-      .then(m => m.PetitionComponent)
   },
   { path: '**', redirectTo: '' }
 ];
