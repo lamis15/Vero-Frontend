@@ -72,7 +72,7 @@ export class Admin implements OnInit, OnDestroy {
   adminMe: UserResponse | null = null;
   conversationSearch   = '';
   adminConversations: ConversationSummary[] = Admin.readCache<ConversationSummary[]>(Admin.CONVS_CACHE_KEY) ?? [];
-  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
+  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, transport: 0, other: 0 };
   selectedConversation: ConversationSummary | null = null;
   selectedConversationMessages: DirectMessage[] = [];
   messagesLoading = this.adminConversations.length === 0;
