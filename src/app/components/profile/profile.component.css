@@ -497,8 +497,8 @@
   line-height: 1.25;
 }
 .pf-promo-badge {
-  width: 110px;
-  height: 110px;
+  width: 200px;
+  height: 200px;
   object-fit: contain;
   align-self: center;
   margin: 4px 0 2px;
