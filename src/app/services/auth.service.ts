@@ -35,6 +35,12 @@ export interface PasskeyLoginOptionsResponse {
   allowCredentialIds: string[];
 }
 
+export interface PasskeyCredentialResponse {
+  id: number;
+  credentialIdMasked: string;
+  createdAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
@@ -153,6 +159,14 @@ export class AuthService {
   passkeyLoginVerify(email: string, credentialId: string, challenge: string) {
     return this.http.post<AuthResponse>(`${this.API}/passkey/login/verify`, { email, credentialId, challenge })
       .pipe(tap(res => this.applyAuthResponse(res)));
+  }
+
+  listMyPasskeys() {
+    return this.http.get<PasskeyCredentialResponse[]>(`${this.API}/passkey/credentials`);
+  }
+
+  deleteMyPasskey(credentialId: number) {
+    return this.http.delete(`${this.API}/passkey/credentials/${credentialId}`);
   }
 
   applySocialSession(params: URLSearchParams): Observable<boolean> {

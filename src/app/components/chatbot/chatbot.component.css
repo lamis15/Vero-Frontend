@@ -9,17 +9,17 @@
 }
 
 .cb-page {
-  --cb-bg:        #04161B;
-  --cb-surface:   rgba(9, 36, 40, 0.35);
-  --cb-surface-s: rgba(9, 36, 40, 0.5);
+  --cb-bg:        #050B14;
+  --cb-surface:   rgba(10, 43, 51, 0.42);
+  --cb-surface-s: rgba(10, 43, 51, 0.56);
   --cb-ink:       rgba(255, 255, 255, 0.88);
   --cb-soft:      rgba(255, 255, 255, 0.55);
   --cb-muted:     rgba(255, 255, 255, 0.35);
-  --cb-hairline:  rgba(0, 229, 255, 0.06);
-  --cb-accent:    #00E5FF;
-  --cb-accent-d:  #3b9ab2;
-  --cb-accent-dd: #1e708a;
-  --cb-tint:      rgba(0, 229, 255, 0.08);
+  --cb-hairline:  rgba(20, 199, 165, 0.2);
+  --cb-accent:    #14C7A5;
+  --cb-accent-d:  #0e9f85;
+  --cb-accent-dd: #0b7d6a;
+  --cb-tint:      rgba(20, 199, 165, 0.12);
   --cb-tint-2:    rgba(255, 255, 255, 0.04);
   --cb-ok:        #34d399;
   --cb-err:       #ef4444;
@@ -27,10 +27,10 @@
   --cb-blur:      20px;
 
   min-height: 100vh;
-  background: radial-gradient(ellipse at 20% 0%, #093B42 0%, #07272D 40%, #04161B 100%);
+  background: radial-gradient(ellipse at top left, #050B14 0%, #0A2B33 55%, #0e4c49 100%);
   color: var(--cb-ink);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  padding: calc(var(--nav-h, 72px) + 16px) clamp(16px, 3vw, 32px) 0;
+  padding: calc(var(--nav-h, 58px) + 26px) clamp(16px, 3vw, 32px) 0;
 }
 
 /* ─── LAYOUT ─── */
@@ -75,7 +75,7 @@
   padding: 6px 12px;
   border: none;
   border-radius: 100px;
-  background: linear-gradient(135deg, #00E5FF, #10b981);
+  background: linear-gradient(135deg, #14C7A5, #0e9f85);
   color: #021214;
   font-family: inherit;
   font-size: 12px;
@@ -107,8 +107,8 @@
 }
 .cb-session:hover { background: var(--cb-tint); }
 .cb-session.active {
-  background: rgba(0,229,255,0.06);
-  border: 1px solid rgba(0,229,255,0.15);
+  background: rgba(20,199,165,0.08);
+  border: 1px solid rgba(20,199,165,0.2);
 }
 
 .cb-session-icon {
@@ -122,8 +122,8 @@
   flex-shrink: 0;
 }
 .cb-session.active .cb-session-icon {
-  background: rgba(0,229,255,0.1);
-  color: #00E5FF;
+  background: rgba(20,199,165,0.14);
+  color: #14C7A5;
 }
 .cb-session-label {
   flex: 1;
@@ -228,7 +228,7 @@
   border: 1px solid var(--cb-hairline);
   border-radius: 8px;
   background: var(--cb-tint);
-  color: #00E5FF;
+  color: #14C7A5;
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -236,8 +236,8 @@
   transition: all 0.15s ease;
 }
 .cb-reconnect:hover {
-  background: rgba(0,229,255,0.1);
-  border-color: rgba(0,229,255,0.2);
+  background: rgba(20,199,165,0.1);
+  border-color: rgba(20,199,165,0.24);
 }
 
 /* ─── ERROR ─── */
@@ -407,9 +407,9 @@
   white-space: pre-wrap;
 }
 .cb-msg.user .cb-msg-bubble {
-  background: rgba(0,229,255,0.12);
+  background: rgba(20,199,165,0.14);
   color: rgba(255,255,255,0.88);
-  border: 1px solid rgba(0,229,255,0.15);
+  border: 1px solid rgba(20,199,165,0.2);
   border-bottom-right-radius: 4px;
 }
 .cb-msg.bot .cb-msg-bubble {
@@ -443,8 +443,8 @@
 }
 .cb-composer input:focus {
   background: rgba(255,255,255,0.06);
-  border-color: rgba(0,229,255,0.3);
-  box-shadow: 0 0 12px rgba(0,229,255,0.06);
+  border-color: rgba(20,199,165,0.3);
+  box-shadow: 0 0 12px rgba(20,199,165,0.08);
 }
 .cb-composer input::placeholder {
   color: var(--cb-muted);
@@ -457,16 +457,16 @@
   place-items: center;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #00E5FF, #10b981);
+  background: linear-gradient(135deg, #14C7A5, #0e9f85);
   color: #021214;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
 .cb-composer button:hover:not(:disabled) {
-  background: #00E5FF;
+  background: #14C7A5;
   color: #021214;
-  box-shadow: 0 4px 16px rgba(0,229,255,0.25);
+  box-shadow: 0 4px 16px rgba(20,199,165,0.28);
 }
 .cb-composer button:disabled {
   opacity: 0.35;

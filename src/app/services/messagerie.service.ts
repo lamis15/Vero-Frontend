@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject, finalize, of, shareReplay, tap } from 'rxjs';
+import { BehaviorSubject, Observable, ReplaySubject, Subject, finalize, of, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Client, Message } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -20,14 +20,17 @@ export interface DirectMessage {
   content: string;
   timestamp: string;
   isRead: boolean;
-  topic?: 'eco' | 'lifestyle' | 'product' | 'other' | null;
+  topic?: 'eco' | 'lifestyle' | 'product' | 'transport' | 'other' | null;
   topicConfidence?: number | null;
+  /** Backend: {@code AI} | {@code KEYWORD}; absent for older rows. */
+  topicSource?: 'AI' | 'KEYWORD' | string | null;
 }
 
 export type TopicCounts = {
   eco: number;
   lifestyle: number;
   product: number;
+  transport: number;
   other: number;
 };
 
@@ -42,6 +45,15 @@ export interface ConversationSummary {
   messageCount: number;
 }
 
+export interface CallSignalPayload {
+  type: 'call-offer' | 'call-answer' | 'ice-candidate' | 'call-end' | 'call-reject';
+  fromUserId: number;
+  toUserId: number;
+  sdp?: RTCSessionDescriptionInit | null;
+  candidate?: RTCIceCandidateInit | null;
+  videoEnabled?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -49,6 +61,7 @@ export class MessagerieService implements OnDestroy {
   private stompClient: Client | null = null;
   private currentUserId: number | null = null;
   private adminSubscribed = false;
+  private callSubscribed = false;
   private readonly wsBaseUrl = environment.apiUrl;
 
   private incomingMessageSubject = new Subject<DirectMessage>();
@@ -56,6 +69,11 @@ export class MessagerieService implements OnDestroy {
 
   private adminIncomingSubject = new Subject<DirectMessage>();
   public adminIncoming$ = this.adminIncomingSubject.asObservable();
+
+  private callSignalSubject = new ReplaySubject<CallSignalPayload>(20);
+  public callSignal$ = this.callSignalSubject.asObservable();
+  private pendingCallSignals: CallSignalPayload[] = [];
+  private globalIncomingRingTimer: ReturnType<typeof setInterval> | null = null;
 
   private usersCacheSubject = new BehaviorSubject<UserResponse[] | null>(null);
   private usersInFlight$: Observable<UserResponse[]> | null = null;
@@ -71,6 +89,9 @@ export class MessagerieService implements OnDestroy {
     this.currentUserId = myUserId;
 
     if (this.stompClient && this.stompClient.active) {
+      if (!this.callSubscribed) {
+        this.subscribeCallStream(myUserId);
+      }
       if (isAdmin && !this.adminSubscribed) {
         this.subscribeAdminStream();
       }
@@ -81,6 +102,7 @@ export class MessagerieService implements OnDestroy {
     if (!token) return;
 
     this.adminSubscribed = false;
+    this.callSubscribed = false;
     const wsUrl = this.wsBaseUrl ? `${this.wsBaseUrl.replace(/\/$/, '')}/ws` : `${typeof window !== 'undefined' ? window.location.origin : ''}/ws`;
     this.stompClient = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
@@ -94,6 +116,8 @@ export class MessagerieService implements OnDestroy {
 
     this.stompClient.onConnect = () => {
       this.subscribeUserStream(myUserId);
+      this.subscribeCallStream(myUserId);
+      this.flushPendingCallSignals();
       if (isAdmin) {
         this.subscribeAdminStream();
       }
@@ -117,12 +141,23 @@ export class MessagerieService implements OnDestroy {
     this.adminSubscribed = true;
   }
 
+  private subscribeCallStream(myUserId: number): void {
+    this.stompClient?.subscribe(`/topic/calls/${myUserId}`, (message: Message) => {
+      const body = JSON.parse(message.body) as CallSignalPayload;
+      this.handleGlobalCallSignal(body);
+      this.callSignalSubject.next(body);
+    });
+    this.callSubscribed = true;
+  }
+
   public disconnect(): void {
     if (this.stompClient) {
       this.stompClient.deactivate();
       this.stompClient = null;
     }
     this.adminSubscribed = false;
+    this.callSubscribed = false;
+    this.stopGlobalIncomingRing();
     this.currentUserId = null;
   }
 
@@ -211,6 +246,93 @@ export class MessagerieService implements OnDestroy {
   // topics, so the UI picks it up through incomingMessage$ — do NOT push here.
   public sendMessage(receiverId: number, content: string): Observable<DirectMessage> {
     return this.http.post<DirectMessage>(`${this.apiUrl}/send`, { receiverId, content });
+  }
+
+  public sendCallSignal(payload: Omit<CallSignalPayload, 'fromUserId'>): void {
+    if (this.currentUserId == null) {
+      return;
+    }
+    const signal: CallSignalPayload = {
+      ...payload,
+      fromUserId: this.currentUserId
+    };
+    if (!this.stompClient || !this.stompClient.connected) {
+      this.pendingCallSignals.push(signal);
+      return;
+    }
+    this.stompClient.publish({
+      destination: '/app/calls.signal',
+      body: JSON.stringify(signal)
+    });
+  }
+
+  private flushPendingCallSignals(): void {
+    if (!this.stompClient || !this.stompClient.connected || this.pendingCallSignals.length === 0) {
+      return;
+    }
+    const queued = [...this.pendingCallSignals];
+    this.pendingCallSignals = [];
+    for (const signal of queued) {
+      this.stompClient.publish({
+        destination: '/app/calls.signal',
+        body: JSON.stringify(signal)
+      });
+    }
+  }
+
+  private handleGlobalCallSignal(signal: CallSignalPayload): void {
+    if (signal.type === 'call-offer') {
+      this.startGlobalIncomingRing();
+      return;
+    }
+    if (signal.type === 'call-answer' || signal.type === 'call-reject' || signal.type === 'call-end') {
+      this.stopGlobalIncomingRing();
+    }
+  }
+
+  private startGlobalIncomingRing(): void {
+    if (this.globalIncomingRingTimer) {
+      return;
+    }
+    this.playTone(880, 150, 0.03);
+    this.globalIncomingRingTimer = setInterval(() => {
+      this.playTone(880, 150, 0.03);
+      setTimeout(() => this.playTone(660, 150, 0.03), 190);
+    }, 1400);
+    setTimeout(() => this.stopGlobalIncomingRing(), 15000);
+  }
+
+  public silenceIncomingRing(): void {
+    this.stopGlobalIncomingRing();
+  }
+
+  private stopGlobalIncomingRing(): void {
+    if (this.globalIncomingRingTimer) {
+      clearInterval(this.globalIncomingRingTimer);
+      this.globalIncomingRingTimer = null;
+    }
+  }
+
+  private playTone(freq: number, durationMs: number, volume: number): void {
+    try {
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => {
+        osc.stop();
+        ctx.close();
+      }, durationMs);
+    } catch {
+      // Browser may block autoplay audio until user interaction.
+    }
   }
 
   /** My own topic breakdown — powers the eco badge on the profile. */

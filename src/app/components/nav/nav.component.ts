@@ -64,11 +64,14 @@ export class NavComponent implements OnInit, OnDestroy {
   private messageSub?: Subscription;
   private notificationSub?: Subscription;
   private cartSub?: Subscription;
+  private callSub?: Subscription;
   private knownConversationLastTime = new Map<string, number>();
+  incomingGlobalCall: { fromUserId: number; fromName: string; videoEnabled: boolean } | null = null;
 
   constructor(
     private forumService: ForumService,
     private messagerieService: MessagerieService,
+    private userService: UserService,
     public authService: AuthService,
     public cartService: CartService,
     private router: Router,
@@ -260,6 +263,12 @@ export class NavComponent implements OnInit, OnDestroy {
   // MESSAGING
   // ═════════════════════════════════════════════
   private initMessaging(): void {
+    const cached = this.authService.currentUser;
+    if (cached) {
+      this.currentUser = cached;
+      this.messagerieService.connect(cached.id, cached.role === 'ADMIN');
+    }
+
     this.authService.getMe().subscribe(user => {
       this.currentUser = user;
       this.messagerieService.connect(user.id, user.role === 'ADMIN');
@@ -275,7 +284,52 @@ export class NavComponent implements OnInit, OnDestroy {
         }
       });
     }
+    if (!this.callSub) {
+      this.callSub = this.messagerieService.callSignal$.subscribe(signal => {
+        const myId = Number(this.currentUser?.id ?? this.authService.currentUser?.id ?? 0);
+        const targetId = Number(signal.toUserId ?? 0);
+        if (!myId || !targetId || myId !== targetId) return;
+        if (signal.type === 'call-offer') {
+          this.incomingGlobalCall = {
+            fromUserId: signal.fromUserId,
+            fromName: `User #${signal.fromUserId}`,
+            videoEnabled: !!signal.videoEnabled
+          };
+          this.userService.getById(signal.fromUserId).subscribe({
+            next: (u: { fullName: string }) => {
+              if (this.incomingGlobalCall?.fromUserId === signal.fromUserId) {
+                this.incomingGlobalCall.fromName = u.fullName || this.incomingGlobalCall.fromName;
+                this.cdr.markForCheck();
+              }
+            },
+            error: () => {}
+          });
+          this.cdr.markForCheck();
+        }
+        if (signal.type === 'call-end' || signal.type === 'call-reject' || signal.type === 'call-answer') {
+          this.incomingGlobalCall = null;
+          this.cdr.markForCheck();
+        }
+      });
+    }
     this.startMessageSync();
+  }
+
+  acceptGlobalCall(): void {
+    this.incomingGlobalCall = null;
+    if (!this.router.url.startsWith('/messages')) {
+      void this.router.navigateByUrl('/messages');
+    }
+  }
+
+  rejectGlobalCall(): void {
+    if (!this.incomingGlobalCall || !this.currentUser) return;
+    this.messagerieService.sendCallSignal({
+      type: 'call-reject',
+      toUserId: this.incomingGlobalCall.fromUserId
+    });
+    this.incomingGlobalCall = null;
+    this.cdr.markForCheck();
   }
 
   private startMessageSync(): void {
@@ -358,8 +412,11 @@ export class NavComponent implements OnInit, OnDestroy {
     this.currentUser = null;
     this.messageSub?.unsubscribe();
     this.messageSub = undefined;
+    this.callSub?.unsubscribe();
+    this.callSub = undefined;
     this.notificationSub?.unsubscribe();
     this.notificationSub = undefined;
+    this.incomingGlobalCall = null;
   }
 
   ngOnDestroy(): void {

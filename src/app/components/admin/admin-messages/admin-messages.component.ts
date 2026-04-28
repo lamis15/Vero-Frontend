@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessagerieService, DirectMessage, ConversationSummary, ChatParticipant, TopicCounts } from '../../../services/messagerie.service';
 import { AuthService, UserResponse } from '../../../services/auth.service';
+import { topicSubjectRowFromMessage } from '../../../utils/eco-topic-display';
 import { Subscription } from 'rxjs';
 
 interface OptimisticMessage extends DirectMessage {
@@ -40,7 +41,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   public sendError = '';
 
   // Topic heatmap for AI classification
-  public topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
+  public topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, transport: 0, other: 0 };
 
   constructor(
     private messagerieService: MessagerieService,
@@ -242,6 +243,10 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
     return message.sender.id === this.myUser?.id;
   }
 
+  topicSubjectRow(msg: DirectMessage) {
+    return topicSubjectRowFromMessage(msg);
+  }
+
   previewName(conversation: ConversationSummary): string {
     return conversation.otherUser?.fullName || `${conversation.userA.fullName} & ${conversation.userB.fullName}`;
   }
@@ -376,7 +381,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
 
   get topicHeatmapTotal(): number {
     const h = this.topicHeatmap;
-    return (h.eco || 0) + (h.lifestyle || 0) + (h.product || 0) + (h.other || 0);
+    return (h.eco || 0) + (h.lifestyle || 0) + (h.product || 0) + (h.transport || 0) + (h.other || 0);
   }
 
   topicPercent(label: keyof TopicCounts): number {

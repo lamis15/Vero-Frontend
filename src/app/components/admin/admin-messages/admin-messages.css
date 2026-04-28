@@ -510,6 +510,30 @@
   font-style: italic;
 }
 
+.ms-topic-subject {
+  margin: 4px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  max-width: 100%;
+}
+.ms-bubble-row.mine .ms-topic-subject {
+  text-align: right;
+}
+.ms-topic-subject[data-topic="eco"] {
+  color: #34d399;
+}
+.ms-topic-subject[data-topic="lifestyle"] {
+  color: #60a5fa;
+}
+.ms-topic-subject[data-topic="product"] {
+  color: #fb923c;
+}
+.ms-topic-subject[data-topic="transport"] {
+  color: #c084fc;
+}
+
 .ms-bubble {
   padding: 10px 16px;
   border-radius: 18px;

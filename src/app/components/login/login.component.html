@@ -99,6 +99,15 @@
                   {{ loginLoading ? 'Signing in...' : 'Sign In' }}
                 </button>
               </form>
+
+              @if (canOfferPasskeyEnroll && passkeySupported) {
+                <div class="alert alert-info">
+                  Password login succeeded. Activate Face ID for next logins.
+                  <button class="link-btn" type="button" (click)="enrollPasskeyAfterPasswordLogin()" [disabled]="loginLoading">
+                    Activate Face ID
+                  </button>
+                </div>
+              }
             </div>
           }
 
@@ -144,6 +153,11 @@
                   <button class="gradient-btn mt-4" (click)="setMode('login')">
                     Return to Login
                   </button>
+                  @if (passkeySupported) {
+                    <button class="gradient-btn mt-4" type="button" (click)="enrollPasskeyAfterRegister()" [disabled]="loginLoading">
+                      {{ loginLoading ? 'Activating...' : 'Activate Face ID now' }}
+                    </button>
+                  }
                 </div>
               } @else {
                 <form class="auth-form" (ngSubmit)="register()">

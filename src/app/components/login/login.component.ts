@@ -144,6 +144,7 @@ export class LoginComponent implements OnInit {
   socialBusy = false;
   registrationSuccess = false;
   forgotPasswordSuccess = false;
+  canOfferPasskeyEnroll = false;
 
   errFullName = '';
   errEmail = '';
@@ -152,6 +153,7 @@ export class LoginComponent implements OnInit {
   errForgotEmail = '';
 
   passkeySupported = typeof window !== 'undefined' && !!navigator.credentials;
+  biometricPlatformAvailable = false;
   passkeyInfo = '';
 
   constructor(
@@ -169,6 +171,19 @@ export class LoginComponent implements OnInit {
 
     this.passkeySupported =
       typeof window !== 'undefined' && 'PublicKeyCredential' in window;
+    if (this.passkeySupported && typeof PublicKeyCredential !== 'undefined'
+      && 'isUserVerifyingPlatformAuthenticatorAvailable' in PublicKeyCredential) {
+      void PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        .then((available) => {
+          this.biometricPlatformAvailable = available;
+          if (!available) {
+            this.passkeyInfo = 'Passkey disponible, mais biométrie locale (Face ID/Windows Hello) non détectée.';
+          }
+        })
+        .catch(() => {
+          this.biometricPlatformAvailable = false;
+        });
+    }
     if (!this.passkeySupported) {
       this.passkeyInfo =
         'Passkey sign-in is only available on compatible devices and browsers.';
@@ -226,6 +241,7 @@ export class LoginComponent implements OnInit {
     this.errForgotEmail = '';
     this.registrationSuccess = false;
     this.forgotPasswordSuccess = false;
+    this.canOfferPasskeyEnroll = false;
   }
 
   onFileSelected(event: Event): void {
@@ -266,6 +282,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginEmail, this.loginPassword).subscribe({
       next: (res) => {
         this.loginLoading = false;
+        this.canOfferPasskeyEnroll = true;
         // Reinitialize cart for the new user
         this.cartService.reinitializeCart();
 
@@ -349,6 +366,7 @@ export class LoginComponent implements OnInit {
         next: () => {
           this.loginLoading = false;
           this.registrationSuccess = true;
+          this.canOfferPasskeyEnroll = true;
         },
         error: (err) => {
           this.loginLoading = false;
@@ -443,9 +461,9 @@ export class LoginComponent implements OnInit {
           'Connection failed. Please ensure the backend is running.';
         return;
       }
-      if (error?.name === 'NotAllowedError') {
-        this.passkeyInfo =
-          'Passkey request was canceled or blocked by the browser.';
+      const webauthnErrorMessage = this.mapWebAuthnError(error);
+      if (webauthnErrorMessage) {
+        this.passkeyInfo = webauthnErrorMessage;
         return;
       }
       const genericBadRequest =
@@ -491,8 +509,62 @@ export class LoginComponent implements OnInit {
         this.passkeyInfo =
           'No passkey registered for this account. Login once with password to create it.';
       } else {
-        this.passkeyInfo = backendMessage || 'Passkey authentication failed.';
+        this.passkeyInfo =
+          this.mapBackendPasskeyError(backendMessage) ||
+          'Passkey authentication failed.';
       }
+    } finally {
+      this.loginLoading = false;
+    }
+  }
+
+  async enrollPasskeyAfterRegister(): Promise<void> {
+    const email = this.registerEmail.trim().toLowerCase();
+    if (!email) {
+      this.passkeyInfo = 'Email introuvable pour activer Face ID.';
+      return;
+    }
+    if (!this.passkeySupported) {
+      this.passkeyInfo = 'Face ID / Passkey non supporté sur ce navigateur.';
+      return;
+    }
+    this.loginLoading = true;
+    this.loginError = '';
+    try {
+      await this.createPasskeyForAuthenticatedUser(email);
+      this.passkeyInfo = 'Face ID activé. Vous pouvez vous connecter avec Passkey.';
+    } catch (error: any) {
+      const backendMessage = this.extractBackendErrorMessage(error);
+      this.passkeyInfo =
+        this.mapWebAuthnError(error) ||
+        this.mapBackendPasskeyError(backendMessage) ||
+        'Impossible d’activer Face ID maintenant.';
+    } finally {
+      this.loginLoading = false;
+    }
+  }
+
+  async enrollPasskeyAfterPasswordLogin(): Promise<void> {
+    const email = this.loginEmail.trim().toLowerCase();
+    if (!email) {
+      this.passkeyInfo = 'Saisissez votre email pour activer Face ID.';
+      return;
+    }
+    if (!this.passkeySupported) {
+      this.passkeyInfo = 'Face ID / Passkey non supporté sur ce navigateur.';
+      return;
+    }
+    this.loginLoading = true;
+    try {
+      await this.createPasskeyForAuthenticatedUser(email);
+      this.canOfferPasskeyEnroll = false;
+      this.passkeyInfo = 'Face ID activé sur ce compte.';
+    } catch (error: any) {
+      const backendMessage = this.extractBackendErrorMessage(error);
+      this.passkeyInfo =
+        this.mapWebAuthnError(error) ||
+        this.mapBackendPasskeyError(backendMessage) ||
+        'Activation Face ID échouée.';
     } finally {
       this.loginLoading = false;
     }
@@ -514,6 +586,10 @@ export class LoginComponent implements OnInit {
     password: string
   ): Promise<void> {
     await firstValueFrom(this.authService.login(email, password));
+    await this.createPasskeyForAuthenticatedUser(email);
+  }
+
+  private async createPasskeyForAuthenticatedUser(email: string): Promise<void> {
     const options = await firstValueFrom(
       this.authService.passkeyRegisterOptions(email)
     );
@@ -528,7 +604,11 @@ export class LoginComponent implements OnInit {
           displayName: options.displayName,
         },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-        authenticatorSelection: { userVerification: 'preferred' },
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          residentKey: 'preferred',
+          userVerification: 'required'
+        },
         timeout: 60000,
         attestation: 'none',
       },
@@ -545,8 +625,7 @@ export class LoginComponent implements OnInit {
         options.challenge
       )
     );
-    this.passkeyInfo =
-      'Passkey created successfully. You can now use Face ID / biometrics.';
+    this.passkeyInfo = 'Passkey created successfully. You can now use Face ID / biometrics.';
   }
 
   private async tryPasskeyLogin(email: string): Promise<void> {
@@ -561,7 +640,7 @@ export class LoginComponent implements OnInit {
           id: this.base64UrlToBuffer(id),
           type: 'public-key' as PublicKeyCredentialType,
         })),
-        userVerification: 'preferred',
+        userVerification: 'required',
         timeout: 60000,
       },
     })) as PublicKeyCredential | null;
@@ -610,5 +689,36 @@ export class LoginComponent implements OnInit {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
+  }
+
+  private mapWebAuthnError(error: any): string | null {
+    const name = error?.name;
+    if (name === 'NotAllowedError') {
+      return 'Action annulée ou délai dépassé pendant Face ID.';
+    }
+    if (name === 'InvalidStateError') {
+      return 'Cette passkey existe déjà sur cet appareil.';
+    }
+    if (name === 'SecurityError') {
+      return 'Face ID nécessite HTTPS ou localhost.';
+    }
+    return null;
+  }
+
+  private mapBackendPasskeyError(message: string): string | null {
+    const normalized = (message || '').toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    if (normalized.includes('challenge passkey invalide') || normalized.includes('challenge') && normalized.includes('expir')) {
+      return 'Challenge expiré. Réessayez Face ID.';
+    }
+    if (normalized.includes('no passkey')) {
+      return 'Aucune passkey enregistrée sur ce compte.';
+    }
+    if (normalized.includes('passkey inconnue')) {
+      return 'Cette passkey ne correspond pas à ce compte.';
+    }
+    return message;
   }
 }

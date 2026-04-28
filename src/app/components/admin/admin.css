@@ -1839,21 +1839,11 @@ select.vc-input {
   transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.vc-heatmap-card .vc-heatmap-seg.eco {
-  background: #06d6a0;
-}
-
-.vc-heatmap-card .vc-heatmap-seg.lifestyle {
-  background: #f77f00;
-}
-
-.vc-heatmap-card .vc-heatmap-seg.product {
-  background: #4361ee;
-}
-
-.vc-heatmap-card .vc-heatmap-seg.other {
-  background: #f72585;
-}
+.vc-heatmap-card .vc-heatmap-seg.eco { background: #06d6a0; }
+.vc-heatmap-card .vc-heatmap-seg.lifestyle { background: #f77f00; }
+.vc-heatmap-card .vc-heatmap-seg.product { background: #4361ee; }
+.vc-heatmap-card .vc-heatmap-seg.transport { background: #c084fc; }
+.vc-heatmap-card .vc-heatmap-seg.other { background: #f72585; }
 
 .vc-heatmap-card .vc-heatmap-legend {
   display: grid;
@@ -1875,21 +1865,11 @@ select.vc-input {
   margin-top: 3px;
 }
 
-.vc-heatmap-card .vc-heatmap-dot.eco {
-  background: #06d6a0;
-}
-
-.vc-heatmap-card .vc-heatmap-dot.lifestyle {
-  background: #f77f00;
-}
-
-.vc-heatmap-card .vc-heatmap-dot.product {
-  background: #4361ee;
-}
-
-.vc-heatmap-card .vc-heatmap-dot.other {
-  background: #f72585;
-}
+.vc-heatmap-card .vc-heatmap-dot.eco { background: #06d6a0; }
+.vc-heatmap-card .vc-heatmap-dot.lifestyle { background: #f77f00; }
+.vc-heatmap-card .vc-heatmap-dot.product { background: #4361ee; }
+.vc-heatmap-card .vc-heatmap-dot.transport { background: #c084fc; }
+.vc-heatmap-card .vc-heatmap-dot.other { background: #f72585; }
 
 .vc-heatmap-card .vc-heatmap-info {
   display: flex;

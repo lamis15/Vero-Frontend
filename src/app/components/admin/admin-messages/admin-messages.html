@@ -64,8 +64,24 @@
           <div class="ms-notice">Loading...</div>
         } @else if (conversationsError) {
           <div class="ms-notice err">{{ conversationsError }}</div>
+        } @else if (conversations.length === 0 && contacts.length > 0) {
+          <div class="ms-list">
+            @for (contact of contacts; track contact.id) {
+              <button class="ms-row" [class.active]="activeContact?.id === contact.id" (pointerdown)="onContactPointerDown(contact)" (click)="selectContact(contact)">
+                <div class="ms-av-wrap">
+                  <div class="ms-av">{{ initials(contact.fullName) }}</div>
+                  <i class="ms-online"></i>
+                </div>
+                <div class="ms-row-body">
+                  <strong>{{ contact.fullName }}</strong>
+                  <p>Tap to start conversation</p>
+                </div>
+                <span class="ms-role-chip">{{ contact.role }}</span>
+              </button>
+            }
+          </div>
         } @else if (conversations.length === 0) {
-          <div class="ms-notice">No conversations yet. Search for someone above to start chatting.</div>
+          <div class="ms-notice">No conversations yet. No other users available.</div>
         } @else {
           <div class="ms-list">
             @for (conversation of conversations; track conversation.conversationKey) {
@@ -121,6 +137,10 @@
                 <span class="ms-bubble-name">{{ isMine(msg) ? (myUser?.fullName || 'You') : msg.sender.fullName }}</span>
                 <span class="ms-bubble-time">{{ msg.timestamp | date:'shortTime' }}</span>
               </div>
+              @let subject = topicSubjectRow(msg);
+              @if (subject) {
+                <div class="ms-topic-subject" [attr.data-topic]="subject.slug">{{ subject.label }}</div>
+              }
               <div class="ms-bubble">
                 <p>{{ msg.content }}</p>
               </div>

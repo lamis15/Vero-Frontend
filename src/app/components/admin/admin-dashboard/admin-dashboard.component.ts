@@ -24,7 +24,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
   productCount = 0;
   formationCount = 0;
   forumStats = { totalPosts: 0, flaggedCount: 0 };
-  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, other: 0 };
+  topicHeatmap: TopicCounts = { eco: 0, lifestyle: 0, product: 0, transport: 0, other: 0 };
   topicHeatmapTotal = 0;
 
   currentDate = '';
@@ -101,14 +101,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
       this._animateCounter('stat-card-community', this.forumStats.totalPosts);
     });
     this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts | any) => {
-        this.topicHeatmap = {
-          eco: counts?.eco || 0,
-          lifestyle: counts?.lifestyle || 0,
-          product: counts?.product || 0,
-          other: counts?.other || 0
-        };
-        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
+      next: (counts: TopicCounts) => {
+        this.topicHeatmap = counts;
+        this.topicHeatmapTotal =
+          (counts.eco || 0) +
+          (counts.lifestyle || 0) +
+          (counts.product || 0) +
+          (counts.transport || 0) +
+          (counts.other || 0);
         this._animateCounter('stat-card-messages', this.topicHeatmapTotal);
         this.cdr.markForCheck();
       },
@@ -128,13 +128,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
       if (!msg) return;
       
       // Update heatmap counts based on the message topic
-      const topic = msg.topic as keyof TopicCounts | null;
-      if (topic && topic in this.topicHeatmap) {
+      const raw = (msg.topic ?? '').toString().trim().toLowerCase();
+      const topic =
+        raw === 'eco' || raw === 'lifestyle' || raw === 'product' || raw === 'transport' || raw === 'other'
+          ? (raw as keyof TopicCounts)
+          : null;
+      if (topic) {
         this.topicHeatmap[topic] = (this.topicHeatmap[topic] || 0) + 1;
-        this.topicHeatmapTotal = (this.topicHeatmap.eco || 0) + 
-                                  (this.topicHeatmap.lifestyle || 0) + 
-                                  (this.topicHeatmap.product || 0) + 
-                                  (this.topicHeatmap.other || 0);
+        this.topicHeatmapTotal =
+          (this.topicHeatmap.eco || 0) +
+          (this.topicHeatmap.lifestyle || 0) +
+          (this.topicHeatmap.product || 0) +
+          (this.topicHeatmap.transport || 0) +
+          (this.topicHeatmap.other || 0);
         this.cdr.detectChanges();
       }
     });
@@ -142,14 +148,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
 
   private _refreshHeatmap(): void {
     this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts | any) => {
-        this.topicHeatmap = {
-          eco: counts?.eco || 0,
-          lifestyle: counts?.lifestyle || 0,
-          product: counts?.product || 0,
-          other: counts?.other || 0
-        };
-        this.topicHeatmapTotal = this.topicHeatmap.eco + this.topicHeatmap.lifestyle + this.topicHeatmap.product + this.topicHeatmap.other;
+      next: (counts: TopicCounts) => {
+        this.topicHeatmap = counts;
+        this.topicHeatmapTotal =
+          (counts.eco || 0) +
+          (counts.lifestyle || 0) +
+          (counts.product || 0) +
+          (counts.transport || 0) +
+          (counts.other || 0);
         this.cdr.detectChanges();
       },
       error: () => {}

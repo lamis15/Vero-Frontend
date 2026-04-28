@@ -173,6 +173,7 @@
         <div class="vc-heatmap-seg eco" [style.width.%]="topicPercent('eco')"></div>
         <div class="vc-heatmap-seg lifestyle" [style.width.%]="topicPercent('lifestyle')"></div>
         <div class="vc-heatmap-seg product" [style.width.%]="topicPercent('product')"></div>
+        <div class="vc-heatmap-seg transport" [style.width.%]="topicPercent('transport')"></div>
         <div class="vc-heatmap-seg other" [style.width.%]="topicPercent('other')"></div>
       } @else {
         <div class="vc-heatmap-seg other" style="width: 100%; opacity: 0.3;"></div>
@@ -198,6 +199,13 @@
         <div class="vc-heatmap-info">
           <span class="vc-heatmap-label">Product</span>
           <span class="vc-heatmap-val">{{ topicHeatmap.product }} <small>({{ topicPercent('product') }}%)</small></span>
+        </div>
+      </div>
+      <div class="vc-heatmap-item">
+        <span class="vc-heatmap-dot transport"></span>
+        <div class="vc-heatmap-info">
+          <span class="vc-heatmap-label">Transport</span>
+          <span class="vc-heatmap-val">{{ topicHeatmap.transport }} <small>({{ topicPercent('transport') }}%)</small></span>
         </div>
       </div>
       <div class="vc-heatmap-item">

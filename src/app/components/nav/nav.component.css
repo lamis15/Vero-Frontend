@@ -507,6 +507,58 @@ nav.nav-solid .dot-badge { border-color: rgba(255,255,255,.9); }
   position: fixed; top: calc(var(--nav-h) + 20px); right: 24px;
   z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none;
 }
+
+.global-call-popup {
+  position: fixed;
+  right: 18px;
+  bottom: 22px;
+  z-index: 220;
+  width: 280px;
+  border-radius: 14px;
+  border: 1px solid rgba(20, 199, 165, 0.35);
+  background: rgba(8, 26, 34, 0.92);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  padding: 12px;
+}
+
+.global-call-title {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.global-call-name {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ecfeff;
+}
+
+.global-call-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.global-call-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.global-call-btn.accept {
+  background: linear-gradient(135deg, #24d8b6, #14C7A5);
+  color: #04231f;
+}
+
+.global-call-btn.reject {
+  background: linear-gradient(135deg, #f15b5b, #ef4444);
+  color: #fff;
+}
 .toast-notification {
   pointer-events: auto;
   background: rgba(14,23,29,.85); backdrop-filter: blur(24px) saturate(130%);
@@ -754,5 +806,5 @@ nav.nav-transparent.nav-dark-bg {
   background: rgba(14, 28, 38, 0.75);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: none;
 }

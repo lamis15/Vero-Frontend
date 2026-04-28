@@ -8,3 +8,14 @@
 @if (!isAdminRoute()) {
   <app-footer></app-footer>
 }
+
+@if (incomingGlobalCall) {
+  <div class="global-call-popup-root" role="dialog" aria-label="Incoming call">
+    <div class="global-call-title">Incoming {{ incomingGlobalCall.videoEnabled ? 'video' : 'audio' }} call</div>
+    <div class="global-call-name">{{ incomingGlobalCall.fromName }}</div>
+    <div class="global-call-actions">
+      <button class="global-call-btn accept" (click)="acceptGlobalCall()" aria-label="Accept call">Accept</button>
+      <button class="global-call-btn reject" (click)="rejectGlobalCall()" aria-label="Reject call">Reject</button>
+    </div>
+  </div>
+}
