@@ -110,23 +110,32 @@ export const routes: Routes = [
           import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
       },
       {
-        path: 'events',
-        loadComponent: () =>
-          import('./components/admin-events/Admin events.component').then(m => m.AdminEventsComponent)
-      },
-      {
-        path: 'reservations',
-        loadComponent: () =>
-          import('./components/admin-events/Admin reservations.component').then(m => m.AdminReservationsComponent)
-      },
-      {
-        path: 'anomaly',
-        loadComponent: () =>
-          import('./components/events/Anomaly detector.component').then(m => m.AnomalyDetectorComponent)
-      },
-      { path: '**', redirectTo: 'dashboard' }
-    ]
-  },
+  path: 'eco-map/moderation',
+  loadComponent: () =>
+    import('./components/admin/eco-map-moderation/eco-map-moderation.component')
+      .then(m => m.EcoMapModerationComponent)
+},
+{
+  path: 'events',
+  loadComponent: () =>
+    import('./components/admin-events/admin-events.component')
+      .then(m => m.AdminEventsComponent)
+},
+{
+  path: 'reservations',
+  loadComponent: () =>
+    import('./components/admin-events/admin-reservations.component')
+      .then(m => m.AdminReservationsComponent)
+},
+{
+  path: 'anomaly',
+  loadComponent: () =>
+    import('./components/events/anomaly-detector.component')
+      .then(m => m.AnomalyDetectorComponent)
+},
+{ path: '**', redirectTo: 'dashboard' }
+]
+},
   {
     path: 'chat',
     canActivate: [authGuard],

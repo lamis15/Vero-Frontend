@@ -70,11 +70,12 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   activeGoals: CarbonGoal[] = [];
   showGoalForm = false;
   newGoal: Partial<CarbonGoal> = {
-    activityType: 'TRANSPORT',
-    targetCarbonKg: 0,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
-  };
+  activityType: 'TRANSPORT',
+  impactType: 'CARBON',  // ADD THIS
+  targetValue: 0,        // RENAME from targetCarbonKg
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+};
 
   // ─── Forms ───
   showAddForm = false;
@@ -709,25 +710,26 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   // ─── Goal CRUD ───
 
   submitGoal(): void {
-    if (!this.newGoal.targetCarbonKg || !this.newGoal.startDate || !this.newGoal.endDate) return;
-    this.submitting = true;
-
-    this.goalService.create(this.newGoal).pipe(
-      finalize(() => { this.submitting = false; this.cdr.markForCheck(); })
-    ).subscribe({
-      next: (created) => {
-        this.activeGoals.push({ ...created, progressPct: 0 });
-        this.showGoalForm = false;
-        this.newGoal = {
-          activityType: 'TRANSPORT',
-          targetCarbonKg: 0,
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
-        };
-        this.loadDashboard();
-      }
-    });
-  }
+  if (!this.newGoal.targetValue || !this.newGoal.startDate || !this.newGoal.endDate) return;  // FIX targetCarbonKg → targetValue
+  this.submitting = true;
+ 
+  this.goalService.create(this.newGoal).pipe(
+    finalize(() => { this.submitting = false; this.cdr.markForCheck(); })
+  ).subscribe({
+    next: (created) => {
+      this.activeGoals.push({ ...created, progressPct: 0 });
+      this.showGoalForm = false;
+      this.newGoal = {
+        activityType: 'TRANSPORT',
+        impactType: 'CARBON',  // ADD THIS
+        targetValue: 0,        // FIX targetCarbonKg → targetValue
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
+      };
+      this.loadDashboard();
+    }
+  });
+}
 
   deleteGoal(id: number): void {
     this.activeGoals = this.activeGoals.filter(g => g.id !== id);
