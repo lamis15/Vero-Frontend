@@ -112,4 +112,28 @@ export class EcoMapService {
   stopLocationSharing(): Observable<any> {
     return this.http.delete(this.locBase);
   }
+
+  // ─── ADMIN MODERATION ───
+
+  /**
+   * Update pin status (admin-only operation)
+   * Allowed values: PENDING, VERIFIED, REJECTED
+   */
+  updatePinStatus(id: number, status: string): Observable<MapPin> {
+    return this.http.put<MapPin>(`${this.base}/pins/${id}/status?status=${status}`, {});
+  }
+
+  /**
+   * Delete a pin (admin-only operation)
+   */
+  deletePin(id: number): Observable<any> {
+    return this.http.delete(`${this.base}/pins/${id}`);
+  }
+
+  /**
+   * Get pin statistics (admin dashboard)
+   */
+  getPinStatistics(): Observable<{ [key: string]: number }> {
+    return this.http.get<{ [key: string]: number }>(`${this.base}/pins/statistics`);
+  }
 }

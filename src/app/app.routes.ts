@@ -109,6 +109,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
       },
+      {
+        path: 'eco-map/moderation',
+        loadComponent: () =>
+          import('./components/admin/eco-map-moderation/eco-map-moderation.component').then(m => m.EcoMapModerationComponent)
+      },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },

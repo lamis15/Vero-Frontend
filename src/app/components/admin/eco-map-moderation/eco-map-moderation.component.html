@@ -1,0 +1,165 @@
+<!-- ═══ ECO MAP MODERATION COMPONENT ═══ -->
+<div class="vc-section">
+
+  <!-- Page Header -->
+  <div class="vc-section-head">
+    <div>
+      <h2 class="vc-h2">
+        <svg class="eco-mod-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Eco Map Moderation
+      </h2>
+      <p class="vc-muted">Review and manage community-submitted eco locations</p>
+    </div>
+    
+    <div class="vc-filters">
+      <button class="vc-btn ghost" (click)="loadPendingPins()" [disabled]="loading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 4v6h6M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+        Refresh
+      </button>
+      <a routerLink="/admin/dashboard" class="vc-btn ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Banner -->
+  <div class="eco-mod-stats-banner">
+    <div class="eco-mod-stat-item">
+      <span class="eco-mod-stat-label">Pending Review</span>
+      <strong class="eco-mod-stat-value">{{ pendingPins.length }}</strong>
+    </div>
+    <div class="eco-mod-stat-item">
+      <span class="eco-mod-stat-label">Filtered</span>
+      <strong class="eco-mod-stat-value">{{ filteredPins.length }}</strong>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  @if (error && !loading) {
+    <div class="vc-banner err">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ error }}
+      <button class="vc-btn ghost" (click)="loadPendingPins()" style="margin-left: 12px; padding: 6px 12px;">
+        Retry
+      </button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="eco-mod-loading">
+      <div class="spinner" style="width: 40px; height: 40px;"></div>
+      <p style="margin-top: 16px; color: var(--vc-text-muted);">Loading pending pins...</p>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading && !error && pendingPins.length === 0) {
+    <div class="vc-empty" style="padding: 64px 24px; text-align: center;">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--vc-success)" stroke-width="2" style="margin-bottom: 16px;">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <h3 style="font-size: 22px; font-weight: 600; color: var(--vc-text-primary); margin: 0 0 8px; letter-spacing: -0.5px;">
+        No Pending Pins
+      </h3>
+      <p style="color: var(--vc-text-muted); margin: 0;">
+        All community pins have been reviewed. Great job!
+      </p>
+    </div>
+  }
+
+  <!-- Main Monitor Interface -->
+  @if (!loading && !error && pendingPins.length > 0) {
+    <div class="eco-mod-monitor">
+      
+      <!-- Filter Header -->
+      <div class="eco-mod-list-header">
+        <h3>Community Submissions</h3>
+        <div class="vc-filters">
+          <select class="vc-input sm" (change)="onFilterChange($event)" [value]="selectedType">
+            <option value="all">All Types</option>
+            <option value="RECYCLING">Recycling</option>
+            <option value="EV_CHARGING">EV Charging</option>
+            <option value="FARMERS_MARKET">Farmers Market</option>
+            <option value="BIKE_STATION">Bike Station</option>
+            <option value="COMMUNITY_GARDEN">Community Garden</option>
+            <option value="PARK">Park</option>
+            <option value="WATER_FOUNTAIN">Water Fountain</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Pins Grid -->
+      <div class="eco-mod-pins-grid">
+        @for (pin of filteredPins; track pin.id) {
+          <div class="eco-mod-pin-card">
+            
+            <!-- Card Header -->
+            <div class="eco-mod-pin-header">
+              <div class="eco-mod-pin-type">
+                <span class="eco-mod-type-icon">{{ getPinTypeIcon(pin.type || '') }}</span>
+                <span class="eco-mod-type-label">{{ pin.type || 'Unknown' }}</span>
+              </div>
+              <span class="vc-tag warn">{{ pin.status || 'PENDING' }}</span>
+            </div>
+
+            <!-- Card Content -->
+            <div class="eco-mod-pin-content">
+              <h4 class="eco-mod-pin-name">{{ pin.name }}</h4>
+              <p class="eco-mod-pin-description">{{ pin.description || 'No description provided' }}</p>
+              
+              @if (pin.address) {
+                <div class="eco-mod-pin-location">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>{{ pin.address }}</span>
+                </div>
+              }
+
+              <div class="eco-mod-pin-coordinates">
+                <span class="eco-mod-coord-label">Coordinates:</span>
+                <span class="eco-mod-coord-value">{{ pin.latitude.toFixed(6) }}, {{ pin.longitude.toFixed(6) }}</span>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="eco-mod-pin-actions">
+              <button class="vc-btn primary" (click)="approvePin(pin)" title="Approve this pin">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Approve
+              </button>
+              <button class="vc-btn danger" (click)="rejectPin(pin)" title="Reject this pin">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Reject
+              </button>
+            </div>
+            
+          </div>
+        }
+      </div>
+      
+    </div>
+  }
+
+</div>
