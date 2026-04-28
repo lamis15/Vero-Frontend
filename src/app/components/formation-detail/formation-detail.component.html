@@ -1,5 +1,55 @@
 <div class="fd-root">
 
+  <!-- ░░ UNSUBSCRIBE CONFIRMATION MODAL ░░ -->
+  @if (showUnsubscribeModal) {
+    <div class="fd-modal-overlay" (click)="cancelUnsubscribe()">
+      <div class="fd-modal" (click)="$event.stopPropagation()">
+        <div class="fd-modal__header">
+          <h2 class="fd-modal__title">Confirmation de désinscription</h2>
+          <button class="fd-modal__close" (click)="cancelUnsubscribe()" [disabled]="isUnsubscribing">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="fd-modal__body">
+          <p class="fd-modal__question">Êtes-vous sûr de vouloir vous désinscrire de cette formation ?</p>
+          
+          <div class="fd-modal__warning">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Important :</span>
+          </div>
+
+          <ul class="fd-modal__list">
+            <li>Vous perdrez l'accès aux ressources et sessions</li>
+            <li>Votre place sera libérée pour la liste d'attente</li>
+            <li>Vous devrez vous réinscrire pour y accéder à nouveau</li>
+          </ul>
+        </div>
+
+        <div class="fd-modal__footer">
+          <button class="fd-modal__btn fd-modal__btn--cancel" (click)="cancelUnsubscribe()" [disabled]="isUnsubscribing">
+            Annuler
+          </button>
+          <button class="fd-modal__btn fd-modal__btn--confirm" (click)="confirmUnsubscribe()" [disabled]="isUnsubscribing">
+            @if (isUnsubscribing) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fd-spinner">
+                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+              </svg>
+              Désinscription...
+            } @else {
+              Confirmer la désinscription
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- ░░ LOADING ░░ -->
   @if (loading) {
     <div class="fd-state">
@@ -52,24 +102,111 @@
             <h1 class="fd-hero__title">{{ formation.title }}</h1>
             <p class="fd-hero__desc">{{ formation.description }}</p>
 
+            <!-- COUNTDOWN TIMER -->
+            @if (sessions.length > 0 && !countdown.isExpired && !countdown.isStarted) {
+              <div class="fd-countdown">
+                <div class="fd-countdown__header">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>La formation commence dans</span>
+                </div>
+                <div class="fd-countdown__timer">
+                  @if (countdown.months > 0) {
+                    <div class="fd-countdown__unit">
+                      <div class="fd-countdown__value">{{ countdown.months }}</div>
+                      <div class="fd-countdown__label">{{ countdown.months > 1 ? 'Mois' : 'Mois' }}</div>
+                    </div>
+                  }
+                  <div class="fd-countdown__unit">
+                    <div class="fd-countdown__value">{{ countdown.days }}</div>
+                    <div class="fd-countdown__label">{{ countdown.days > 1 ? 'Jours' : 'Jour' }}</div>
+                  </div>
+                  <div class="fd-countdown__separator">:</div>
+                  <div class="fd-countdown__unit">
+                    <div class="fd-countdown__value">{{ countdown.hours.toString().padStart(2, '0') }}</div>
+                    <div class="fd-countdown__label">Heures</div>
+                  </div>
+                  <div class="fd-countdown__separator">:</div>
+                  <div class="fd-countdown__unit">
+                    <div class="fd-countdown__value">{{ countdown.minutes.toString().padStart(2, '0') }}</div>
+                    <div class="fd-countdown__label">Minutes</div>
+                  </div>
+                  <div class="fd-countdown__separator">:</div>
+                  <div class="fd-countdown__unit">
+                    <div class="fd-countdown__value">{{ countdown.seconds.toString().padStart(2, '0') }}</div>
+                    <div class="fd-countdown__label">Secondes</div>
+                  </div>
+                </div>
+              </div>
+            }
+
             <!-- CTA -->
             <div class="fd-hero__cta">
               @if (isUserEnrolled()) {
-                <div class="fd-enrolled">
-                  <div class="fd-enrolled__shine"></div>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <div>
-                    <strong>Vous êtes inscrit !</strong>
-                    <span>Votre place est confirmée.</span>
+                <div class="fd-enrolled-group">
+                  <div class="fd-enrolled">
+                    <div class="fd-enrolled__shine"></div>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <div>
+                      <strong>Vous êtes inscrit !</strong>
+                      <span>Votre place est confirmée.</span>
+                    </div>
                   </div>
+                  @if (canModifyRegistration()) {
+                    <button class="fd-btn-unregister" (click)="unregister()" title="Se désinscrire de la formation">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <line x1="23" y1="11" x2="17" y2="11"/>
+                      </svg>
+                      Se désinscrire
+                    </button>
+                  } @else {
+                    <div class="fd-formation-started">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      Formation commencée
+                    </div>
+                  }
                 </div>
-              } @else {
-                <button class="fd-btn-register" (click)="register()" [disabled]="getAvailableSpots() === 0">
+              } @else if (isInWaitlist) {
+                <div class="fd-waitlist">
+                  <div class="fd-waitlist__icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <div class="fd-waitlist__content">
+                    <strong>Liste d'attente</strong>
+                    <span>Position #{{ waitlistPosition }} • Vous serez notifié sur Slack</span>
+                  </div>
+                  @if (canModifyRegistration()) {
+                    <button class="fd-btn-leave-waitlist" (click)="leaveWaitlist()">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                      Quitter
+                    </button>
+                  }
+                </div>
+              } @else if (canModifyRegistration()) {
+                <button class="fd-btn-register" (click)="register()" [disabled]="getAvailableSpots() === 0 && !authService.isLoggedIn">
                   @if (getAvailableSpots() === 0) {
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                    Formation complète
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Rejoindre la liste d'attente
                   } @else if (formation.price && formation.price > 0) {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                     S'inscrire — €{{ formation.price.toFixed(2) }}
@@ -78,6 +215,18 @@
                     S'inscrire gratuitement
                   }
                 </button>
+              } @else {
+                <div class="fd-registration-closed">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                  <div>
+                    <strong>Inscriptions fermées</strong>
+                    <span>La formation a déjà commencé</span>
+                  </div>
+                </div>
               }
 
               @if (canTakeQuiz()) {
@@ -85,6 +234,11 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   Passer le quiz
                 </button>
+              } @else if (isParticipant() && hasQuiz && !quizPassed) {
+                <div class="fd-quiz-unavailable">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>{{ getQuizStatusMessage() }}</span>
+                </div>
               }
 
               @if (hasCertificate()) {
@@ -147,31 +301,58 @@
     <div class="fd-body">
 
       <!-- RESOURCES -->
-      @if (resources.length > 0) {
-        <section class="fd-card">
-          <div class="fd-card__head">
-            <div class="fd-card__head-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <section class="fd-card">
+        <div class="fd-card__head">
+          <div class="fd-card__head-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <h2 class="fd-card__title">Ressources <span class="fd-badge-count">{{ resources.length }}</span></h2>
+        </div>
+
+        @if (isUserEnrolled()) {
+          <!-- User is enrolled: show resources -->
+          @if (resources.length === 0) {
+            <div class="fd-empty">
+              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <p>Aucune ressource disponible pour le moment.</p>
             </div>
-            <h2 class="fd-card__title">Ressources <span class="fd-badge-count">{{ resources.length }}</span></h2>
-          </div>
-          <div class="fd-resources">
-            @for (res of resources; track res.id) {
-              <div class="fd-resource">
-                <span class="fd-resource__icon">{{ getFileIcon(res.fileType) }}</span>
-                <div class="fd-resource__info">
-                  <span class="fd-resource__name">{{ res.originalFileName }}</span>
-                  <span class="fd-resource__size">{{ formatFileSize(res.fileSize) }}</span>
+          } @else {
+            <div class="fd-resources">
+              @for (res of resources; track res.id) {
+                <div class="fd-resource">
+                  <span class="fd-resource__icon">{{ getFileIcon(res.fileType) }}</span>
+                  <div class="fd-resource__info">
+                    <span class="fd-resource__name">{{ res.originalFileName }}</span>
+                    <span class="fd-resource__size">{{ formatFileSize(res.fileSize) }}</span>
+                  </div>
+                  <button class="fd-btn-dl" (click)="downloadResource(res.id, res.originalFileName)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Télécharger
+                  </button>
                 </div>
-                <button class="fd-btn-dl" (click)="downloadResource(res.id, res.originalFileName)">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Télécharger
-                </button>
-              </div>
-            }
+              }
+            </div>
+          }
+        } @else {
+          <!-- User is NOT enrolled: show locked message -->
+          <div class="fd-locked">
+            <div class="fd-locked__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="fd-locked__content">
+              <h3 class="fd-locked__title">Contenu réservé aux inscrits</h3>
+              <p class="fd-locked__desc">
+                Inscrivez-vous à cette formation pour accéder aux {{ resources.length }} ressource{{ resources.length > 1 ? 's' : '' }} disponible{{ resources.length > 1 ? 's' : '' }}.
+              </p>
+            </div>
           </div>
-        </section>
-      }
+        }
+      </section>
 
       <!-- SESSIONS -->
       <section class="fd-card">
@@ -182,58 +363,77 @@
           <h2 class="fd-card__title">Sessions programmées <span class="fd-badge-count">{{ sessions.length }}</span></h2>
         </div>
 
-        @if (sessions.length === 0) {
-          <div class="fd-empty">
-            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <p>Aucune session programmée pour le moment.</p>
-          </div>
-        }
-
-        <div class="fd-sessions">
-          @for (session of sessions; track session.id; let i = $index) {
-            <div class="fd-session">
-              <div class="fd-session__num">{{ i + 1 }}</div>
-              <div class="fd-session__body">
-                <div class="fd-session__head">
-                  <h3 class="fd-session__title">{{ session.title }}</h3>
-                  <span class="fd-session__status" [ngClass]="'fd-ss--'+session.status.toLowerCase()">
-                    {{ getStatusLabel(session.status) }}
-                  </span>
-                </div>
-                <div class="fd-session__details">
-                  <div class="fd-detail">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    <div>
-                      <span class="fd-detail__label">Date</span>
-                      <span class="fd-detail__val">{{ formatDate(session.startDate) }}</span>
+        @if (isUserEnrolled()) {
+          <!-- User is enrolled: show sessions -->
+          @if (sessions.length === 0) {
+            <div class="fd-empty">
+              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <p>Aucune session programmée pour le moment.</p>
+            </div>
+          } @else {
+            <div class="fd-sessions">
+              @for (session of sessions; track session.id; let i = $index) {
+                <div class="fd-session">
+                  <div class="fd-session__num">{{ i + 1 }}</div>
+                  <div class="fd-session__body">
+                    <div class="fd-session__head">
+                      <h3 class="fd-session__title">{{ session.title }}</h3>
+                      <span class="fd-session__status" [ngClass]="'fd-ss--'+session.status.toLowerCase()">
+                        {{ getStatusLabel(session.status) }}
+                      </span>
                     </div>
-                  </div>
-                  <div class="fd-detail">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <div>
-                      <span class="fd-detail__label">Horaires</span>
-                      <span class="fd-detail__val">{{ formatTime(session.startDate) }} – {{ formatTime(session.endDate) }}</span>
-                    </div>
-                  </div>
-                  @if (session.meetLink) {
-                    <div class="fd-detail">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                      <div>
-                        <span class="fd-detail__label">Lien</span>
-                        <a [href]="session.meetLink" target="_blank" class="fd-meet-link">
-                          Rejoindre
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-                        </a>
+                    <div class="fd-session__details">
+                      <div class="fd-detail">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div>
+                          <span class="fd-detail__label">Date</span>
+                          <span class="fd-detail__val">{{ formatDate(session.startDate) }}</span>
+                        </div>
                       </div>
+                      <div class="fd-detail">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div>
+                          <span class="fd-detail__label">Horaires</span>
+                          <span class="fd-detail__val">{{ formatTime(session.startDate) }} – {{ formatTime(session.endDate) }}</span>
+                        </div>
+                      </div>
+                      @if (session.meetLink) {
+                        <div class="fd-detail">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          <div>
+                            <span class="fd-detail__label">Lien</span>
+                            <a [href]="session.meetLink" target="_blank" class="fd-meet-link">
+                              Rejoindre
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                            </a>
+                          </div>
+                        </div>
+                      }
                     </div>
-                  }
+                  </div>
                 </div>
-              </div>
+              }
             </div>
           }
-        </div>
+        } @else {
+          <!-- User is NOT enrolled: show locked message -->
+          <div class="fd-locked">
+            <div class="fd-locked__icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="fd-locked__content">
+              <h3 class="fd-locked__title">Contenu réservé aux inscrits</h3>
+              <p class="fd-locked__desc">
+                Inscrivez-vous à cette formation pour accéder aux {{ sessions.length }} session{{ sessions.length > 1 ? 's' : '' }} programmée{{ sessions.length > 1 ? 's' : '' }}.
+              </p>
+            </div>
+          </div>
+        }
       </section>
 
     </div>

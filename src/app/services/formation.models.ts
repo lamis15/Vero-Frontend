@@ -2,12 +2,15 @@ export interface Formation {
   id?: number;
   title: string;
   description: string;
+  imageUrl?: string; // URL de l'image de la formation
   duration: number; // in hours
   maxCapacity: number;
   price?: number; // prix d'inscription
   status: FormationStatus;
   participantIds?: number[];
+  waitlistIds?: number[];
   pinned?: boolean;
+  tags?: string[]; // Tags de la formation
 }
 
 export enum FormationStatus {
@@ -22,9 +25,11 @@ export interface Session {
   startDate: string; // ISO format
   endDate: string;
   status: SessionStatus;
+  type?: SessionType; // Type de session (en ligne ou présentiel)
   meetLink?: string;
   trainerId: number;
   formation?: Formation;
+  isFinalSession?: boolean; // Indique si c'est la session finale
 }
 
 export enum SessionStatus {
@@ -32,6 +37,11 @@ export enum SessionStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED'
+}
+
+export enum SessionType {
+  ONLINE = 'ONLINE',
+  IN_PERSON = 'IN_PERSON'
 }
 
 export interface FormationResource {

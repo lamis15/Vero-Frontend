@@ -13,15 +13,16 @@
   @if (error) { <div class="pf-banner err">{{ error }}</div> }
 
   @if (activeTab === 'profile') {
-    <!-- Two-column flow: left col = profile + timeline, right col = eco voice + promo -->
-    <section class="pf-grid">
-      <div class="pf-col">
+  <!-- Two-column flow: left col = profile + timeline, right col = eco voice + promo -->
+  <section class="pf-grid">
+    <div class="pf-col">
 
       <!-- Big profile card -->
       <article class="pf-card pf-profile-card pf-col-left">
         <button type="button" class="pf-edit-pen" aria-label="Edit profile" (click)="setTab('profile'); scrollEdit()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
           </svg>
         </button>
 
@@ -29,16 +30,17 @@
           <div class="pf-avatar-wrap">
             <div class="pf-avatar">
               @if (image || user?.image) {
-                <img [src]="image || user?.image" alt="" />
+              <img [src]="image || user?.image" alt="" />
               } @else {
-                <span class="pf-avatar-initials">{{ (user?.fullName?.[0] || '?') }}{{ (user?.fullName?.split(' ')?.[1]?.[0] || '') }}</span>
+              <span class="pf-avatar-initials">{{ (user?.fullName?.[0] || '?') }}{{ (user?.fullName?.split('
+                ')?.[1]?.[0] || '') }}</span>
               }
             </div>
             <label class="pf-avatar-edit" title="Change photo">
               <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
               </svg>
             </label>
           </div>
@@ -58,7 +60,8 @@
               <li>
                 <span class="pf-info-label">Status:</span>
                 <span class="pf-info-value">
-                  <span class="pf-status-chip" [class.ok]="user?.verified">{{ user?.verified ? 'Verified' : 'Pending' }}</span>
+                  <span class="pf-status-chip" [class.ok]="user?.verified">{{ user?.verified ? 'Verified' : 'Pending'
+                    }}</span>
                 </span>
               </li>
               <li>
@@ -73,19 +76,37 @@
 
             <div class="pf-social-row">
               <button type="button" class="pf-social" aria-label="Email" [title]="user?.email || ''">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="M3 7l9 6 9-6" />
+                </svg>
               </button>
               <button type="button" class="pf-social" aria-label="Activity">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
               </button>
               <button type="button" class="pf-social" aria-label="Calendar">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
               </button>
               <button type="button" class="pf-social" aria-label="Bookmark">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
               </button>
               <button type="button" class="pf-social" aria-label="Share">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
               </button>
             </div>
           </div>
@@ -97,85 +118,97 @@
         <h3 class="pf-card-title">My impact</h3>
 
         @if (ecoProfileLoading) {
-          <div class="pf-skeleton"></div>
+        <div class="pf-skeleton"></div>
         } @else if (ecoProfile) {
-          <div class="pf-timeline">
-            <div class="pf-timeline-rail"></div>
+        <div class="pf-timeline">
+          <div class="pf-timeline-rail"></div>
 
-            <div class="pf-track-item track-eco">
-              <span class="pf-track-dot"></span>
-              <div class="pf-track-body">
-                <div class="pf-track-text">
-                  <strong>Transport footprint</strong>
-                  <p>Daily mobility — commute, trips, and rides</p>
-                  <span class="pf-track-meta">{{ ecoProfile.transportKg | number:'1.0-1' }} kg CO₂</span>
-                </div>
-                <span class="pf-track-badge done">Tracked</span>
-                <button type="button" class="pf-track-arrow eco" aria-label="Open">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-                </button>
+          <div class="pf-track-item track-eco">
+            <span class="pf-track-dot"></span>
+            <div class="pf-track-body">
+              <div class="pf-track-text">
+                <strong>Transport footprint</strong>
+                <p>Daily mobility — commute, trips, and rides</p>
+                <span class="pf-track-meta">{{ ecoProfile.transportKg | number:'1.0-1' }} kg CO₂</span>
               </div>
-            </div>
-
-            <div class="pf-track-item track-food">
-              <span class="pf-track-dot"></span>
-              <div class="pf-track-body">
-                <div class="pf-track-text">
-                  <strong>Food footprint</strong>
-                  <p>Diet patterns and food-related emissions</p>
-                  <span class="pf-track-meta">{{ ecoProfile.foodKg | number:'1.0-1' }} kg CO₂</span>
-                </div>
-                <span class="pf-track-badge done">Tracked</span>
-                <button type="button" class="pf-track-arrow food" aria-label="Open">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="pf-track-item track-energy">
-              <span class="pf-track-dot"></span>
-              <div class="pf-track-body">
-                <div class="pf-track-text">
-                  <strong>Energy use</strong>
-                  <p>Household electricity and consumption</p>
-                  <span class="pf-track-meta">{{ ecoProfile.energyKwh | number:'1.0-1' }} kWh</span>
-                </div>
-                <span class="pf-track-badge live">Live</span>
-                <button type="button" class="pf-track-arrow energy" aria-label="Open">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="pf-track-item track-waste">
-              <span class="pf-track-dot"></span>
-              <div class="pf-track-body">
-                <div class="pf-track-text">
-                  <strong>Waste</strong>
-                  <p>What you throw, recycle, or compost</p>
-                  <span class="pf-track-meta">{{ ecoProfile.wasteKg | number:'1.0-1' }} kg</span>
-                </div>
-                <span class="pf-track-badge live">Live</span>
-                <button type="button" class="pf-track-arrow waste" aria-label="Open">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
-                </button>
-              </div>
+              <span class="pf-track-badge done">Tracked</span>
+              <button type="button" class="pf-track-arrow eco" aria-label="Open">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="7 13 12 18 17 13" />
+                  <polyline points="7 6 12 11 17 6" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="pf-persona-stats">
-            <div><strong>{{ ecoProfile.postsCount }}</strong><small>Posts</small></div>
-            <div><strong>{{ ecoProfile.goalsAchieved }}</strong><small>Goals</small></div>
-            <div><strong>{{ ecoProfile.reportsCount }}</strong><small>Alerts</small></div>
+          <div class="pf-track-item track-food">
+            <span class="pf-track-dot"></span>
+            <div class="pf-track-body">
+              <div class="pf-track-text">
+                <strong>Food footprint</strong>
+                <p>Diet patterns and food-related emissions</p>
+                <span class="pf-track-meta">{{ ecoProfile.foodKg | number:'1.0-1' }} kg CO₂</span>
+              </div>
+              <span class="pf-track-badge done">Tracked</span>
+              <button type="button" class="pf-track-arrow food" aria-label="Open">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="7 13 12 18 17 13" />
+                  <polyline points="7 6 12 11 17 6" />
+                </svg>
+              </button>
+            </div>
           </div>
+
+          <div class="pf-track-item track-energy">
+            <span class="pf-track-dot"></span>
+            <div class="pf-track-body">
+              <div class="pf-track-text">
+                <strong>Energy use</strong>
+                <p>Household electricity and consumption</p>
+                <span class="pf-track-meta">{{ ecoProfile.energyKwh | number:'1.0-1' }} kWh</span>
+              </div>
+              <span class="pf-track-badge live">Live</span>
+              <button type="button" class="pf-track-arrow energy" aria-label="Open">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="7 13 12 18 17 13" />
+                  <polyline points="7 6 12 11 17 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="pf-track-item track-waste">
+            <span class="pf-track-dot"></span>
+            <div class="pf-track-body">
+              <div class="pf-track-text">
+                <strong>Waste</strong>
+                <p>What you throw, recycle, or compost</p>
+                <span class="pf-track-meta">{{ ecoProfile.wasteKg | number:'1.0-1' }} kg</span>
+              </div>
+              <span class="pf-track-badge live">Live</span>
+              <button type="button" class="pf-track-arrow waste" aria-label="Open">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="7 13 12 18 17 13" />
+                  <polyline points="7 6 12 11 17 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-persona-stats">
+          <div><strong>{{ ecoProfile.postsCount }}</strong><small>Posts</small></div>
+          <div><strong>{{ ecoProfile.goalsAchieved }}</strong><small>Goals</small></div>
+          <div><strong>{{ ecoProfile.reportsCount }}</strong><small>Alerts</small></div>
+        </div>
         } @else {
-          <p class="pf-empty">Keep tracking your footprint to generate your impact timeline.</p>
+        <p class="pf-empty">Keep tracking your footprint to generate your impact timeline.</p>
         }
       </article>
 
-      </div>
+    </div>
 
-      <div class="pf-col">
+    <div class="pf-col">
       <article class="pf-card pf-side-card pf-col-right">
         <h3 class="pf-card-title">Eco voice</h3>
         <p class="pf-side-sub">Share of eco-themed messages</p>
@@ -184,14 +217,19 @@
           <div class="pf-eco-ring-val">
             <strong>{{ ecoScore }}<span>%</span></strong>
             <small>{{ ecoStats.eco }}/{{ ecoTotal || '0' }} msgs</small>
+            <small>{{ ecoStats.eco }}/{{ ecoTotal || '0' }} msgs</small>
           </div>
         </div>
 
         <ul class="pf-eco-breakdown">
-          <li><span class="pf-eco-dot eco"></span> Eco <em>{{ ecoStats.eco }}</em> <small>({{ topicPercent('eco') }}%)</small></li>
-          <li><span class="pf-eco-dot lifestyle"></span> Lifestyle <em>{{ ecoStats.lifestyle }}</em> <small>({{ topicPercent('lifestyle') }}%)</small></li>
-          <li><span class="pf-eco-dot product"></span> Product <em>{{ ecoStats.product }}</em> <small>({{ topicPercent('product') }}%)</small></li>
-          <li><span class="pf-eco-dot other"></span> Other <em>{{ ecoStats.other }}</em> <small>({{ topicPercent('other') }}%)</small></li>
+          <li><span class="pf-eco-dot eco"></span> Eco <em>{{ ecoStats.eco }}</em> <small>({{ topicPercent('eco')
+              }}%)</small></li>
+          <li><span class="pf-eco-dot lifestyle"></span> Lifestyle <em>{{ ecoStats.lifestyle }}</em> <small>({{
+              topicPercent('lifestyle') }}%)</small></li>
+          <li><span class="pf-eco-dot product"></span> Product <em>{{ ecoStats.product }}</em> <small>({{
+              topicPercent('product') }}%)</small></li>
+          <li><span class="pf-eco-dot other"></span> Other <em>{{ ecoStats.other }}</em> <small>({{
+              topicPercent('other') }}%)</small></li>
         </ul>
       </article>
       <!-- Promo / Persona purple card -->
@@ -199,114 +237,115 @@
         <h3 class="pf-promo-title">{{ personaTitle }}</h3>
 
         @if (badgeImage) {
-          <img [src]="badgeImage" alt="" class="pf-promo-badge" />
+        <img [src]="badgeImage" alt="" class="pf-promo-badge" />
         }
 
 
         <button class="pf-promo-cta" type="button" (click)="setTab('edit')">Manage account</button>
       </article>
-      </div>
-    </section>
+    </div>
+  </section>
   }
 
   @if (activeTab === 'edit') {
-    <article class="pf-card pf-form-card pf-edit-page" id="pf-edit">
-      <header class="pf-card-head pf-edit-head">
-        <div class="pf-edit-avatar-wrap">
-          <div class="pf-edit-avatar">
-            @if (image || user?.image) {
-              <img [src]="image || user?.image" alt="" />
-            } @else {
-              <span class="pf-avatar-initials">{{ (user?.fullName?.[0] || '?') }}{{ (user?.fullName?.split(' ')?.[1]?.[0] || '') }}</span>
-            }
-          </div>
-          <label class="pf-avatar-edit" title="Change photo">
-            <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-          </label>
+  <article class="pf-card pf-form-card pf-edit-page" id="pf-edit">
+    <header class="pf-card-head pf-edit-head">
+      <div class="pf-edit-avatar-wrap">
+        <div class="pf-edit-avatar">
+          @if (image || user?.image) {
+          <img [src]="image || user?.image" alt="" />
+          } @else {
+          <span class="pf-avatar-initials">{{ (user?.fullName?.[0] || '?') }}{{ (user?.fullName?.split(' ')?.[1]?.[0] ||
+            '') }}</span>
+          }
         </div>
-        <div>
-          <h2>Edit your profile</h2>
-          <p>This is how other members see you across Vero.</p>
-        </div>
-      </header>
-
-      <div class="pf-form">
-        <label class="pf-field">
-          <span>Full name</span>
-          <input type="text" [(ngModel)]="fullName" placeholder="Your full name" />
+        <label class="pf-avatar-edit" title="Change photo">
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
         </label>
-        <label class="pf-field">
-          <span>Email address</span>
-          <input type="email" [(ngModel)]="email" placeholder="you@example.com" />
-        </label>
-        <label class="pf-field pf-field-upload">
-          <span>Profile photo</span>
-          <div class="pf-upload">
-            <input id="pf-file" type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
-            <label for="pf-file" class="pf-upload-btn">Upload new photo</label>
-            <small>PNG or JPG, max 2 MB</small>
-          </div>
-        </label>
-      </div>
-
-      <footer class="pf-card-foot">
-        <span class="pf-muted">Visible to all platform members.</span>
-        <div class="pf-edit-actions">
-          <button class="pf-btn ghost" type="button" (click)="setTab('profile')">Cancel</button>
-          <button class="pf-btn primary" (click)="updateProfile()">Save profile</button>
-        </div>
-      </footer>
-    </article>
-
-    <!-- Security layer — same Edit tab, below profile fields -->
-    <article class="pf-card pf-security-hero">
-      <div class="pf-security-hero-art">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="3" y="11" width="18" height="11" rx="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
       </div>
       <div>
-        <span class="pf-eco-kicker">Account security</span>
-        <h2>Keep your account yours.</h2>
-        <p>Rotate your password regularly. Vero never stores passwords in plain text.</p>
+        <h2>Edit your profile</h2>
+        <p>This is how other members see you across Vero.</p>
       </div>
-    </article>
+    </header>
 
-    <article class="pf-card pf-form-card pf-edit-page">
-      <header class="pf-card-head">
-        <h2>Change your password</h2>
-        <p>Enter your current password, then pick a new one.</p>
-      </header>
+    <div class="pf-form">
+      <label class="pf-field">
+        <span>Full name</span>
+        <input type="text" [(ngModel)]="fullName" placeholder="Your full name" />
+      </label>
+      <label class="pf-field">
+        <span>Email address</span>
+        <input type="email" [(ngModel)]="email" placeholder="you@example.com" />
+      </label>
+      <label class="pf-field pf-field-upload">
+        <span>Profile photo</span>
+        <div class="pf-upload">
+          <input id="pf-file" type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+          <label for="pf-file" class="pf-upload-btn">Upload new photo</label>
+          <small>PNG or JPG, max 2 MB</small>
+        </div>
+      </label>
+    </div>
 
-      <div class="pf-form">
-        <label class="pf-field">
-          <span>Current password</span>
-          <input type="password" [(ngModel)]="currentPassword" />
-        </label>
-        <label class="pf-field">
-          <span>New password</span>
-          <input type="password" [(ngModel)]="newPassword" />
-        </label>
+    <footer class="pf-card-foot">
+      <span class="pf-muted">Visible to all platform members.</span>
+      <div class="pf-edit-actions">
+        <button class="pf-btn ghost" type="button" (click)="setTab('profile')">Cancel</button>
+        <button class="pf-btn primary" (click)="updateProfile()">Save profile</button>
       </div>
+    </footer>
+  </article>
 
-      <footer class="pf-card-foot">
-        <span class="pf-muted">You'll stay signed in after the change.</span>
-        <button class="pf-btn primary" (click)="updatePassword()">Update password</button>
-      </footer>
-    </article>
+  <!-- Security layer — same Edit tab, below profile fields -->
+  <article class="pf-card pf-security-hero">
+    <div class="pf-security-hero-art">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="11" width="18" height="11" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    </div>
+    <div>
+      <span class="pf-eco-kicker">Account security</span>
+      <h2>Keep your account yours.</h2>
+      <p>Rotate your password regularly. Vero never stores passwords in plain text.</p>
+    </div>
+  </article>
 
-    <article class="pf-card pf-advice">
-      <h3 class="pf-card-title">Good password habits</h3>
-      <ul>
-        <li><span class="pf-advice-dot"></span> Use at least 12 characters mixing upper, lower, numbers.</li>
-        <li><span class="pf-advice-dot accent"></span> Never reuse a password from another site.</li>
-        <li><span class="pf-advice-dot alt"></span> A password manager makes this effortless.</li>
-      </ul>
-    </article>
+  <article class="pf-card pf-form-card pf-edit-page">
+    <header class="pf-card-head">
+      <h2>Change your password</h2>
+      <p>Enter your current password, then pick a new one.</p>
+    </header>
+
+    <div class="pf-form">
+      <label class="pf-field">
+        <span>Current password</span>
+        <input type="password" [(ngModel)]="currentPassword" />
+      </label>
+      <label class="pf-field">
+        <span>New password</span>
+        <input type="password" [(ngModel)]="newPassword" />
+      </label>
+    </div>
+
+    <footer class="pf-card-foot">
+      <span class="pf-muted">You'll stay signed in after the change.</span>
+      <button class="pf-btn primary" (click)="updatePassword()">Update password</button>
+    </footer>
+  </article>
+
+  <article class="pf-card pf-advice">
+    <h3 class="pf-card-title">Good password habits</h3>
+    <ul>
+      <li><span class="pf-advice-dot"></span> Use at least 12 characters mixing upper, lower, numbers.</li>
+      <li><span class="pf-advice-dot accent"></span> Never reuse a password from another site.</li>
+      <li><span class="pf-advice-dot alt"></span> A password manager makes this effortless.</li>
+    </ul>
+  </article>
   }
 </div>

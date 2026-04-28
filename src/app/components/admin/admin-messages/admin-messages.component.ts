@@ -45,7 +45,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   constructor(
     private messagerieService: MessagerieService,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const cachedUser = this.authService.currentUser;
@@ -279,7 +279,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   private scrollToBottom(): void {
     try {
       this.chatScrollContainer.nativeElement.scrollTop = this.chatScrollContainer.nativeElement.scrollHeight;
-    } catch {}
+    } catch { }
   }
 
   private initializeMessaging(user: UserResponse): void {
@@ -299,7 +299,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
         }
         const belongsToActiveThread = this.activeContact != null &&
           ((msg.sender.id === this.myUser.id && msg.receiver.id === this.activeContact.id) ||
-           (msg.sender.id === this.activeContact.id && msg.receiver.id === this.myUser.id));
+            (msg.sender.id === this.activeContact.id && msg.receiver.id === this.myUser.id));
 
         if (belongsToActiveThread) {
           this.appendIncoming(msg);
@@ -370,7 +370,7 @@ export class AdminMessagesComponent implements OnInit, OnDestroy, AfterViewCheck
   loadTopicHeatmap(): void {
     this.messagerieService.loadTopicHeatmap().subscribe({
       next: (counts) => (this.topicHeatmap = counts),
-      error: () => {}
+      error: () => { }
     });
   }
 

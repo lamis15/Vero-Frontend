@@ -30,8 +30,8 @@
           @for (item of cartItems; track item.product.id) {
             <div class="cart-item">
               <div class="item-image" [style.background]="getProductColor(item.product.category)">
-                @if (item.product.image && item.product.image.startsWith('data:image')) {
-                  <img [src]="item.product.image" alt="{{ item.product.name }}">
+                @if (item.product.image) {
+                  <img [src]="item.product.image" [alt]="item.product.name">
                 } @else {
                   <span class="item-emoji">{{ getProductEmoji(item.product.category) }}</span>
                 }

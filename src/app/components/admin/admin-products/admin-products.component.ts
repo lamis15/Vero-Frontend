@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { timeout, catchError, of } from 'rxjs';
 import { ProductService } from '../../../services/product.service';
 import { NotificationService } from '../../../services/notification.service';
+import { CloudinaryService } from '../../../services/cloudinary.service';
 import { Product } from '../../../services/product.models';
 
 @Component({
@@ -21,6 +22,10 @@ export class AdminProductsComponent implements OnInit {
   productSaving = false;
   productImageCache = new Map<number, string>();
   productToDelete: number | null = null;
+  selectedImageFile: File | null = null;
+  imagePreview: string | null = null;
+  uploadingImage = false;
+  uploadProgress = 0;
 
   productForm = {
     name: '',
@@ -90,6 +95,7 @@ export class AdminProductsComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private notificationService: NotificationService,
+    private cloudinaryService: CloudinaryService,
     private cdr: ChangeDetectorRef,
     private zone: NgZone
   ) { }
@@ -187,6 +193,9 @@ export class AdminProductsComponent implements OnInit {
 
   openProductModal(product?: Product): void {
     this.editingProduct = product ?? null;
+    this.selectedImageFile = null;
+    this.uploadProgress = 0;
+
     if (product) {
       this.productForm = {
         name: product.name,
@@ -198,11 +207,13 @@ export class AdminProductsComponent implements OnInit {
         origin: product.origin ?? '',
         isEcological: product.isEcological
       };
+      this.imagePreview = this.productForm.image || null;
     } else {
       this.productForm = {
         name: '', description: '', price: 0, stock: 0,
         category: 'NATURAL_COSMETICS', image: '', origin: '', isEcological: true
       };
+      this.imagePreview = null;
     }
     this.showProductModal = true;
   }
@@ -216,13 +227,66 @@ export class AdminProductsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (!input.files?.[0]) return;
     const file = input.files[0];
-    if (file.size > 500 * 1024) {
-      this.notificationService.error('Image must be under 500KB.');
+
+    // Validation de la taille
+    if (file.size > 10 * 1024 * 1024) { // 10MB max
+      this.notificationService.error('Image must be under 10MB.');
       return;
     }
+
+    // Validation du type
+    if (!file.type.startsWith('image/')) {
+      this.notificationService.error('Please select a valid image file.');
+      return;
+    }
+
+    this.selectedImageFile = file;
+
+    // Créer un aperçu local
     const reader = new FileReader();
-    reader.onload = () => { this.productForm.image = reader.result as string; };
+    reader.onload = () => {
+      this.imagePreview = reader.result as string;
+      this.cdr.detectChanges();
+    };
     reader.readAsDataURL(file);
+  }
+
+  uploadImageToCloudinary(): void {
+    if (!this.selectedImageFile) {
+      this.notificationService.warning('Please select an image first');
+      return;
+    }
+
+    this.uploadingImage = true;
+    this.uploadProgress = 0;
+
+    console.log('📤 Starting Cloudinary upload...');
+
+    this.cloudinaryService.uploadImageWithTransform(this.selectedImageFile, 800, 800).subscribe({
+      next: (response) => {
+        console.log('✅ Cloudinary upload SUCCESS:', response);
+        this.productForm.image = response.secure_url;
+        this.imagePreview = response.secure_url;
+        this.uploadingImage = false;
+        this.uploadProgress = 100;
+        this.notificationService.success('Image uploaded successfully!');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('❌ Cloudinary upload FAILED:', err);
+        this.uploadingImage = false;
+        this.uploadProgress = 0;
+        this.notificationService.error('Failed to upload image. Please try again.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  removeImage(): void {
+    this.productForm.image = '';
+    this.imagePreview = null;
+    this.selectedImageFile = null;
+    this.uploadProgress = 0;
   }
 
   saveProduct(): void {

@@ -51,4 +51,25 @@ export class SessionService {
       params: { status }
     });
   }
+
+  // FILE UPLOAD operations
+  uploadResource(sessionId: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.API}/${sessionId}/resources`, formData);
+  }
+
+  getResources(sessionId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API}/${sessionId}/resources`);
+  }
+
+  deleteResource(sessionId: number, resourceId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API}/${sessionId}/resources/${resourceId}`);
+  }
+
+  downloadResource(sessionId: number, resourceId: number): Observable<Blob> {
+    return this.http.get(`${this.API}/${sessionId}/resources/${resourceId}/download`, {
+      responseType: 'blob'
+    });
+  }
 }

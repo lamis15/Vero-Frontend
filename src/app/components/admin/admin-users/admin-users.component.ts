@@ -26,7 +26,7 @@ export class AdminUsersComponent implements OnInit {
     private notificationService: NotificationService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadUsers();
@@ -76,10 +76,10 @@ export class AdminUsersComponent implements OnInit {
     this.router.navigate(['/admin/users', user.id, 'edit']);
   }
 
-  onSearchChange(): void {}
-  onRoleFilterChange(): void {}
-  onPageSizeChange(): void {}
-  goToPage(_: number): void {}
+  onSearchChange(): void { }
+  onRoleFilterChange(): void { }
+  onPageSizeChange(): void { }
+  goToPage(_: number): void { }
 
   toggleBan(user: AdminUserListItem): void {
     const isBanned = user.banned;

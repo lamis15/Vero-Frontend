@@ -8,20 +8,21 @@
       <div class="ms-favorites">
         <h3>People</h3>
         @if (contactsLoading) {
-          <div class="ms-fav-empty">Loading...</div>
+        <div class="ms-fav-empty">Loading...</div>
         } @else if (contactsError) {
-          <div class="ms-fav-empty">{{ contactsError }}</div>
+        <div class="ms-fav-empty">{{ contactsError }}</div>
         } @else if (contacts.length === 0) {
-          <div class="ms-fav-empty">No people yet</div>
+        <div class="ms-fav-empty">No people yet</div>
         } @else {
-          <div class="ms-fav-strip">
-            @for (contact of contacts; track contact.id) {
-              <button class="ms-fav-av-wrap" (click)="selectContact(contact)" [title]="contact.fullName">
-                <div class="ms-fav-av" [class.active]="activeContact?.id === contact.id">{{ initials(contact.fullName) }}</div>
-                <i class="ms-online sm"></i>
-              </button>
-            }
-          </div>
+        <div class="ms-fav-strip">
+          @for (contact of contacts; track contact.id) {
+          <button class="ms-fav-av-wrap" (click)="selectContact(contact)" [title]="contact.fullName">
+            <div class="ms-fav-av" [class.active]="activeContact?.id === contact.id">{{ initials(contact.fullName) }}
+            </div>
+            <i class="ms-online sm"></i>
+          </button>
+          }
+        </div>
         }
       </div>
 
@@ -29,62 +30,67 @@
       <div class="ms-side-head">
         <h2>My Chat List</h2>
         <div class="ms-search">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input type="text" [(ngModel)]="contactSearch" placeholder="Search chats or people..." autocomplete="off" />
         </div>
       </div>
 
       <!-- When searching: show people matches; otherwise show conversations -->
       @if (contactSearch.trim()) {
-        @if (contactsLoading) {
-          <div class="ms-notice">Loading...</div>
-        } @else if (contactsError) {
-          <div class="ms-notice err">{{ contactsError }}</div>
-        } @else if (filteredContacts.length === 0) {
-          <div class="ms-notice">No users found.</div>
-        } @else {
-          <div class="ms-list">
-            @for (contact of filteredContacts; track contact.id) {
-              <button class="ms-row" [class.active]="activeContact?.id === contact.id" (pointerdown)="onContactPointerDown(contact)" (click)="selectContact(contact)">
-                <div class="ms-av-wrap">
-                  <div class="ms-av">{{ initials(contact.fullName) }}</div>
-                  <i class="ms-online"></i>
-                </div>
-                <div class="ms-row-body">
-                  <strong>{{ contact.fullName }}</strong>
-                  <p>Tap to start conversation</p>
-                </div>
-                <span class="ms-role-chip">{{ contact.role }}</span>
-              </button>
-            }
-          </div>
-        }
+      @if (contactsLoading) {
+      <div class="ms-notice">Loading...</div>
+      } @else if (contactsError) {
+      <div class="ms-notice err">{{ contactsError }}</div>
+      } @else if (filteredContacts.length === 0) {
+      <div class="ms-notice">No users found.</div>
       } @else {
-        @if (conversationsLoading) {
-          <div class="ms-notice">Loading...</div>
-        } @else if (conversationsError) {
-          <div class="ms-notice err">{{ conversationsError }}</div>
-        } @else if (conversations.length === 0) {
-          <div class="ms-notice">No conversations yet. Search for someone above to start chatting.</div>
-        } @else {
-          <div class="ms-list">
-            @for (conversation of conversations; track conversation.conversationKey) {
-              <button class="ms-row" [class.active]="activeContact?.id === conversationTargetId(conversation)" (pointerdown)="onConversationPointerDown(conversation)" (click)="openConversation(conversation)">
-                <div class="ms-av-wrap">
-                  <div class="ms-av">{{ initials(previewName(conversation)) }}</div>
-                  <i class="ms-online"></i>
-                </div>
-                <div class="ms-row-body">
-                  <div class="ms-row-top">
-                    <strong>{{ previewName(conversation) }}</strong>
-                    <span class="ms-ts">{{ conversation.lastMessageTime | date:'shortTime' }}</span>
-                  </div>
-                  <p>{{ conversation.lastMessagePreview || 'Start chatting' }}</p>
-                </div>
-              </button>
-            }
+      <div class="ms-list">
+        @for (contact of filteredContacts; track contact.id) {
+        <button class="ms-row" [class.active]="activeContact?.id === contact.id"
+          (pointerdown)="onContactPointerDown(contact)" (click)="selectContact(contact)">
+          <div class="ms-av-wrap">
+            <div class="ms-av">{{ initials(contact.fullName) }}</div>
+            <i class="ms-online"></i>
           </div>
+          <div class="ms-row-body">
+            <strong>{{ contact.fullName }}</strong>
+            <p>Tap to start conversation</p>
+          </div>
+          <span class="ms-role-chip">{{ contact.role }}</span>
+        </button>
         }
+      </div>
+      }
+      } @else {
+      @if (conversationsLoading) {
+      <div class="ms-notice">Loading...</div>
+      } @else if (conversationsError) {
+      <div class="ms-notice err">{{ conversationsError }}</div>
+      } @else if (conversations.length === 0) {
+      <div class="ms-notice">No conversations yet. Search for someone above to start chatting.</div>
+      } @else {
+      <div class="ms-list">
+        @for (conversation of conversations; track conversation.conversationKey) {
+        <button class="ms-row" [class.active]="activeContact?.id === conversationTargetId(conversation)"
+          (pointerdown)="onConversationPointerDown(conversation)" (click)="openConversation(conversation)">
+          <div class="ms-av-wrap">
+            <div class="ms-av">{{ initials(previewName(conversation)) }}</div>
+            <i class="ms-online"></i>
+          </div>
+          <div class="ms-row-body">
+            <div class="ms-row-top">
+              <strong>{{ previewName(conversation) }}</strong>
+              <span class="ms-ts">{{ conversation.lastMessageTime | date:'shortTime' }}</span>
+            </div>
+            <p>{{ conversation.lastMessagePreview || 'Start chatting' }}</p>
+          </div>
+        </button>
+        }
+      </div>
+      }
       }
     </aside>
 
@@ -99,61 +105,81 @@
           <span><i class="ms-status-dot"></i> Active</span>
         </div>
         <button class="ms-more" type="button" aria-label="More">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <circle cx="5" cy="12" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="19" cy="12" r="1.6" />
+          </svg>
         </button>
       </header>
 
       <div class="ms-thread" #chatScroll>
         @if (messages.length === 0) {
-          <div class="ms-thread-empty">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <strong>Start the conversation</strong>
-            <p>Send the first message to {{ activeContact.fullName }}.</p>
-          </div>
+        <div class="ms-thread-empty">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <strong>Start the conversation</strong>
+          <p>Send the first message to {{ activeContact.fullName }}.</p>
+        </div>
         }
         @for (msg of messages; track msg.id || $index) {
-          <div class="ms-bubble-row" [class.mine]="isMine(msg)">
-            @if (!isMine(msg)) {
-              <div class="ms-av xs">{{ initials(msg.sender.fullName) }}</div>
-            }
-            <div class="ms-bubble-col">
-              <div class="ms-bubble-meta">
-                <span class="ms-bubble-name">{{ isMine(msg) ? (myUser?.fullName || 'You') : msg.sender.fullName }}</span>
-                <span class="ms-bubble-time">{{ msg.timestamp | date:'shortTime' }}</span>
-              </div>
-              <div class="ms-bubble">
-                <p>{{ msg.content }}</p>
-              </div>
+        <div class="ms-bubble-row" [class.mine]="isMine(msg)">
+          @if (!isMine(msg)) {
+          <div class="ms-av xs">{{ initials(msg.sender.fullName) }}</div>
+          }
+          <div class="ms-bubble-col">
+            <div class="ms-bubble-meta">
+              <span class="ms-bubble-name">{{ isMine(msg) ? (myUser?.fullName || 'You') : msg.sender.fullName }}</span>
+              <span class="ms-bubble-time">{{ msg.timestamp | date:'shortTime' }}</span>
             </div>
-            @if (isMine(msg)) {
-              <div class="ms-av xs me">{{ initials(myUser?.fullName) }}</div>
-            }
+            <div class="ms-bubble">
+              <p>{{ msg.content }}</p>
+            </div>
           </div>
+          @if (isMine(msg)) {
+          <div class="ms-av xs me">{{ initials(myUser?.fullName) }}</div>
+          }
+        </div>
         }
       </div>
 
       <footer class="ms-composer">
         <form (ngSubmit)="sendMessage()">
           <button type="button" class="ms-icon-btn" aria-label="Emoji">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+              <line x1="9" y1="9" x2="9.01" y2="9" />
+              <line x1="15" y1="9" x2="15.01" y2="9" />
+            </svg>
           </button>
-          <input type="text" placeholder="Type a message" [(ngModel)]="currentMessage" name="currentMessage" autocomplete="off" [disabled]="sending" />
+          <input type="text" placeholder="Type a message" [(ngModel)]="currentMessage" name="currentMessage"
+            autocomplete="off" [disabled]="sending" />
           <button type="button" class="ms-icon-btn" aria-label="Attach">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path
+                d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+            </svg>
           </button>
           <button type="submit" class="ms-send" [disabled]="!currentMessage.trim() || sending" aria-label="Send">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
           </button>
         </form>
         @if (sendError) {
-          <p class="ms-send-err">{{ sendError }}</p>
+        <p class="ms-send-err">{{ sendError }}</p>
         }
       </footer>
     </section>
 
     <ng-template #emptyState>
       <section class="ms-center ms-center-empty">
-        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.1">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
         <strong>Your messages</strong>
         <p>Select a chat or search a user to start a conversation.</p>
       </section>
@@ -161,46 +187,66 @@
 
     <!-- RIGHT — Active user profile -->
     @if (activeContact) {
-      <aside class="ms-sidebar ms-profile">
-        <div class="ms-profile-head">
-          <div class="ms-profile-av">{{ initials(activeContact.fullName) }}</div>
-          <strong class="ms-profile-name">{{ activeContact.fullName }}</strong>
-          <span class="ms-profile-email">{{ activeContact.email }}</span>
-          <div class="ms-profile-actions">
-            <button type="button" class="ms-act" aria-label="Call">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </button>
-            <button type="button" class="ms-act" aria-label="Video">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-            </button>
-            <button type="button" class="ms-act" aria-label="Email">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </button>
-          </div>
+    <aside class="ms-sidebar ms-profile">
+      <div class="ms-profile-head">
+        <div class="ms-profile-av">{{ initials(activeContact.fullName) }}</div>
+        <strong class="ms-profile-name">{{ activeContact.fullName }}</strong>
+        <span class="ms-profile-email">{{ activeContact.email }}</span>
+        <div class="ms-profile-actions">
+          <button type="button" class="ms-act" aria-label="Call">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path
+                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </button>
+          <button type="button" class="ms-act" aria-label="Video">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polygon points="23 7 16 12 23 17 23 7" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+          </button>
+          <button type="button" class="ms-act" aria-label="Email">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </button>
         </div>
+      </div>
 
-        <div class="ms-info-card">
-          <div class="ms-info-row">
-            <span class="ms-info-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </span>
-            <span class="ms-info-text">{{ activeContact.role }} on Vero</span>
-          </div>
-          <div class="ms-info-row">
-            <span class="ms-info-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </span>
-            <span class="ms-info-text">Joined {{ activeContact.createdAt | date:'mediumDate' }}</span>
-          </div>
-          <div class="ms-info-row">
-            <span class="ms-info-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </span>
-            <span class="ms-info-text">{{ activeContact.email }}</span>
-          </div>
+      <div class="ms-info-card">
+        <div class="ms-info-row">
+          <span class="ms-info-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </span>
+          <span class="ms-info-text">{{ activeContact.role }} on Vero</span>
         </div>
+        <div class="ms-info-row">
+          <span class="ms-info-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </span>
+          <span class="ms-info-text">Joined {{ activeContact.createdAt | date:'mediumDate' }}</span>
+        </div>
+        <div class="ms-info-row">
+          <span class="ms-info-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+          </span>
+          <span class="ms-info-text">{{ activeContact.email }}</span>
+        </div>
+      </div>
 
-      </aside>
+    </aside>
     }
 
   </div>
