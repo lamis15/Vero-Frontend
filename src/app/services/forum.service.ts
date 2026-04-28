@@ -127,4 +127,9 @@ export class ForumService {
   disconnectNotificationStomp(): void {
     this.notificationStompClient?.deactivate();
   }
+
+  // ─── REPORTS (Simplified) ───
+  reportPost(postId: number): Observable<Post> {
+    return this.http.put<Post>(`${this.API_POSTS}/${postId}/report`, {});
+  }
 }

@@ -1,0 +1,275 @@
+@if (activeTab === 'forum') {
+<div class="vc-section">
+
+  <!-- Section header -->
+  <div class="vc-section-head">
+    <div>
+      <h2 class="vc-h2">Community Governance</h2>
+      <p class="vc-muted">Moderate posts, review flags, and track forum engagement.</p>
+    </div>
+    <div class="vc-filters">
+      <button class="vc-btn ghost" [class.primary]="currentView === 'stats'"
+        (click)="setView('stats')">Analytics</button>
+      <button class="vc-btn ghost" [class.primary]="currentView === 'oversight'"
+        (click)="setView('oversight')">Oversight</button>
+      <button class="vc-btn ghost vc-forum-flag-btn" [class.primary]="currentView === 'moderation'"
+        (click)="setView('moderation')">
+        Flags
+        @if (stats.flaggedCount > 0) {
+        <span class="vc-forum-badge">{{ stats.flaggedCount }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ ANALYTICS ══ -->
+  @if (currentView === 'stats') {
+  <div class="animate-fadeIn">
+
+    <div class="vc-stats-row" style="margin-bottom:20px">
+
+      <div class="vc-stat-card">
+        <div class="vc-stat-card-head">
+          <span class="vc-stat-card-label">Total Posts</span>
+          <button class="vc-stat-menu-btn">⋯</button>
+        </div>
+        <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="fsp1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4361ee" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#4361ee" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path class="spark-fill" d="M0,28 C15,24 30,18 45,12 C60,6 70,5 80,4 L80,40 L0,40 Z" fill="url(#fsp1)"
+            stroke="none" />
+          <path class="spark-line" d="M0,28 C15,24 30,18 45,12 C60,6 70,5 80,4" fill="none" stroke="#4361ee"
+            stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <div class="vc-stat-number">
+          <span class="vc-stat-number-inner">{{ stats.totalPosts }}</span>
+        </div>
+        <div class="vc-stat-sublabel">across all topics</div>
+        <div class="vc-stat-trend vc-trend-up">↑ community active</div>
+      </div>
+
+      <div class="vc-stat-card">
+        <div class="vc-stat-card-head">
+          <span class="vc-stat-card-label">Engagement</span>
+          <button class="vc-stat-menu-btn">⋯</button>
+        </div>
+        <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="fsp2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#06d6a0" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#06d6a0" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path class="spark-fill" d="M0,34 C20,28 35,18 50,12 C65,6 72,5 80,4 L80,40 L0,40 Z" fill="url(#fsp2)"
+            stroke="none" />
+          <path class="spark-line" d="M0,34 C20,28 35,18 50,12 C65,6 72,5 80,4" fill="none" stroke="#06d6a0"
+            stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <div class="vc-stat-number">
+          <span class="vc-stat-number-inner">{{ stats.totalEngagement }}</span>
+        </div>
+        <div class="vc-stat-sublabel">likes + views</div>
+        <div class="vc-stat-trend vc-trend-up">↑ readers engaged</div>
+      </div>
+
+      <div class="vc-stat-card">
+        <div class="vc-stat-card-head">
+          <span class="vc-stat-card-label">Flagged</span>
+          <button class="vc-stat-menu-btn">⋯</button>
+        </div>
+        <svg class="vc-sparkline" viewBox="0 0 80 40" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="fsp3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f72585" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="#f72585" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path class="spark-fill" d="M0,10 C10,14 25,20 40,24 C55,28 68,30 80,34 L80,40 L0,40 Z" fill="url(#fsp3)"
+            stroke="none" />
+          <path class="spark-line" d="M0,10 C10,14 25,20 40,24 C55,28 68,30 80,34" fill="none" stroke="#f72585"
+            stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <div class="vc-stat-number">
+          <span class="vc-stat-number-inner">{{ stats.flaggedCount }}</span>
+        </div>
+        <div class="vc-stat-sublabel">require review</div>
+        <div class="vc-stat-trend" [class.vc-trend-down]="stats.flaggedCount > 0"
+          [class.vc-trend-up]="stats.flaggedCount === 0">
+          {{ stats.flaggedCount > 0 ? '↑ needs attention' : '✓ all clear' }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Topic distribution -->
+    <div class="vc-card">
+      <div class="vc-card-head">
+        <span class="vc-card-title">Topic Distribution</span>
+        <span class="vc-tag">Top: {{ stats.topCategory }}</span>
+      </div>
+      <div class="vc-plans-list" style="margin-bottom:0">
+
+        <div class="vc-plan-item">
+          <div class="vc-plan-header">
+            <span class="vc-plan-label">Sustainability</span>
+            <span class="vc-plan-pct" style="color:#06d6a0">68%</span>
+          </div>
+          <div class="vc-progress-track">
+            <div class="vc-progress-fill vc-forum-bar-1"></div>
+          </div>
+        </div>
+
+        <div class="vc-plan-item">
+          <div class="vc-plan-header">
+            <span class="vc-plan-label">Products</span>
+            <span class="vc-plan-pct" style="color:#4361ee">49%</span>
+          </div>
+          <div class="vc-progress-track">
+            <div class="vc-progress-fill vc-forum-bar-2"></div>
+          </div>
+        </div>
+
+        <div class="vc-plan-item">
+          <div class="vc-plan-header">
+            <span class="vc-plan-label">Community</span>
+            <span class="vc-plan-pct" style="color:#f77f00">33%</span>
+          </div>
+          <div class="vc-progress-track">
+            <div class="vc-progress-fill vc-forum-bar-3"></div>
+          </div>
+        </div>
+
+        <div class="vc-plan-item">
+          <div class="vc-plan-header">
+            <span class="vc-plan-label">Off-topic</span>
+            <span class="vc-plan-pct" style="color:#8892b0">18%</span>
+          </div>
+          <div class="vc-progress-track">
+            <div class="vc-progress-fill vc-forum-bar-4"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  }
+
+  <!-- ══ OVERSIGHT / MODERATION TABLE ══ -->
+  @if (currentView === 'oversight' || currentView === 'moderation') {
+  <div class="animate-fadeIn">
+
+    <!-- Toolbar -->
+    <div class="vc-forum-toolbar">
+      <div class="vc-search-wrap">
+        <svg class="vc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input class="vc-search" type="text" [(ngModel)]="searchQuery" placeholder="Search posts, authors…" />
+      </div>
+
+      @if (currentView === 'oversight') {
+      <button class="vc-btn" [class.danger]="showFlaggedOnly" [class.ghost]="!showFlaggedOnly"
+        (click)="showFlaggedOnly = !showFlaggedOnly">
+        Flagged only
+      </button>
+      }
+
+      <button class="vc-btn ghost vc-forum-refresh" (click)="loadData()" [disabled]="loading" title="Refresh">
+        <svg [class.vc-forum-spin]="loading" viewBox="0 0 24 24" width="15" height="15" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M23 4v6h-6M1 20v-6h6" />
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="vc-forum-table-wrap">
+      <table class="vc-table">
+        <thead>
+          <tr>
+            <th>Author</th>
+            <th>Content</th>
+            <th>Category</th>
+            <th>Engagement</th>
+            <th>Status</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @for (post of filteredPosts; track post.id) {
+          <tr [class.vc-forum-row-flagged]="post.isFlagged">
+
+            <td>
+              <div class="vc-person">
+                <div class="vc-avatar">{{ (post.user?.fullName || '?').charAt(0) }}</div>
+                <strong>{{ post.user?.fullName || 'Anonymous' }}</strong>
+              </div>
+            </td>
+
+            <td>
+              <div class="vc-forum-content-cell">
+                <strong>{{ post.title }}</strong>
+                <small>{{ (post.content || '') | slice:0:65 }}…</small>
+              </div>
+            </td>
+
+            <td>
+              <span class="vc-tag">{{ post.category || '—' }}</span>
+            </td>
+
+            <td>
+              <div class="vc-forum-engage">
+                <span>♥ {{ post.likes || 0 }}</span>
+                <span>👁 {{ post.views || 0 }}</span>
+              </div>
+            </td>
+
+            <td>
+              <span class="vc-tag" [class.ok]="!post.isFlagged" [class.bad]="post.isFlagged">
+                {{ post.isFlagged ? 'Flagged' : 'Approved' }}
+              </span>
+            </td>
+
+            <td class="right">
+              <div class="vc-row-actions">
+                <button class="vc-link-btn" [class.warn]="!post.isFlagged" [class.danger]="post.isFlagged"
+                  (click)="toggleFlag(post)">
+                  {{ post.isFlagged ? 'Unflag' : 'Flag' }}
+                </button>
+                <button class="vc-link-btn danger" (click)="deletePost(post.id!)">Delete</button>
+              </div>
+            </td>
+
+          </tr>
+          }
+
+          @if (filteredPosts.length === 0 && !loading) {
+          <tr>
+            <td colspan="6">
+              <div class="vc-empty">No posts match your current filters.</div>
+            </td>
+          </tr>
+          }
+
+        </tbody>
+      </table>
+
+      <div class="vc-forum-table-foot">
+        <span>{{ filteredPosts.length }} post{{ filteredPosts.length !== 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+  </div>
+  }
+
+</div>
+}

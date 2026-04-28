@@ -19,7 +19,107 @@ export const routes: Routes = [
   {
     path: 'admin',
     canActivate: [adminGuard],
-    loadComponent: () => import('./components/admin/admin.component').then(m => m.Admin)
+    loadComponent: () =>
+      import('./components/admin/admin').then(m => m.Admin),
+    children: [
+      {
+        path: '',
+        redirectTo: 'users',
+        pathMatch: 'full'
+      },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: 'users/new',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
+        data: { mode: 'add' }
+      },
+      {
+        path: 'users/:id/edit',
+        loadComponent: () =>
+          import('./components/admin/admin-users/admin-users.component').then(m => m.AdminUsersComponent),
+        data: { mode: 'edit' }
+      },
+      {
+        path: 'messages',
+        loadComponent: () =>
+          import('./components/messagerie/messagerie.component').then(m => m.MessagerieComponent)
+      },
+      {
+        path: 'products',
+        loadComponent: () =>
+          import('./components/admin/admin-products/admin-products.component').then(m => m.AdminProductsComponent)
+      },
+      {
+        path: 'formations',
+        loadComponent: () =>
+          import('./components/admin/admin-formations/admin-formations.component').then(m => m.AdminFormationsComponent)
+      }
+    ]
+  },
+  {
+    path: 'chat',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/chatbot/chatbot.component').then(m => m.ChatbotComponent)
+  },
+  {
+    path: 'messages',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/messagerie/messagerie.component').then(m => m.MessagerieComponent)
+  },
+  {
+    path: 'community',
+    loadComponent: () =>
+      import('./components/community/community.component').then(m => m.CommunityComponent)
+  },
+  {
+    path: 'community/:id',
+    loadComponent: () =>
+      import('./components/community/thread/thread.component').then(m => m.ThreadComponent)
+  },
+  {
+    path: 'formations',
+    loadComponent: () => import('./components/formations/formations.component').then(m => m.FormationsComponent)
+  },
+  {
+    path: 'formations/:id',
+    loadComponent: () => import('./components/formation-detail/formation-detail.component').then(m => m.FormationDetailComponent)
+  },
+  {
+    path: 'formations/:id/checkout',
+    loadComponent: () => import('./components/formation-checkout/formation-checkout.component').then(m => m.FormationCheckoutComponent)
+  },
+  {
+    path: 'formations/:id/quiz',
+    loadComponent: () => import('./components/quiz/quiz.component').then(m => m.QuizComponent)
+  },
+  {
+    path: 'checkout',
+    loadComponent: () => import('./components/checkout/checkout.component').then(m => m.CheckoutComponent)
+  },
+  {
+    path: 'cart',
+    loadComponent: () => import('./components/cart/cart').then(m => m.CartComponent)
+  },
+  {
+    path: 'orders',
+    loadComponent: () => import('./components/orders/orders.component').then(m => m.OrdersComponent)
+  },
+  {
+    path: 'my-reservations',
+    loadComponent: () =>
+      import('./components/my-reservations/my-reservations.component').then(m => m.MyReservationsComponent)
+  },
+  {
+    path: 'petitions',
+    loadComponent: () => import('./components/petition/petition')
+      .then(m => m.PetitionComponent)
   },
 
   { path: 'chat', canActivate: [authGuard], loadComponent: () => import('./components/chatbot/chatbot.component').then(m => m.ChatbotComponent) },

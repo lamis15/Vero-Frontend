@@ -1,0 +1,653 @@
+<!-- ═══ FORMATIONS ═══ -->
+@if (activeTab === 'formations') {
+<div class="tab-section">
+  @if (!selectedFormationForSessions) {
+
+  <!-- Page Header -->
+  <div class="fc-page-header">
+    <div>
+      <span class="fc-page-eyebrow">Learning Hub</span>
+      <h2 class="fc-page-title">Formation Catalogue</h2>
+      <p class="fc-page-subtitle">Manage your learning programmes and certify your teams.</p>
+    </div>
+    <button (click)="openFormationModal()" class="vc-btn gold">
+      Add Formation
+    </button>
+  </div>
+
+  @if (formationsLoading) {
+  <div class="formations-bento">
+    @for (s of [1,2,3]; track s) {
+    <div class="vc-formation-card vc-skeleton"></div>
+    }
+  </div>
+  } @else {
+
+  <!-- Formation Grid -->
+  <div class="formations-bento">
+    @for (formation of formations; track formation.id) {
+    <div class="formation-card-verdant">
+
+      <!-- Top: ID + Title + Status -->
+      <div class="fc-card-top">
+        <div class="fc-card-top-left">
+          <span class="fc-id-label">Formation #{{ formation.id }}</span>
+          <h3 class="fc-title-text">{{ formation.title }}</h3>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          @if (formation.pinned) {
+          <span
+            style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--vc-warning);border:1px solid rgba(247,127,0,.25);padding:3px 8px;border-radius:4px;background:rgba(247,127,0,.08);">Pinned</span>
+          }
+          <span class="verdant-status-badge" [ngClass]="getFormationStatusClass(formation.status)">
+            <span class="status-dot-verdant"></span>{{ formation.status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p class="fc-desc-text">{{ formation.description || 'No description.' }}</p>
+
+      <!-- Stats 4-col -->
+      <div class="fc-stats-row">
+        <div class="fc-stat">
+          <span class="fc-stat-label">Duration</span>
+          <span class="fc-stat-val">{{ formation.duration }}h</span>
+        </div>
+        <div class="fc-stat">
+          <span class="fc-stat-label">Price</span>
+          <span class="fc-stat-val">{{ (formation.price ?? 0) > 0 ? formation.price + ' €' : 'Free' }}</span>
+        </div>
+        <div class="fc-stat">
+          <span class="fc-stat-label">Enrolled</span>
+          <span class="fc-stat-val">{{ formation.participantIds?.length || 0 }}<span
+              style="font-size:11px;color:var(--vc-text-muted);font-weight:400;">/{{ formation.maxCapacity
+              }}</span></span>
+        </div>
+        <div class="fc-stat">
+          <span class="fc-stat-label">Available</span>
+          <span class="fc-stat-val">{{ formation.maxCapacity - (formation.participantIds?.length || 0) }}</span>
+        </div>
+      </div>
+
+      <!-- Capacity bar -->
+      <div class="fc-capacity-section">
+        <div class="fc-capacity-header">
+          <span class="fc-capacity-label">Fill rate</span>
+          <span class="fc-capacity-pct">{{ formation.maxCapacity > 0 ? (((formation.participantIds?.length || 0) /
+            formation.maxCapacity) * 100).toFixed(0) : 0 }}%</span>
+        </div>
+        <div class="fc-capacity-bar">
+          <div class="fc-capacity-fill"
+            [style.width.%]="formation.maxCapacity > 0 ? ((formation.participantIds?.length || 0) / formation.maxCapacity) * 100 : 0"
+            [class.fc-capacity-full]="(formation.participantIds?.length || 0) >= formation.maxCapacity">
+          </div>
+        </div>
+      </div>
+
+      <!-- Participants toggle -->
+      <button class="fc-participants-btn" (click)="toggleParticipantsPanel(formation.id!)"
+        [attr.data-open]="expandedFormationId === formation.id">
+        <span class="fc-participants-btn-label">
+          Participants
+          <span class="fc-participants-btn-count">{{ formation.participantIds?.length || 0 }}</span>
+        </span>
+        <span class="fc-participants-btn-arrow">▾</span>
+      </button>
+
+      <!-- Participants panel -->
+      @if (expandedFormationId === formation.id) {
+      <div class="fc-participants-panel">
+        <div class="fc-participants-scroll">
+          <table class="fc-participants-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Last name</th>
+                <th>First name</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of getParticipantDetails(formation.participantIds || []); track p.id) {
+              <tr>
+                <td class="fc-participant-id">#{{ p.id }}</td>
+                <td>{{ p.lastName || p.fullName?.split(' ')[1] || '—' }}</td>
+                <td>{{ p.firstName || p.fullName?.split(' ')[0] || '—' }}</td>
+                <td class="p-email-cell">{{ p.email }}</td>
+              </tr>
+              }
+              @if ((formation.participantIds?.length || 0) === 0) {
+              <tr>
+                <td colspan="4" class="fc-no-participants">No participants yet</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      }
+
+      <!-- Actions -->
+      <div class="fc-actions">
+        <button (click)="viewFormationSessions(formation)" class="fc-action-btn fc-action-btn--primary">
+          <svg class="fc-icon-svg" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          Sessions
+        </button>
+        <button (click)="openFormationModal(formation)" class="fc-action-btn fc-action-btn--icon" title="Edit">
+          <svg class="fc-icon-svg" viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
+        <button (click)="togglePin(formation)" class="fc-action-btn fc-action-btn--icon fc-action-btn--pin"
+          [class.fc-pinned]="formation.pinned" title="Pin">
+          <svg class="fc-icon-svg" viewBox="0 0 24 24">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+        </button>
+        <button (click)="openDeleteConfirm(formation.id!)" class="fc-action-btn fc-action-btn--icon fc-action-btn--delete"
+          title="Delete">
+          <svg class="fc-icon-svg" viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4h6v2" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+    }
+
+    @if (formations.length === 0) {
+    <div class="fc-empty">
+      <h3 class="fc-empty-title">Empty catalogue</h3>
+      <p class="fc-empty-sub">Start by creating your first formation.</p>
+      <button (click)="openFormationModal()" class="vc-btn gold">Add formation</button>
+    </div>
+    }
+  </div>
+  }
+
+  } @else {
+
+  <!-- ══ Sessions Detail View ══ -->
+  <div class="sessions-page-header">
+    <div class="sessions-header-left">
+      <nav class="sessions-breadcrumb">
+        <button (click)="closeSessionsView()" class="breadcrumb-back">← Formations</button>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">{{ selectedFormationForSessions.title }}</span>
+      </nav>
+      <h2 class="sessions-page-title">{{ selectedFormationForSessions.title }}</h2>
+    </div>
+    <div class="sessions-header-actions">
+      <button (click)="generateQuizFromResources()" class="vc-btn ghost" [disabled]="generatingQuiz">
+        {{ generatingQuiz ? 'Generating...' : 'Generate AI Quiz' }}
+      </button>
+      <button (click)="openSessionModal()" class="vc-btn gold">
+        Add Session
+      </button>
+    </div>
+  </div>
+
+  <div class="sessions-dashboard-grid">
+
+    <!-- Resources Column -->
+    <div class="sessions-resources-col">
+      <div class="res-card">
+        <h3 class="res-card-title">Resources</h3>
+
+        <label for="resFile" class="res-upload-zone">
+          <div>
+            <p class="res-upload-text">Click to upload</p>
+            <p class="res-upload-sub">PDF, DOCX or ZIP · 10 MB max</p>
+          </div>
+        </label>
+        <input type="file" (change)="onResourceFileSelected($event)" id="resFile" class="res-file-input">
+
+        @if (formationResources.length === 0) {
+        <div class="res-empty-state">
+          <p class="res-empty-title">No resources yet</p>
+          <p class="res-empty-sub">Upload course materials for participants.</p>
+        </div>
+        } @else {
+        <div class="res-list">
+          @for (res of formationResources; track res.id) {
+          <div class="res-item">
+            <div class="res-item-info">
+              <p class="res-item-name">{{ res.originalFileName }}</p>
+              <p class="res-item-size">{{ (res.fileSize / 1024 / 1024).toFixed(1) }} MB</p>
+            </div>
+            <div class="res-item-actions">
+              <button (click)="downloadResource(selectedFormationForSessions!.id!, res.id!, res.originalFileName)"
+                class="vc-link-btn" title="Download">
+                <svg
+                  style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"
+                  viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </button>
+              <button (click)="deleteResource(selectedFormationForSessions!.id!, res.id!)" class="vc-link-btn danger"
+                title="Delete">
+                <svg
+                  style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"
+                  viewBox="0 0 24 24">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M9 6V4h6v2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
+        <div class="res-card-actions">
+          <button (click)="uploadResource(selectedFormationForSessions.id!)" class="vc-btn gold" style="width:100%"
+            [disabled]="resourceUploading">
+            {{ resourceUploading ? 'Uploading...' : 'Upload' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions Table Column -->
+    <div class="sessions-table-col">
+      <div class="sessions-table-card">
+        <div class="sessions-table-card-header">
+          <h3 class="sessions-table-title">Active sessions</h3>
+        </div>
+        <div class="sessions-table-scroll">
+          <table class="sessions-tbl">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Trainer</th>
+                <th>Status</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (sessionsLoading) {
+              <tr>
+                <td colspan="7" class="vc-empty">Loading…</td>
+              </tr>
+              }
+              @for (s of sessions; track s.id) {
+              <tr class="sessions-tbl-row">
+                <td class="session-id-cell">#{{ s.id }}</td>
+                <td>
+                  <div class="session-title-wrap">
+                    <span class="session-tbl-title">{{ s.title }}</span>
+                    @if (s.meetLink) {
+                    <a [href]="s.meetLink" target="_blank" class="meeting-link-modern">Join Meet</a>
+                    }
+                  </div>
+                </td>
+                <td><span class="session-date-range">{{ formatDate(s.startDate) }}</span></td>
+                <td><span class="session-date-range">{{ formatDate(s.endDate) }}</span></td>
+                <td>
+                  <div class="session-trainer-cell">
+                    <div class="session-trainer-avatar">{{ getTrainerName(s.trainerId).charAt(0) }}</div>
+                    <span class="session-trainer-name">{{ getTrainerName(s.trainerId) }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="sess-status-pill" [ngClass]="'sess-'+getComputedSessionStatus(s).toLowerCase()">
+                    {{ getComputedSessionStatusLabel(s) }}
+                  </span>
+                </td>
+                <td class="right">
+                  <div class="vc-row-actions">
+                    <button (click)="openSessionModal(s)" class="vc-link-btn">Edit</button>
+                    <button (click)="deleteSession(s.id!)" class="vc-link-btn danger">Delete</button>
+                  </div>
+                </td>
+              </tr>
+              }
+              @if (sessions.length === 0 && !sessionsLoading) {
+              <tr>
+                <td colspan="7" class="vc-empty">No sessions yet. Add the first one.</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="sessions-table-footer">
+          <p class="sessions-table-count">{{ sessions.length }} session{{ sessions.length !== 1 ? 's' : '' }}</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  }
+</div>
+}
+
+
+<!-- ═══ FORMATION MODAL — 3-step ═══ -->
+@if (showFormationModal) {
+<div class="vc-modal-overlay" (click)="closeFormationModal()">
+  <div class="vc-modal fm-modal" (click)="$event.stopPropagation()">
+
+    <!-- Step indicator -->
+    <div class="fm-modal-top">
+      <div class="fm-step-row">
+        <div class="fm-step-item">
+          <div class="fm-step-dot" [class.active]="formationStep === 1" [class.done]="formationStep > 1">
+            {{ formationStep > 1 ? '✓' : '1' }}
+          </div>
+          <span class="fm-step-label" [class.active]="formationStep === 1">Basics</span>
+        </div>
+        <div class="fm-step-line"></div>
+        <div class="fm-step-item">
+          <div class="fm-step-dot" [class.active]="formationStep === 2" [class.done]="formationStep > 2">
+            {{ formationStep > 2 ? '✓' : '2' }}
+          </div>
+          <span class="fm-step-label" [class.active]="formationStep === 2">Details</span>
+        </div>
+        <div class="fm-step-line"></div>
+        <div class="fm-step-item">
+          <div class="fm-step-dot" [class.active]="formationStep === 3">3</div>
+          <span class="fm-step-label" [class.active]="formationStep === 3">Settings</span>
+        </div>
+      </div>
+
+      <div class="fm-modal-header">
+        <div>
+          <div class="fm-modal-title">{{ stepTitle }}</div>
+          <div class="fm-modal-sub">{{ stepSubtitle }}</div>
+        </div>
+        <button class="fm-close-btn" (click)="closeFormationModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Basics -->
+    @if (formationStep === 1) {
+    <div class="fm-modal-body fm-panel">
+      <label class="fm-field">
+        <span>Title *</span>
+        <input type="text" [(ngModel)]="formationForm.title" placeholder="e.g. Eco-design Fundamentals" />
+      </label>
+
+      <div class="fm-field">
+        <span class="fm-field-label">Description</span>
+        <div class="fm-desc-wrap">
+          <textarea [(ngModel)]="formationForm.description" rows="5"
+            placeholder="Describe the content, goals and what learners will take away..."></textarea>
+          <button type="button" class="fm-ai-btn" (click)="generateDescription()" [disabled]="generatingDescription">
+            {{ generatingDescription ? '...' : '✦ Generate with AI' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="fm-field">
+        <span class="fm-field-label">Tags</span>
+        <div class="fm-tag-row">
+          @for (tag of availableTags; track tag) {
+          <span class="fm-tag" [class.sel]="hasTag(tag)" (click)="toggleTag(tag)">{{ tag }}</span>
+          }
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 2: Details -->
+    @if (formationStep === 2) {
+    <div class="fm-modal-body fm-panel">
+      <div class="fm-field-row">
+        <label class="fm-field">
+          <span>Duration (hours) *</span>
+          <input type="number" [(ngModel)]="formationForm.duration" min="1" placeholder="8" />
+        </label>
+        <label class="fm-field">
+          <span>Max capacity *</span>
+          <input type="number" [(ngModel)]="formationForm.maxCapacity" min="1" placeholder="20" />
+        </label>
+      </div>
+
+      <div class="fm-field">
+        <span class="fm-field-label">Price</span>
+        <div class="fm-price-toggle">
+          <button type="button" [class.active]="!formationForm.isPaid" (click)="setIsPaid(false)">Free</button>
+          <button type="button" [class.active]="formationForm.isPaid" (click)="setIsPaid(true)">Paid</button>
+        </div>
+        @if (formationForm.isPaid) {
+        <div class="fm-prefix">
+          <span>€</span>
+          <input type="number" [(ngModel)]="formationForm.price" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        }
+      </div>
+
+      <div class="fm-field">
+        <span class="fm-field-label">Trainer</span>
+        @if (trainers.length === 0) {
+        <p class="vc-muted">No trainers available.</p>
+        } @else {
+        <div class="trainer-scroll-list">
+          @for (trainer of trainers; track trainer.id) {
+          <label class="trainer-option" [class.trainer-option--selected]="sessionForm.trainerId === trainer.id">
+            <input type="radio" name="trainerSelect" [value]="trainer.id" [(ngModel)]="sessionForm.trainerId"
+              class="trainer-radio">
+            <div class="session-trainer-avatar">{{ trainer.fullName.charAt(0) }}</div>
+            <div class="trainer-info">
+              <span class="trainer-name">{{ trainer.fullName }}</span>
+              <span class="trainer-email">{{ trainer.email }}</span>
+            </div>
+          </label>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Step 3: Settings -->
+    @if (formationStep === 3) {
+    <div class="fm-modal-body fm-panel">
+      <div class="fm-field">
+        <span class="fm-field-label">Status</span>
+        <div class="fm-status-grid">
+          <div class="fm-status-opt" [class.selected]="formationForm.status === FormationStatus.PLANNED"
+            (click)="setFormationStatus(FormationStatus.PLANNED)">
+            <div class="fm-status-dot" style="background:rgba(255,255,255,0.3)"></div>
+            <div class="fm-status-name">Planned</div>
+            <div class="fm-status-desc">Not started yet</div>
+          </div>
+          <div class="fm-status-opt" [class.selected]="formationForm.status === FormationStatus.IN_PROGRESS"
+            (click)="setFormationStatus(FormationStatus.IN_PROGRESS)">
+            <div class="fm-status-dot" style="background:#06d6a0"></div>
+            <div class="fm-status-name">In progress</div>
+            <div class="fm-status-desc">Currently active</div>
+          </div>
+          <div class="fm-status-opt" [class.selected]="formationForm.status === FormationStatus.COMPLETED"
+            (click)="setFormationStatus(FormationStatus.COMPLETED)">
+            <div class="fm-status-dot" style="background:#4361ee"></div>
+            <div class="fm-status-name">Completed</div>
+            <div class="fm-status-desc">Fully delivered</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fm-field">
+        <span class="fm-field-label">Visibility</span>
+        <label class="fm-pin-row">
+          <input type="checkbox" [(ngModel)]="formationForm.pinned" />
+          <span>Pin this formation to the top of the catalogue</span>
+        </label>
+      </div>
+    </div>
+    }
+
+    <!-- Footer -->
+    <div class="fm-modal-footer">
+      <span class="fm-step-count">Step {{ formationStep }} of {{ FORMATION_STEPS }}</span>
+      <div class="fm-footer-btns">
+        @if (formationStep > 1) {
+        <button class="fm-btn-ghost" (click)="prevStep()">← Back</button>
+        }
+        <button class="fm-btn-ghost" (click)="closeFormationModal()">Cancel</button>
+        <button class="fm-btn-primary" (click)="nextStep()">
+          {{ formationStep === FORMATION_STEPS ? (editingFormation ? 'Save changes' : '✓ Create formation') : 'Continue
+          →' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+}
+
+
+<!-- ═══ SESSION MODAL ═══ -->
+@if (showSessionModal) {
+<div class="vc-modal-overlay" (click)="closeSessionModal()">
+  <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+    <div class="vc-modal-header">
+      <h3>{{ editingSession ? 'Edit Session' : 'New Session' }}</h3>
+      <button class="vc-modal-close" (click)="closeSessionModal()">✕</button>
+    </div>
+    <div class="vc-modal-body">
+      <div class="vc-modal-grid">
+        <label class="vc-line" style="grid-column:1/-1">
+          <span>Title *</span>
+          <input type="text" [(ngModel)]="sessionForm.title" placeholder="e.g. Introduction Session" />
+        </label>
+        <label class="vc-line">
+          <span>Start date *</span>
+          <input type="datetime-local" [(ngModel)]="sessionForm.startDate" />
+        </label>
+        <label class="vc-line">
+          <span>End date *</span>
+          <input type="datetime-local" [(ngModel)]="sessionForm.endDate" />
+        </label>
+        <label class="vc-line" style="grid-column:1/-1">
+          <span>Meet link (optional)</span>
+          <input type="text" [(ngModel)]="sessionForm.meetLink" placeholder="https://meet.google.com/..." />
+        </label>
+      </div>
+      <div style="margin-top:16px;">
+        <label class="vc-line" style="margin-bottom:8px;display:block;">
+          <span>Trainer *</span>
+        </label>
+        @if (trainers.length === 0) {
+        <p class="vc-muted">No trainers available.</p>
+        } @else {
+        <div class="trainer-scroll-list">
+          @for (trainer of trainers; track trainer.id) {
+          <label class="trainer-option" [class.trainer-option--selected]="sessionForm.trainerId === trainer.id">
+            <input type="radio" name="trainerSelect" [value]="trainer.id" [(ngModel)]="sessionForm.trainerId"
+              class="trainer-radio">
+            <div class="session-trainer-avatar">{{ trainer.fullName.charAt(0) }}</div>
+            <div class="trainer-info">
+              <span class="trainer-name">{{ trainer.fullName }}</span>
+              <span class="trainer-email">{{ trainer.email }}</span>
+            </div>
+          </label>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    <div class="vc-modal-actions">
+      <button class="vc-btn ghost" (click)="closeSessionModal()">Cancel</button>
+      <button class="vc-btn gold" (click)="saveSession()">
+        {{ editingSession ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+
+<!-- ═══ QUIZ PREVIEW MODAL ═══ -->
+@if (showQuizPreviewModal) {
+<div class="vc-modal-overlay" (click)="closeQuizPreviewModal()">
+  <div class="vc-modal vc-product-modal" (click)="$event.stopPropagation()">
+    <div class="vc-modal-header">
+      <h3>{{ quizPreview?.title || 'Quiz' }}</h3>
+      <button class="vc-modal-close" (click)="closeQuizPreviewModal()">✕</button>
+    </div>
+    <div class="vc-modal-body">
+      @if (quizPreviewLoading) {
+      <p class="vc-empty">Loading quiz...</p>
+      }
+      @if (quizPreviewResult && !quizPreviewLoading) {
+      <div style="text-align:center;padding:2rem;">
+        <h3 style="font-size:20px;margin:0 0 12px;">{{ quizPreviewResult.passed ? 'Passed' : 'Failed' }}</h3>
+        <p style="font-size:3rem;font-weight:800;margin:0 0 8px;color:var(--vc-accent);">{{ quizPreviewResult.score }}%
+        </p>
+        <p class="vc-muted" style="margin:0 0 24px;">Minimum required: {{ quizPreview?.passingScore }}%</p>
+        <button class="vc-btn ghost" (click)="closeQuizPreviewModal()">Close</button>
+      </div>
+      }
+      @if (quizPreview && !quizPreviewLoading && !quizPreviewResult) {
+      <p class="vc-muted" style="margin:0 0 20px;font-size:12px;">
+        {{ quizPreview.questions.length }} questions · Min score {{ quizPreview.passingScore }}% · {{
+        quizPreviewAnswers.size }}/{{ quizPreview.questions.length }} answered
+      </p>
+      @for (q of quizPreview.questions; track q.id; let qi = $index) {
+      <div style="margin-bottom:20px;">
+        <p style="font-weight:600;margin:0 0 8px;font-size:13.5px;">Q{{ qi + 1 }}. {{ q.text }}</p>
+        @for (opt of q.options; track opt.id) {
+        <label
+          style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--vc-border);cursor:pointer;margin-bottom:4px;transition:all .15s ease;"
+          [style.background]="isQuizPreviewSelected(q.id, opt.id) ? 'rgba(67,97,238,.12)' : 'rgba(255,255,255,.02)'"
+          [style.border-color]="isQuizPreviewSelected(q.id, opt.id) ? 'rgba(67,97,238,.35)' : ''"
+          (click)="selectQuizPreviewOption(q.id, opt.id)">
+          <input type="radio" [checked]="isQuizPreviewSelected(q.id, opt.id)" readonly
+            style="accent-color:var(--vc-accent);" />
+          <span style="font-size:13px;">{{ opt.text }}</span>
+        </label>
+        }
+      </div>
+      }
+      }
+    </div>
+    @if (quizPreview && !quizPreviewLoading && !quizPreviewResult) {
+    <div class="vc-modal-actions">
+      <button class="vc-btn ghost" (click)="closeQuizPreviewModal()">Cancel</button>
+      <button class="vc-btn gold" (click)="submitQuizPreview()"
+        [disabled]="!allQuizPreviewAnswered() || quizPreviewSubmitting">
+        {{ quizPreviewSubmitting ? 'Submitting...' : 'Submit' }}
+      </button>
+    </div>
+    }
+  </div>
+</div>
+}
+
+<!-- Custom Confirmation Modal for Formation Deletion -->
+@if (formationToDeleteId !== null) {
+<div class="vc-modal-overlay">
+  <div class="vc-modal" style="max-width: 400px; padding: 24px; text-align: center;">
+    <div style="width: 48px; height: 48px; background: rgba(239, 35, 60, 0.1); color: #ef233c; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+      </svg>
+    </div>
+    <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #fff;">Delete Formation?</h3>
+    <p style="margin: 0 0 24px; color: rgba(255, 255, 255, 0.6); font-size: 14px;">This action cannot be undone. Are you sure you want to permanently remove this formation?</p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="vc-btn ghost" type="button" (click)="cancelDeleteFormation()">Cancel</button>
+      <button class="vc-btn" style="background: #ef233c; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" type="button" (click)="confirmDeleteFormation()">Delete</button>
+    </div>
+  </div>
+</div>
+}

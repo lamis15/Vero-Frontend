@@ -149,4 +149,15 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
+
+  get badgeImage(): string | null {
+    if (!this.ecoProfile?.profile) return null;
+    const p = this.ecoProfile.profile;
+    if (p.includes('Eco-Guardian')) return 'assets/images/badges/eco-guardian.png';
+    if (p.includes('Eco-Warrior')) return 'assets/images/badges/eco-warrior.png';
+    if (p.includes('Eco-Learner')) return 'assets/images/badges/eco-learner.png';
+    if (p.includes('Urban Commuter')) return 'assets/images/badges/urban-commuter.png';
+    if (p.includes('High Impact')) return 'assets/images/badges/high-impact.png';
+    return null;
+  }
 }

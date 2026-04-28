@@ -1,0 +1,138 @@
+/* ── Progress bars ── */
+.vc-forum-bar-1 {
+  width: 68%;
+  background: linear-gradient(90deg, #06d6a0, #4361ee);
+  animation: barGrow 1.2s cubic-bezier(.22, 1, .36, 1) .50s both;
+}
+
+.vc-forum-bar-2 {
+  width: 49%;
+  background: linear-gradient(90deg, #4361ee, #7b2ff7);
+  animation: barGrow 1.2s cubic-bezier(.22, 1, .36, 1) .65s both;
+}
+
+.vc-forum-bar-3 {
+  width: 33%;
+  background: linear-gradient(90deg, #f77f00, #f72585);
+  animation: barGrow 1.2s cubic-bezier(.22, 1, .36, 1) .80s both;
+}
+
+.vc-forum-bar-4 {
+  width: 18%;
+  background: linear-gradient(90deg, #8892b0, #4361ee);
+  animation: barGrow 1.2s cubic-bezier(.22, 1, .36, 1) .95s both;
+}
+
+/* ── Flags button badge ── */
+.vc-forum-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--vc-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  margin-left: 6px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* ── Toolbar ── */
+.vc-forum-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.vc-forum-toolbar .vc-search-wrap {
+  flex: 1;
+  max-width: 400px;
+  min-width: 200px;
+}
+
+.vc-forum-refresh {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Table wrapper ── */
+.vc-forum-table-wrap {
+  background: var(--vc-surface);
+  border: 1px solid var(--vc-border);
+  border-radius: var(--vc-radius);
+  overflow: hidden;
+}
+
+/* ── Flagged row ── */
+.vc-forum-row-flagged td {
+  background: rgba(247, 37, 133, 0.03);
+}
+
+/* ── Content cell ── */
+.vc-forum-content-cell {
+  max-width: 280px;
+}
+
+.vc-forum-content-cell strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--vc-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+  margin-bottom: 2px;
+}
+
+.vc-forum-content-cell small {
+  display: block;
+  font-size: 12px;
+  color: var(--vc-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* ── Engagement cell ── */
+.vc-forum-engage {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--vc-text-muted);
+}
+
+/* ── Table footer ── */
+.vc-forum-table-foot {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--vc-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--vc-text-muted);
+}
+
+/* ── Spin ── */
+@keyframes vc-forum-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vc-forum-spin {
+  animation: vc-forum-spin .7s linear infinite;
+}

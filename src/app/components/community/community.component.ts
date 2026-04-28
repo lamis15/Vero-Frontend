@@ -32,6 +32,12 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   toxicError = '';
+  
+  // Reporting state
+  reportingPostId: number | null = null;
+  reportReason: string = 'SPAM';
+  reportDetails: string = '';
+  reportSubmitted = false;
 
   constructor(
     private forumService: ForumService,
@@ -188,5 +194,36 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   formatDate(d?: string) {
     if(!d) return '';
     return new Date(d).toLocaleDateString();
+  }
+
+  // ─── REPORTING ───
+  openReportModal(postId: number, event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.reportingPostId = postId;
+    this.reportReason = 'SPAM';
+    this.reportDetails = '';
+    this.reportSubmitted = false;
+  }
+
+  closeReportModal() {
+    this.reportingPostId = null;
+  }
+
+  submitReport() {
+    if (!this.reportingPostId) return;
+    
+    this.forumService.reportPost(this.reportingPostId).subscribe({
+      next: () => {
+        this.reportSubmitted = true;
+        setTimeout(() => {
+          this.closeReportModal();
+          this.loadPosts(); // Reload to see flagging status if admin
+        }, 1500);
+      },
+      error: () => {
+        alert('Failed to submit report. Please try again.');
+      }
+    });
   }
 }

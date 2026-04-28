@@ -1,0 +1,218 @@
+@if (activeTab === 'products') {
+<section class="prod-section">
+
+  <!-- Header -->
+  <div class="prod-header">
+    <div>
+      <span class="prod-kicker">ECO CATALOGUE</span>
+      <h2 class="prod-title">Products</h2>
+      <p class="prod-subtitle">{{ products.length }} items in the eco-store catalogue</p>
+    </div>
+    <button class="prod-add-btn" (click)="openProductModal()">
+      <span class="prod-add-icon">+</span>
+      Add Product
+    </button>
+  </div>
+
+  <!-- Loading Skeletons -->
+  @if (productsLoading) {
+  <div class="prod-grid">
+    @for (s of [1,2,3,4,5,6]; track s) {
+    <div class="prod-skeleton-card">
+      <div class="prod-skeleton-img"></div>
+      <div class="prod-skeleton-body">
+        <div class="prod-skeleton-line short"></div>
+        <div class="prod-skeleton-line"></div>
+        <div class="prod-skeleton-line medium"></div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (products.length === 0) {
+  <div class="prod-empty">
+    <div class="prod-empty-icon">🌿</div>
+    <h3>No products yet</h3>
+    <p>Start by adding your first eco product to the catalogue.</p>
+    <button class="prod-add-btn" (click)="openProductModal()">
+      <span class="prod-add-icon">+</span>
+      Add First Product
+    </button>
+  </div>
+  }
+
+  <!-- Product Grid -->
+  @else {
+  <div class="prod-grid">
+    @for (p of products; track p.id; let i = $index) {
+    <div class="prod-card" [style.animation-delay]="(i * 60) + 'ms'">
+
+      <!-- Image -->
+      <div class="prod-img-wrap">
+        @if (getProductImage(p)) {
+        <img [src]="getProductImage(p)" [alt]="p.name" class="prod-img" />
+        } @else {
+        <div class="prod-img-fallback">🌿</div>
+        }
+        <div class="prod-img-fade"></div>
+        @if (p.isEcological) {
+        <div class="prod-eco-tag">♻ ECO</div>
+        }
+      </div>
+
+      <!-- Content -->
+      <div class="prod-content">
+        <div class="prod-tags">
+          <span class="prod-cat-tag">{{ formatCategory(p.category) }}</span>
+          @if (p.origin) {
+          <span class="prod-origin-tag">📍 {{ p.origin }}</span>
+          }
+        </div>
+
+        <h3 class="prod-name">{{ p.name }}</h3>
+        <p class="prod-desc">{{ p.description }}</p>
+
+        <div class="prod-footer">
+          <div class="prod-price-block">
+            <span class="prod-price">{{ p.price | number:'1.2-2' }}</span>
+            <span class="prod-currency">€</span>
+          </div>
+          <span class="prod-stock-badge" [class.low]="p.stock < 10">
+            {{ p.stock < 10 ? '⚠' : '✓' }} {{ p.stock }} in stock </span>
+        </div>
+
+        <div class="prod-divider"></div>
+
+        <div class="prod-actions">
+          <button type="button" class="prod-edit-btn" (click)="openProductModal(p)">✏️ Edit</button>
+          <button type="button" class="prod-delete-btn" (click)="deleteProduct(p.id)" title="Delete product">🗑️</button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+</section>
+}
+
+<!-- ══════════════════════════════════════════
+     MODAL — MUST be siblings: backdrop first, then panel
+     ══════════════════════════════════════════ -->
+@if (productToDelete !== null) {
+<div class="prod-backdrop" (click)="cancelDelete()"></div>
+<div class="prod-confirm-modal" (click)="$event.stopPropagation()">
+  <div class="prod-confirm-icon">🗑️</div>
+  <h3 class="prod-confirm-title">Delete Product?</h3>
+  <p class="prod-confirm-text">This action cannot be undone. The product will be permanently removed from the catalogue.</p>
+  <div class="prod-confirm-actions">
+    <button class="prod-btn-ghost" (click)="cancelDelete()">Cancel</button>
+    <button class="prod-btn-danger" (click)="confirmDelete()">Yes, Delete</button>
+  </div>
+</div>
+}
+
+@if (showProductModal) {
+<!-- 1. Dark overlay (NO backdrop-filter) -->
+<div class="prod-backdrop" (click)="closeProductModal()"></div>
+
+<!-- 2. Modal panel (completely separate element) -->
+<div class="prod-modal" (click)="$event.stopPropagation()">
+
+  <div class="prod-modal-head">
+    <div>
+      <p class="prod-modal-kicker">{{ editingProduct ? 'Editing product' : 'New product' }}</p>
+      <h3 class="prod-modal-title">{{ editingProduct ? editingProduct.name : 'Add to Catalogue' }}</h3>
+    </div>
+    <button class="prod-modal-close" (click)="closeProductModal()">✕</button>
+  </div>
+
+  <div class="prod-modal-form">
+
+    <div class="prod-form-row">
+      <label class="prod-field">
+        <span class="prod-field-label">Name <em>*</em></span>
+        <input type="text" class="prod-input" [(ngModel)]="productForm.name" placeholder="e.g. Organic Rose Serum" />
+      </label>
+      <label class="prod-field">
+        <span class="prod-field-label">Category</span>
+        <select class="prod-input" [(ngModel)]="productForm.category">
+          @for (cat of productCategories; track cat) {
+          <option [value]="cat">{{ formatCategory(cat) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="prod-form-row">
+      <label class="prod-field">
+        <span class="prod-field-label">Price (€) <em>*</em></span>
+        <input type="number" class="prod-input" [(ngModel)]="productForm.price" min="0" step="0.01"
+          placeholder="0.00" />
+      </label>
+      <label class="prod-field">
+        <span class="prod-field-label">Stock</span>
+        <input type="number" class="prod-input" [(ngModel)]="productForm.stock" min="0" placeholder="0" />
+      </label>
+    </div>
+
+    <div class="prod-form-row">
+      <label class="prod-field">
+        <span class="prod-field-label">Country of Origin</span>
+        <select class="prod-input" [(ngModel)]="productForm.origin">
+          <option value="">— Select country —</option>
+          @for (c of countries; track c.name) {
+          <option [value]="c.name">{{ c.flag }} {{ c.name }}</option>
+          }
+        </select>
+      </label>
+      <div class="prod-field prod-switch-field">
+        <span class="prod-field-label">Ecological Product</span>
+        <label class="prod-switch">
+          <input type="checkbox" [(ngModel)]="productForm.isEcological" />
+          <span class="prod-switch-track"><span class="prod-switch-thumb"></span></span>
+          <span class="prod-switch-label">{{ productForm.isEcological ? 'Yes — certified eco' : 'No' }}</span>
+        </label>
+      </div>
+    </div>
+
+    <label class="prod-field prod-field-full">
+      <span class="prod-field-label">Description</span>
+      <textarea class="prod-input prod-textarea" [(ngModel)]="productForm.description" rows="3"
+        placeholder="Describe the product, ingredients, benefits…"></textarea>
+    </label>
+
+    <div class="prod-field prod-field-full">
+      <span class="prod-field-label">Product Image <span class="prod-field-hint">(max 500 KB)</span></span>
+      <label class="prod-upload-area">
+        <input type="file" accept="image/*" class="prod-file-input" (change)="onProductImageSelected($event)" />
+        @if (productForm.image) {
+        <img [src]="productForm.image" class="prod-upload-preview" alt="Preview" />
+        <div class="prod-upload-overlay"><span>Click to change image</span></div>
+        } @else {
+        <div class="prod-upload-placeholder">
+          <span class="prod-upload-icon">📷</span>
+          <span class="prod-upload-text">Click to upload image</span>
+          <span class="prod-upload-sub">PNG, JPG, WEBP — max 500 KB</span>
+        </div>
+        }
+      </label>
+    </div>
+
+  </div>
+
+  <div class="prod-modal-foot">
+    <button class="prod-btn-ghost" (click)="closeProductModal()">Cancel</button>
+    <button class="prod-btn-primary" (click)="saveProduct()" [disabled]="productSaving">
+      @if (productSaving) {
+      <span class="prod-spinner"></span> Saving…
+      } @else {
+      {{ editingProduct ? 'Save Changes' : 'Create Product' }}
+      }
+    </button>
+  </div>
+
+</div>
+}

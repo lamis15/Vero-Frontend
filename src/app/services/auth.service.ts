@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, catchError, of, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface UserResponse {
@@ -155,18 +155,15 @@ export class AuthService {
       .pipe(tap(res => this.applyAuthResponse(res)));
   }
 
-  applySocialSession(params: URLSearchParams): boolean {
-    const accessToken = params.get('accessToken');
-    const refreshToken = params.get('refreshToken');
-    const email = params.get('email');
-    const fullName = params.get('fullName');
-    const role = params.get('role');
+  applySocialSession(params: URLSearchParams): Observable<boolean> {
+    const code = params.get('code');
+    if (!code) return of(false);
 
-    if (!accessToken || !refreshToken || !email || !fullName || !role) return false;
-
-    const user: UserResponse = { id: 0, fullName, email, role, verified: true, banned: false, image: null };
-    this.storeSession(accessToken, refreshToken, user);
-    return true;
+    return this.http.post<AuthResponse>(`${this.API}/social/exchange`, { code }).pipe(
+      tap(res => this.applyAuthResponse(res)),
+      map(() => true),
+      catchError(() => of(false))
+    );
   }
 
   getSocialAuthUrl(provider: 'google' | 'github' | 'facebook'): string {

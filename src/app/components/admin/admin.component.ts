@@ -29,6 +29,8 @@ import { AdminPetitionsComponent } from './admin-petitions/admin-petitions.compo
     FormsModule,
     AdminDonationsComponent,
     AdminPetitionsComponent,
+    AdminPetitionsComponent,
+AdminDonationsComponent
   ],
   templateUrl: './admin.component.html',
 styleUrls: ['./admin.css', './admin.component.css'],
