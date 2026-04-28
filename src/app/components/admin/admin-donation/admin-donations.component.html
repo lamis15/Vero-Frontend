@@ -4,46 +4,54 @@
     <div class="don-page-header-left">
       <div class="don-page-icon">💰</div>
       <div>
-        <h1 class="don-page-title">Gestion des Donations</h1>
+        <h1 class="don-page-title">Donation Management</h1>
         <p class="don-page-desc">
-          Modèle <strong>Random Forest</strong> · 11 features ·
+          <strong>Random Forest</strong> Model · 11 features ·
           <span class="don-tag don-tag-warn">Fraud score</span>
           <span class="don-tag don-tag-ok">F1 = 0.84</span>
         </p>
       </div>
     </div>
 
-<button class="don-btn-refresh" (click)="load(); loadStats()">⟳ Actualiser</button>  </div>
+    <button class="don-btn-refresh" (click)="load(); loadStats()">⟳ Refresh</button>
+  </div>
 
   <div class="don-kpi-strip">
     <div class="don-kpi"><span class="don-kpi-num">{{ stats.total }}</span><span class="don-kpi-lbl">Total</span></div>
     <div class="don-kpi don-kpi-warn"><span class="don-kpi-num">{{ stats.pendingReview }}</span><span class="don-kpi-lbl">Suspects</span></div>
-    <div class="don-kpi"><span class="don-kpi-num">{{ stats.pending }}</span><span class="don-kpi-lbl">En attente</span></div>
-    <div class="don-kpi don-kpi-ok"><span class="don-kpi-num">{{ stats.validated }}</span><span class="don-kpi-lbl">Validés</span></div>
-    <div class="don-kpi don-kpi-bad"><span class="don-kpi-num">{{ stats.rejected }}</span><span class="don-kpi-lbl">Rejetés</span></div>
-    <div class="don-kpi don-kpi-amt"><span class="don-kpi-num">€{{ stats.totalValidatedAmount | number:'1.0-0' }}</span><span class="don-kpi-lbl">Montant validé</span></div>
+    <div class="don-kpi"><span class="don-kpi-num">{{ stats.pending }}</span><span class="don-kpi-lbl">Pending</span></div>
+    <div class="don-kpi don-kpi-ok"><span class="don-kpi-num">{{ stats.validated }}</span><span class="don-kpi-lbl">Validated</span></div>
+    <div class="don-kpi don-kpi-bad"><span class="don-kpi-num">{{ stats.rejected }}</span><span class="don-kpi-lbl">Rejected</span></div>
+    <div class="don-kpi don-kpi-amt"><span class="don-kpi-num">€{{ stats.totalValidatedAmount | number:'1.0-0' }}</span><span class="don-kpi-lbl">Validated Amount</span></div>
   </div>
 
   <div class="don-toolbar">
     <div class="don-tabs">
-      <button class="don-tab" [class.on]="filter === 'ALL'" (click)="setFilter('ALL')">Tous</button>
-      <button class="don-tab" [class.on]="filter === 'PENDING'" (click)="setFilter('PENDING')">En attente</button>
-      <button class="don-tab don-tab-warn" [class.on]="filter === 'PENDING_REVIEW'" (click)="setFilter('PENDING_REVIEW')">
-        Suspects <span class="don-badge" *ngIf="stats.pendingReview > 0">{{ stats.pendingReview }}</span>
+      <button class="don-tab" [class.on]="filter === 'ALL'" (click)="setFilter('ALL')">All</button>
+      <button class="don-tab" [class.on]="filter === 'PENDING'" (click)="setFilter('PENDING')">Pending</button>
+
+      <button class="don-tab don-tab-warn"
+              [class.on]="filter === 'PENDING_REVIEW'"
+              (click)="setFilter('PENDING_REVIEW')">
+        Suspects
+        <span class="don-badge" *ngIf="stats.pendingReview > 0">{{ stats.pendingReview }}</span>
       </button>
-      <button class="don-tab" [class.on]="filter === 'VALIDATED'" (click)="setFilter('VALIDATED')">Validés</button>
-      <button class="don-tab" [class.on]="filter === 'REJECTED'" (click)="setFilter('REJECTED')">Rejetés</button>
+
+      <button class="don-tab" [class.on]="filter === 'VALIDATED'" (click)="setFilter('VALIDATED')">Validated</button>
+      <button class="don-tab" [class.on]="filter === 'REJECTED'" (click)="setFilter('REJECTED')">Rejected</button>
     </div>
 
-    <span class="don-count">{{ filtered.length }} don{{ filtered.length > 1 ? 's' : '' }}</span>
+    <span class="don-count">
+      {{ filtered.length }} donation{{ filtered.length > 1 ? 's' : '' }}
+    </span>
   </div>
 
   @if (loading) {
     <div class="don-state">
       <div class="don-spinner"></div>
       <div>
-        <strong>Chargement des donations...</strong>
-        <small>Analyse IA anti-fraude en cours</small>
+        <strong>Loading donations...</strong>
+        <small>AI fraud analysis in progress</small>
       </div>
     </div>
   }
@@ -51,44 +59,40 @@
   @else if (filtered.length === 0) {
     <div class="don-empty">
       <span class="don-empty-icon">💰</span>
-      <p>Aucun don pour ce filtre</p>
+      <p>No donations found for this filter</p>
     </div>
   }
 
   @else {
     <div class="don-cards-grid">
       @for (don of filtered; track don.id) {
-        <article
-          class="don-review-card"
-          [class.is-suspect]="don.fraudScore !== null && don.fraudScore >= 0.4 && don.status !== 'VALIDATED'"
-          [class.is-validated]="don.status === 'VALIDATED'"
-          [class.is-rejected]="don.status === 'REJECTED'"
-          [class.is-pending]="don.status === 'PENDING'">
+
+        <article class="don-review-card">
 
           <div class="don-card-top">
-            <div class="don-card-icon" [class.don-card-icon-anon]="don.anonymous">
+            <div class="don-card-icon">
               {{ initials(don.anonymous ? null : don.userName) }}
             </div>
 
             <div class="don-card-main">
               <div class="don-card-title-row">
                 <h3 class="don-card-title">
-                  {{ don.anonymous ? 'Don anonyme' : (don.userName || 'Donateur inconnu') }}
+                  {{ don.anonymous ? 'Anonymous Donation' : (don.userName || 'Unknown Donor') }}
                 </h3>
 
                 <span class="don-status" [ngClass]="statusClass(don.status)">
-                  <span class="don-dot"></span>
                   @switch (don.status) {
-                    @case ('PENDING_REVIEW') { À réviser }
-                    @case ('PENDING') { En attente }
-                    @case ('VALIDATED') { Validé }
-                    @case ('REJECTED') { Rejeté }
-                    @default { {{ don.status || 'PENDING' }} }
+                    @case ('PENDING_REVIEW') { Review Needed }
+                    @case ('PENDING') { Pending }
+                    @case ('VALIDATED') { Validated }
+                    @case ('REJECTED') { Rejected }
                   }
                 </span>
               </div>
 
-              <p class="don-card-subtitle">{{ don.donationDate | date:'dd/MM/yyyy · HH:mm' }}</p>
+              <p class="don-card-subtitle">
+                {{ don.donationDate | date:'dd/MM/yyyy · HH:mm' }}
+              </p>
 
               <span class="don-ai-badge" [ngClass]="fraudClass(don.fraudScore)">
                 🤖 {{ fraudLabel(don.fraudScore) }}
@@ -100,9 +104,9 @@
           </div>
 
           <div class="don-card-meta">
-            <span [attr.data-type]="don.type">{{ don.type }}</span>
+            <span>{{ don.type }}</span>
             <span *ngIf="don.eventTitle">🎯 {{ don.eventTitle }}</span>
-            <span *ngIf="!don.eventTitle">Sans événement</span>
+            <span *ngIf="!don.eventTitle">No event</span>
           </div>
 
           <div class="don-card-body">
@@ -111,53 +115,41 @@
                 <span>Contribution</span>
                 <strong *ngIf="don.type === 'MONEY'">€{{ don.amount }}</strong>
                 <strong *ngIf="don.type === 'TIME'">{{ don.amount }}h</strong>
-                <strong *ngIf="don.type === 'MATERIAL'">📦 Matériel</strong>
+                <strong *ngIf="don.type === 'MATERIAL'">📦 Material</strong>
               </div>
-              <small>{{ don.transactionId || 'Aucune transaction' }}</small>
+              <small>{{ don.transactionId || 'No transaction' }}</small>
             </div>
 
             <div class="don-panel">
               <div class="don-panel-head">
-                <span>Score fraude</span>
-                <strong>{{ don.fraudScore !== null ? ((don.fraudScore * 100) | number:'1.0-0') + '%' : '—' }}</strong>
+                <span>Fraud Score</span>
+                <strong>
+                  {{ don.fraudScore !== null ? ((don.fraudScore * 100) | number:'1.0-0') + '%' : '—' }}
+                </strong>
               </div>
 
-              <div class="don-score-track" *ngIf="don.fraudScore !== null">
-                <div class="don-score-fill" [ngClass]="fraudClass(don.fraudScore)" [style.width.%]="don.fraudScore * 100"></div>
-              </div>
-
-              <small>{{ don.fraudNote || 'Analyse automatique' }}</small>
+              <small>{{ don.fraudNote || 'Automatic analysis' }}</small>
             </div>
           </div>
 
-          <p class="don-message" *ngIf="don.message">
-            “{{ don.message | slice:0:120 }}{{ don.message.length > 120 ? '…' : '' }}”
-          </p>
-
           <div class="don-card-footer">
-            <div class="don-person">
-              <div class="don-av" [class.don-av-anon]="don.anonymous">
-                {{ initials(don.anonymous ? null : don.userName) }}
-              </div>
-
-              <div class="don-author-info">
-                <span class="don-name">{{ don.anonymous ? 'Anonyme' : (don.userName || 'Donateur inconnu') }}</span>
-                <small>{{ don.anonymous ? 'Identité masquée' : 'Donateur' }}</small>
-              </div>
-            </div>
-
             <div class="don-actions">
-              <button class="don-act don-act-ok" *ngIf="don.status !== 'VALIDATED'" [disabled]="isProcessing(don.id)" (click)="validate(don.id)">
-                {{ isProcessing(don.id) ? '…' : '✓ Valider' }}
+              <button class="don-act don-act-ok"
+                      *ngIf="don.status !== 'VALIDATED'"
+                      (click)="validate(don.id)">
+                ✓ Validate
               </button>
-              <button class="don-act don-act-no" *ngIf="don.status !== 'REJECTED'" [disabled]="isProcessing(don.id)" (click)="reject(don.id)">
-                {{ isProcessing(don.id) ? '…' : '✕ Rejeter' }}
+
+              <button class="don-act don-act-no"
+                      *ngIf="don.status !== 'REJECTED'"
+                      (click)="reject(don.id)">
+                ✕ Reject
               </button>
-              <span class="don-nil" *ngIf="don.status === 'VALIDATED' || don.status === 'REJECTED'">Décision prise</span>
             </div>
           </div>
 
         </article>
+
       }
     </div>
   }

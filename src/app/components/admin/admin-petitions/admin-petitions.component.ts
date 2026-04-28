@@ -99,7 +99,7 @@ export class AdminPetitionsComponent implements OnInit {
       }),
       finalize(() => {
         this.loading = false;
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       })
     ).subscribe({
       next: (data) => {
@@ -121,7 +121,7 @@ export class AdminPetitionsComponent implements OnInit {
           targetSignatures: p.targetSignatures ?? p.signatureGoal ?? 100,
           createdBy: p.createdBy ?? null
         }));
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
       }
     });
   }
@@ -193,12 +193,12 @@ export class AdminPetitionsComponent implements OnInit {
         const p = this.petitions.find(item => item.id === id);
         if (p) p.status = 'ACTIVE';
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.success.emit('✅ Pétition validée — elle est maintenant ACTIVE');
       },
       error: (e) => {
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.error.emit(e?.error?.message || 'Erreur validation pétition');
       }
     });
@@ -218,12 +218,12 @@ export class AdminPetitionsComponent implements OnInit {
         const p = this.petitions.find(item => item.id === id);
         if (p) p.status = 'REJECTED';
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.success.emit('❌ Pétition rejetée');
       },
       error: (e) => {
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.error.emit(e?.error?.message || 'Erreur rejet pétition');
       }
     });
@@ -243,12 +243,12 @@ export class AdminPetitionsComponent implements OnInit {
         const p = this.petitions.find(item => item.id === id);
         if (p) p.status = 'CLOSED';
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.success.emit('🔒 Pétition fermée');
       },
       error: (e) => {
         this.processingIds.delete(id);
-        this.cdr.markForCheck();
+        this.cdr.detectChanges();
         this.error.emit(e?.error?.message || 'Erreur fermeture pétition');
       }
     });
@@ -264,8 +264,11 @@ export class AdminPetitionsComponent implements OnInit {
         const a = document.createElement('a');
         a.href = url;
         a.download = 'petitions-report.xlsx';
+        a.style.display = 'none';
+        document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
         this.success.emit('📊 Excel téléchargé avec succès');
       },
       error: () => this.error.emit('❌ Erreur export Excel')
