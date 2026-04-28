@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface Event {
-createdBy: any;
+  createdBy: any;
   id?: number;
   title: string;
   description: string;
@@ -13,12 +14,14 @@ createdBy: any;
   location: string;
   capacity: number;
   status?: 'UPCOMING' | 'ONGOING' | 'CANCELLED' | 'COMPLETED';
+  reservedPlaces?: number;
 }
 
 export interface Reservation {
   id: number;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED';
-  createdAt: string;
+  reservedAt: string;   // ← corrigé (le backend envoie reservedAt, pas createdAt)
+  createdAt?: string;   // ← gardé en optionnel pour compatibilité
   event: Event;
 }
 
@@ -28,9 +31,6 @@ export class EventApiService {
   private base = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) {}
-
-  // NOTE: The Authorization header is added automatically by authInterceptor.
-  // No need to set it manually here.
 
   // ── Events ──────────────────────────────────────────────────────────────────
   getAll(): Observable<Event[]> {
@@ -61,13 +61,18 @@ export class EventApiService {
     );
   }
 
+  // ← PLUS de shareReplay/cache : on fetch toujours les données fraîches
   getMyReservations(): Observable<Reservation[]> {
     return this.http.get<Reservation[]>(`${this.base}/reservations/my`);
   }
 
   cancelReservation(reservationId: number): Observable<void> {
-    // Using PUT .../cancel — the standard Spring Boot soft-cancel pattern.
-    // If your backend uses DELETE instead, change this to http.delete<void>(...)
     return this.http.put<void>(`${this.base}/reservations/${reservationId}/cancel`, {});
+  }
+
+  uploadImage(file: File): Observable<{ url: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ url: string }>(`${this.base}/uploads`, fd);
   }
 }

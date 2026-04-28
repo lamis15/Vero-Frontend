@@ -2008,16 +2008,17 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .formation-modal-teal {
-  background: white;
+  background: #1a2332;
   border-radius: 24px;
   width: 90%;
   max-width: 700px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 88, 106, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   animation: modalSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @keyframes modalSlideUp {
@@ -2033,7 +2034,7 @@
 
 /* Modal Header */
 .formation-modal-header {
-  background: linear-gradient(135deg, #00586A 0%, #004551 100%);
+  background: linear-gradient(135deg, #1a2332 0%, #151d2a 100%);
   padding: 2rem;
   display: flex;
   justify-content: space-between;
@@ -2041,6 +2042,7 @@
   gap: 1.5rem;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .formation-modal-header::before {
@@ -2050,7 +2052,7 @@
   right: -10%;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(20, 199, 165, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 200, 255, 0.05) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -2067,25 +2069,25 @@
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(20, 199, 165, 0.2);
+  background: rgba(0, 200, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #14C7A5;
+  color: #00C8FF;
   flex-shrink: 0;
 }
 
 .formation-modal-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #e8f4f6;
+  color: #FFFFFF;
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
 }
 
 .formation-modal-subtitle {
   font-size: 0.9375rem;
-  color: rgba(232, 244, 246, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
   line-height: 1.5;
 }
@@ -2094,12 +2096,12 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #e8f4f6;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
@@ -2108,7 +2110,9 @@
 }
 
 .formation-modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
   transform: rotate(90deg);
 }
 
@@ -2117,6 +2121,7 @@
   padding: 2rem;
   overflow-y: auto;
   flex: 1;
+  background: #1a2332;
 }
 
 .formation-modal-body::-webkit-scrollbar {
@@ -2124,17 +2129,17 @@
 }
 
 .formation-modal-body::-webkit-scrollbar-track {
-  background: #f8fcfd;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
 }
 
 .formation-modal-body::-webkit-scrollbar-thumb {
-  background: #00697C;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
 .formation-modal-body::-webkit-scrollbar-thumb:hover {
-  background: #00586A;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Form */
@@ -2156,11 +2161,14 @@
   gap: 0.5rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #003C47;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8125rem;
 }
 
 .formation-field-label svg {
-  color: #00697C;
+  color: #7a8fa3;
   flex-shrink: 0;
 }
 
@@ -2175,11 +2183,11 @@
 .formation-select-teal {
   width: 100%;
   padding: 0.875rem 1rem;
-  border: 2px solid #e8f4f6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   font-size: 0.9375rem;
-  color: #003C47;
-  background: #f8fcfd;
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.04);
   transition: all 0.3s ease;
   font-family: inherit;
 }
@@ -2188,15 +2196,15 @@
 .formation-textarea-teal:focus,
 .formation-select-teal:focus {
   outline: none;
-  border-color: #14C7A5;
-  background: white;
-  box-shadow: 0 0 0 4px rgba(20, 199, 165, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 4px rgba(0, 200, 255, 0.08);
 }
 
 .formation-input-teal::placeholder,
 .formation-textarea-teal::placeholder {
-  color: #00697C;
-  opacity: 0.6;
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 1;
 }
 
 .formation-textarea-teal {
@@ -2208,7 +2216,7 @@
 .formation-select-teal {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2300697C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='0.6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 3rem;
@@ -2216,7 +2224,7 @@
 
 .formation-field-hint {
   font-size: 0.8125rem;
-  color: #00697C;
+  color: rgba(255, 255, 255, 0.45);
   line-height: 1.5;
 }
 
@@ -2233,20 +2241,20 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #14C7A5 0%, #00697C 100%);
-  color: white;
+  background: linear-gradient(135deg, #00C8FF 0%, #00E5FF 100%);
+  color: #021214;
   border: none;
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(20, 199, 165, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 200, 255, 0.25);
 }
 
 .formation-ai-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(20, 199, 165, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 200, 255, 0.35);
 }
 
 .formation-ai-btn:disabled {
@@ -2274,7 +2282,7 @@
   left: 1rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #00586A;
+  color: rgba(255, 255, 255, 0.7);
   pointer-events: none;
 }
 
@@ -2294,10 +2302,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.875rem 1rem;
-  border: 2px solid #e8f4f6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
-  background: linear-gradient(135deg, #00586A 0%, #004551 100%);
-  color: #e8f4f6;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -2308,7 +2316,9 @@
 
 .formation-currency-toggle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 88, 106, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .formation-currency-toggle svg {
@@ -2327,11 +2337,11 @@
 /* Modal Footer */
 .formation-modal-footer {
   padding: 1.5rem 2rem;
-  border-top: 2px solid #e8f4f6;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  background: #f8fcfd;
+  background: #1a2332;
 }
 
 .formation-btn-secondary,
@@ -2349,27 +2359,29 @@
 }
 
 .formation-btn-secondary {
-  background: white;
-  color: #00586A;
-  border: 2px solid #e8f4f6;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .formation-btn-secondary:hover {
-  border-color: #00697C;
-  background: #f8fcfd;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 88, 106, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .formation-btn-primary {
-  background: linear-gradient(135deg, #00586A 0%, #004551 100%);
-  color: #e8f4f6;
-  box-shadow: 0 4px 12px rgba(0, 88, 106, 0.3);
+  background: linear-gradient(135deg, #0066FF 0%, #00C8FF 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+  font-weight: 700;
 }
 
 .formation-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 88, 106, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 102, 255, 0.4);
 }
 
 /* Responsive */
@@ -2744,24 +2756,24 @@
 .formation-toggle-option {
   display: block;
   cursor: pointer;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
 .formation-toggle-option:hover {
-  border-color: rgba(255, 215, 0, 0.3);
-  background: rgba(255, 215, 0, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .formation-toggle-option.active {
-  border-color: #ffd700;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 237, 78, 0.05));
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  border-color: rgba(0, 200, 255, 0.4);
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.08), rgba(0, 200, 255, 0.04));
+  box-shadow: 0 4px 12px rgba(0, 200, 255, 0.15);
 }
 
 .formation-toggle-option.active::before {
@@ -2771,7 +2783,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #ffd700, #ffed4e);
+  background: linear-gradient(90deg, #00C8FF, #00E5FF);
 }
 
 .formation-toggle-input {
@@ -2791,13 +2803,14 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .formation-toggle-option.active .formation-toggle-icon {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #8b5a00;
+  background: linear-gradient(135deg, #00C8FF, #00E5FF);
+  color: #021214;
 }
 
 .formation-toggle-option.active .formation-toggle-icon svg {
@@ -2814,7 +2827,7 @@
 }
 
 .formation-toggle-option.active .formation-toggle-title {
-  color: #ffd700;
+  color: #00C8FF;
 }
 
 .formation-toggle-desc {
@@ -2825,7 +2838,7 @@
 }
 
 .formation-toggle-option.active .formation-toggle-desc {
-  color: rgba(255, 215, 0, 0.8);
+  color: rgba(0, 200, 255, 0.8);
 }
 
 /* Animation for toggle */

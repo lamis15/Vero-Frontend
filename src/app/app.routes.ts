@@ -70,24 +70,9 @@ export const routes: Routes = [
           import('./components/admin/admin-formations/admin-formations.component')
             .then(m => m.AdminFormationsComponent)
       },
-
-      {
-        path: 'petitions',
-        loadComponent: () =>
-          import('./components/admin/admin-petitions/admin-petitions.component')
-            .then(m => m.AdminPetitionsComponent)
-      },
-      {
-        path: 'donations',
-        loadComponent: () =>
-          import('./components/admin/admin-donation/admin-donations.component')
-            .then(m => m.AdminDonationsComponent)
-      },
-
       { path: '**', redirectTo: 'dashboard' }
     ]
   },
-
   {
     path: 'chat',
     canActivate: [authGuard],

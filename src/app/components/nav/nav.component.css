@@ -35,7 +35,7 @@
 
 /* ── Nav shell ── */
 nav {
-  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
   z-index: 100; width: auto; max-width: 920px; height: var(--nav-h);
   border-radius: var(--r);
   background: var(--glass-bg);
@@ -463,7 +463,7 @@ nav.nav-solid .dot-badge { border-color: rgba(255,255,255,.9); }
   z-index: 99; animation: fadeIn .25s ease;
 }
 .mobile-menu {
-  position: absolute; top: calc(14px + var(--nav-h) + 10px); left: 16px; right: 16px;
+  position: absolute; top: calc(var(--nav-h) + 10px); left: 16px; right: 16px;
   background: var(--dd-bg); backdrop-filter: blur(32px) saturate(160%);
   -webkit-backdrop-filter: blur(32px) saturate(160%);
   border: 1px solid var(--dd-border); border-radius: 20px; padding: 12px;
@@ -504,7 +504,7 @@ nav.nav-solid .dot-badge { border-color: rgba(255,255,255,.9); }
    TOASTS
    ═══════════════════════════════ */
 .toast-container {
-  position: fixed; top: max(90px, calc(var(--nav-h) + 36px)); right: 24px;
+  position: fixed; top: calc(var(--nav-h) + 20px); right: 24px;
   z-index: 1000; display: flex; flex-direction: column; gap: 12px; pointer-events: none;
 }
 .toast-notification {

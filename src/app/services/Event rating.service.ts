@@ -11,6 +11,7 @@ export interface RatingResponse {
   userName: string;
   stars: number;
   comment: string;
+  imageUrl?: string;
   ratedAt: string;
   averageStars: number;
   totalRatings: number;
@@ -19,6 +20,7 @@ export interface RatingResponse {
 export interface RatingRequest {
   stars: number;
   comment: string;
+  imageUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +32,6 @@ export class EventRatingService {
 
   constructor(private http: HttpClient) {}
 
-  // ── REST ──────────────────────────────────────────────────────────────────
   submitRating(eventId: number, req: RatingRequest): Observable<RatingResponse> {
     return this.http.post<RatingResponse>(`${this.base}/event/${eventId}`, req);
   }
@@ -43,25 +44,25 @@ export class EventRatingService {
     return this.http.get<boolean>(`${this.base}/event/${eventId}/has-rated`);
   }
 
-  // ── WebSocket ─────────────────────────────────────────────────────────────
+  uploadRatingImage(file: File): Observable<{ url: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ url: string }>(`${environment.apiUrl}/api/uploads`, fd);
+  }
+
   subscribeToRatings(eventId: number): Observable<RatingResponse> {
     if (!this.ratingSubjects.has(eventId)) {
       this.ratingSubjects.set(eventId, new Subject<RatingResponse>());
     }
-
     if (!this.stompClient || !this.stompClient.connected) {
       this.connectStomp();
     }
-
     return this.ratingSubjects.get(eventId)!.asObservable();
   }
 
   private connectStomp(): void {
     const wsUrl = `${environment.apiUrl}/ws`;
-
     this.stompClient = new Client({
-      // ← Pas d'import SockJS — on utilise l'URL directement
-      // Si le serveur supporte le WebSocket natif, ça marche sans SockJS
       brokerURL: wsUrl.replace('http', 'ws') + '/websocket',
       reconnectDelay: 5000,
       onConnect: () => {
@@ -75,11 +76,8 @@ export class EventRatingService {
           );
         });
       },
-      onStompError: (frame) => {
-        console.error('STOMP error:', frame);
-      }
+      onStompError: (frame) => console.error('STOMP error:', frame)
     });
-
     this.stompClient.activate();
   }
 

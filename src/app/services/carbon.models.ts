@@ -20,11 +20,12 @@ export interface CarbonActivity {
 export interface CarbonGoal {
   id?: number;
   activityType: ActivityType;
-  targetCarbonKg: number;
+  impactType: 'CARBON' | 'WATER' | 'ENERGY' | 'WASTE' | 'LAND';  // ADD THIS
+  targetValue: number;  // RENAME from targetCarbonKg
   startDate: string;
   endDate: string;
-  achieved: boolean;
-  progressPct: number;
+  achieved?: boolean;
+  progressPct?: number;
 }
 
 // ── Helper maps ──
