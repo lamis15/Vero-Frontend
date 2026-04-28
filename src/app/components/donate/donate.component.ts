@@ -134,6 +134,10 @@ export class DonateComponent implements OnInit, OnDestroy {
   validatingId: number | null = null;
   activeTab: 'browse' | 'donate' | 'history' = 'browse';
   currentStep = 1;
+
+  readonly pageSize = 6;
+  eventsPage   = 1;
+  historyPage  = 1;
   showConfirmModal = false;
   showSuccessModal = false;
   pendingDonation: Donation | null = null;
@@ -801,5 +805,33 @@ export class DonateComponent implements OnInit, OnDestroy {
     return history
       .filter(d => d.type === 'MONEY')
       .reduce((sum, d) => sum + (d.amount || 0), 0);
+  }
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+
+  get pagedEvents(): Event[] {
+    const start = (this.eventsPage - 1) * this.pageSize;
+    return this.events.slice(start, start + this.pageSize);
+  }
+  get eventsTotal(): number { return Math.max(1, Math.ceil(this.events.length / this.pageSize)); }
+  get eventsPageNumbers(): number[] { return this.buildPages(this.eventsPage, this.eventsTotal); }
+  goToEventsPage(p: number) { if (p >= 1 && p <= this.eventsTotal) this.eventsPage = p; }
+
+  get pagedHistory(): Donation[] {
+    const start = (this.historyPage - 1) * this.pageSize;
+    return this.donations.slice(start, start + this.pageSize);
+  }
+  get historyTotal(): number { return Math.max(1, Math.ceil(this.donations.length / this.pageSize)); }
+  get historyPageNumbers(): number[] { return this.buildPages(this.historyPage, this.historyTotal); }
+  goToHistoryPage(p: number) { if (p >= 1 && p <= this.historyTotal) this.historyPage = p; }
+
+  private buildPages(current: number, total: number): number[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: number[] = [1];
+    if (current > 3) pages.push(-1);
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
   }
 }

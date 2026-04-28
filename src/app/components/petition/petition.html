@@ -144,7 +144,7 @@
     </div>
 
     <div class="petition-grid" *ngIf="filteredPetitions.length > 0">
-      <div class="p-card" *ngFor="let p of filteredPetitions; let i = index" [style.animation-delay]="i * 0.07 + 's'"
+      <div class="p-card" *ngFor="let p of pagedBrowse; let i = index" [style.animation-delay]="i * 0.07 + 's'"
         (click)="selectPetition(p)">
 
         <!-- Image strip -->
@@ -186,6 +186,21 @@
           <button class="btn-sign signed-btn" *ngIf="!isAdmin && p._hasSigned" disabled>Signed ✓</button>
           <span class="admin-view-badge" *ngIf="isAdmin">👁 Read only</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Browse pagination -->
+    <div class="pag-bar" *ngIf="browseTotal > 1">
+      <span class="pag-info">
+        {{ (browsePage - 1) * pageSize + 1 }}–{{ browsePage * pageSize > filteredPetitions.length ? filteredPetitions.length : browsePage * pageSize }} of {{ filteredPetitions.length }}
+      </span>
+      <div class="pag-controls">
+        <button class="pag-btn" [disabled]="browsePage === 1" (click)="goToBrowsePage(browsePage - 1)">‹</button>
+        <ng-container *ngFor="let p of browsePages">
+          <span class="pag-ellipsis" *ngIf="p === -1">…</span>
+          <button class="pag-btn" *ngIf="p !== -1" [class.active]="p === browsePage" (click)="goToBrowsePage(p)">{{ p }}</button>
+        </ng-container>
+        <button class="pag-btn" [disabled]="browsePage === browseTotal" (click)="goToBrowsePage(browsePage + 1)">›</button>
       </div>
     </div>
 
@@ -357,7 +372,7 @@
     </div>
 
     <div class="petition-grid" *ngIf="myPetitions.length > 0">
-      <div class="p-card" *ngFor="let p of myPetitions; let i = index" [style.animation-delay]="i * 0.07 + 's'">
+      <div class="p-card" *ngFor="let p of pagedMy; let i = index" [style.animation-delay]="i * 0.07 + 's'">
 
         <div class="p-card-img">
           <div class="p-card-img-pattern"></div>
@@ -388,6 +403,21 @@
           <button class="btn-edit" (click)="editPetition(p)">Edit</button>
           <button class="btn-delete" (click)="deletePetition(p)">Delete</button>
         </div>
+      </div>
+    </div>
+
+    <!-- My petitions pagination -->
+    <div class="pag-bar" *ngIf="myTotal > 1">
+      <span class="pag-info">
+        {{ (myPage - 1) * pageSize + 1 }}–{{ myPage * pageSize > myPetitions.length ? myPetitions.length : myPage * pageSize }} of {{ myPetitions.length }}
+      </span>
+      <div class="pag-controls">
+        <button class="pag-btn" [disabled]="myPage === 1" (click)="goToMyPage(myPage - 1)">‹</button>
+        <ng-container *ngFor="let p of myPages">
+          <span class="pag-ellipsis" *ngIf="p === -1">…</span>
+          <button class="pag-btn" *ngIf="p !== -1" [class.active]="p === myPage" (click)="goToMyPage(p)">{{ p }}</button>
+        </ng-container>
+        <button class="pag-btn" [disabled]="myPage === myTotal" (click)="goToMyPage(myPage + 1)">›</button>
       </div>
     </div>
 
@@ -455,7 +485,7 @@
       </div>
 
       <div class="petition-grid">
-        <div class="p-card" *ngFor="let p of getFilteredAdmin()">
+        <div class="p-card" *ngFor="let p of pagedAdminAll">
           <div class="p-card-img">
             <div class="p-card-img-pattern"></div>
             <div class="p-card-img-emoji">{{ getCategoryEmoji(p.category) }}</div>
@@ -486,6 +516,20 @@
             <button class="btn-sign" *ngIf="p.status==='ACTIVE'" (click)="closePetition(p)">🔒 Close</button>
             <button class="btn-delete" (click)="adminDeletePetition(p)">🗑 Delete</button>
           </div>
+        </div>
+      </div>
+      <!-- Admin all pagination -->
+      <div class="pag-bar" *ngIf="adminTotal > 1">
+        <span class="pag-info">
+          {{ (adminPage - 1) * pageSize + 1 }}–{{ adminPage * pageSize > getFilteredAdmin().length ? getFilteredAdmin().length : adminPage * pageSize }} of {{ getFilteredAdmin().length }}
+        </span>
+        <div class="pag-controls">
+          <button class="pag-btn" [disabled]="adminPage === 1" (click)="goToAdminPage(adminPage - 1)">‹</button>
+          <ng-container *ngFor="let p of adminPages">
+            <span class="pag-ellipsis" *ngIf="p === -1">…</span>
+            <button class="pag-btn" *ngIf="p !== -1" [class.active]="p === adminPage" (click)="goToAdminPage(p)">{{ p }}</button>
+          </ng-container>
+          <button class="pag-btn" [disabled]="adminPage === adminTotal" (click)="goToAdminPage(adminPage + 1)">›</button>
         </div>
       </div>
     </div>
