@@ -20,6 +20,7 @@ import { FormationService } from '../../../services/formation.service';
 import { ForumService } from '../../../services/forum.service';
 import { MessagerieService, TopicCounts } from '../../../services/messagerie.service';
 import { AuthService, UserResponse } from '../../../services/auth.service';
+
 export type AdminTab =
   | 'users'
   | 'add'
@@ -50,7 +51,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
   formationCount = 0;
   messageCount = 0;
 
-  // Tu peux remplacer ces valeurs plus tard par des appels backend réels
   petitionCount = 0;
   donationCount = 0;
 
@@ -147,24 +147,21 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
       next: (users) => {
         this.userCount = users?.length || 0;
         this.animateCounter('stat-card-users', this.userCount);
-      },
-      error: () => {}
+      }
     });
 
     this.productService.getAll().subscribe({
       next: (products) => {
         this.productCount = products?.length || 0;
         this.animateCounter('stat-card-products', this.productCount);
-      },
-      error: () => {}
+      }
     });
 
     this.formationService.getAll().subscribe({
       next: (formations) => {
         this.formationCount = formations?.length || 0;
         this.animateCounter('stat-card-formations', this.formationCount);
-      },
-      error: () => {}
+      }
     });
 
     this.forumService.getAllPosts().subscribe({
@@ -173,8 +170,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
         this.forumStats.totalPosts = list.length;
         this.forumStats.flaggedCount = list.filter(p => p.isFlagged).length;
         this.animateCounter('stat-card-community', this.forumStats.totalPosts);
-      },
-      error: () => {}
+      }
     });
 
     this.refreshHeatmap();
@@ -182,7 +178,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
 
   private refreshHeatmap(): void {
     this.messagerieService.loadTopicHeatmap().subscribe({
-      next: (counts: TopicCounts) => {
+      next: (counts: TopicCounts | any) => {
         this.topicHeatmap = {
           eco: counts?.eco || 0,
           lifestyle: counts?.lifestyle || 0,
@@ -200,8 +196,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy, AfterViewInit
 
         this.animateCounter('stat-card-messages', this.messageCount);
         this.cdr.detectChanges();
-      },
-      error: () => {}
+      }
     });
   }
 

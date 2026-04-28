@@ -37,8 +37,11 @@ export class ForumService {
     return this.http.put<Post>(`${this.API_POSTS}/${id}`, post);
   }
 
-  deletePost(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.API_POSTS}/${id}`);
+  deletePost(id: number): Observable<any> {
+    return this.http.delete(`${this.API_POSTS}/${id}`, {
+      observe: 'response',
+      responseType: 'text'
+    });
   }
 
   likePost(id: number): Observable<Post> {

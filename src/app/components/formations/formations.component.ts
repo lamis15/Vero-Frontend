@@ -1,5 +1,6 @@
 import { Component, OnInit, Renderer2, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormationService } from '../../services/formation.service';
 import { Formation } from '../../services/formation.models';
@@ -20,7 +21,7 @@ interface Trainer {
 @Component({
   selector: 'app-formations',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './formations.component.html',
   styleUrl: './formations.component.css'
 })
@@ -30,8 +31,8 @@ export class FormationsComponent implements OnInit, OnDestroy {
   error: string | null = null;
   isDark = false;
   filter = 'all';
-  private pinnedIds: Set<number> = new Set();
-  private readonly PINNED_KEY = 'vero_pinned_formations';
+  showOnlyMyFormations = false;
+  searchQuery = '';
   private fabButton: HTMLElement | null = null;
 
   // Using UI Avatars API for professional-looking avatars with real names
@@ -96,6 +97,10 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   currentUserId: number | null = null;
   quizAvailableIds: Set<number> = new Set(); // formation IDs that have a quiz
+  
+  // Currency conversion
+  currency: 'EUR' | 'DT' = 'EUR';
+  private readonly EUR_TO_DT_RATE = 3.3; // Taux de conversion approximatif
 
   constructor(
     private formationService: FormationService,
@@ -107,7 +112,6 @@ export class FormationsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadPinnedFromStorage();
     this.loadFormations();
     
     // Load current user ID if logged in
@@ -197,35 +201,18 @@ export class FormationsComponent implements OnInit, OnDestroy {
     this.renderer.appendChild(document.body, this.fabButton);
   }
 
-  private loadPinnedFromStorage(): void {
-    try {
-      const stored = localStorage.getItem(this.PINNED_KEY);
-      this.pinnedIds = stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch { this.pinnedIds = new Set(); }
-  }
-
-  private savePinnedToStorage(): void {
-    localStorage.setItem(this.PINNED_KEY, JSON.stringify([...this.pinnedIds]));
-  }
-
-  isPinned(f: Formation): boolean {
-    return this.pinnedIds.has(f.id!);
-  }
-
-  togglePin(f: Formation): void {
-    if (this.pinnedIds.has(f.id!)) {
-      this.pinnedIds.delete(f.id!);
-    } else {
-      this.pinnedIds.add(f.id!);
-    }
-    this.savePinnedToStorage();
-  }
-
   loadFormations(): void {
     this.loading = true;
     this.formationService.getAll().subscribe({
       next: (data) => {
-        this.formations = data;
+        // Sort formations: pinned first, then by ID descending
+        this.formations = data.sort((a, b) => {
+          // First, sort by pinned status (pinned formations first)
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          // Then sort by ID descending within each group
+          return (b.id || 0) - (a.id || 0);
+        });
         this.loading = false;
         // Check quiz availability for COMPLETED formations
         data.filter(f => f.status === 'COMPLETED').forEach(f => {
@@ -247,8 +234,40 @@ export class FormationsComponent implements OnInit, OnDestroy {
     let list = this.filter === 'all'
       ? this.formations
       : this.formations.filter(f => f.status === this.filter);
-    // pinned formations always first
-    return list.slice().sort((a, b) => (this.isPinned(b) ? 1 : 0) - (this.isPinned(a) ? 1 : 0));
+    
+    // Filter by search query
+    if (this.searchQuery && this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase().trim();
+      list = list.filter(f => 
+        f.title.toLowerCase().includes(query) ||
+        (f.description && f.description.toLowerCase().includes(query))
+      );
+    }
+    
+    // Filter by user enrollment if "Mes formations" is active
+    if (this.showOnlyMyFormations && this.currentUserId) {
+      list = list.filter(f => f.participantIds?.includes(this.currentUserId!) || false);
+    }
+    
+    return list;
+  }
+
+  toggleMyFormations(): void {
+    this.showOnlyMyFormations = !this.showOnlyMyFormations;
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+  }
+
+  onSearchChange(): void {
+    // La recherche se fait automatiquement via filteredFormations()
+    // Cette méthode peut être utilisée pour des actions supplémentaires si nécessaire
+  }
+
+  getMyFormationsCount(): number {
+    if (!this.currentUserId) return 0;
+    return this.formations.filter(f => f.participantIds?.includes(this.currentUserId!) || false).length;
   }
 
   register(formationId: number): void {
@@ -282,14 +301,28 @@ export class FormationsComponent implements OnInit, OnDestroy {
     if (!this.authService.isLoggedIn || !this.currentUserId) {
       return false;
     }
-    const isEnrolled = formation.participantIds?.includes(this.currentUserId) || false;
-    console.log(`User ${this.currentUserId} enrolled in formation ${formation.id}:`, isEnrolled, 'Participants:', formation.participantIds);
-    return isEnrolled;
+    return formation.participantIds?.includes(this.currentUserId) || false;
   }
 
   hasPrice(formation: Formation): boolean {
     const p = formation.price;
     return p !== null && p !== undefined && Number(p) > 0;
+  }
+  
+  toggleCurrency(): void {
+    this.currency = this.currency === 'EUR' ? 'DT' : 'EUR';
+  }
+  
+  getDisplayPrice(formation: Formation): string {
+    if (!this.hasPrice(formation)) return 'Gratuit';
+    
+    const price = formation.price!;
+    if (this.currency === 'EUR') {
+      return `€${price.toFixed(2)}`;
+    } else {
+      const dtPrice = price * this.EUR_TO_DT_RATE;
+      return `${dtPrice.toFixed(2)} DT`;
+    }
   }
 
   getProgress(formation: Formation): number {
@@ -332,7 +365,11 @@ export class FormationsComponent implements OnInit, OnDestroy {
   }
 
   getFormationImage(formation: Formation): string {
-    // Using high-quality images from Picsum
+    // Use the imageUrl from backend if available, otherwise fallback to Picsum
+    if (formation.imageUrl) {
+      return formation.imageUrl;
+    }
+    // Fallback: Using high-quality images from Picsum
     const imageId = 100 + ((formation.id || 0) % 50);
     return `https://picsum.photos/id/${imageId}/800/600`;
   }
@@ -376,5 +413,39 @@ export class FormationsComponent implements OnInit, OnDestroy {
   openAddFormationModal(): void {
     // Navigate to admin page or open modal
     this.router.navigate(['/admin']);
+  }
+
+  togglePin(event: Event, formation: Formation): void {
+    event.stopPropagation(); // Prevent card click
+    
+    if (!this.authService.isLoggedIn) {
+      this.notificationService.show('Veuillez vous connecter pour épingler une formation', 'warning');
+      return;
+    }
+
+    // Toggle pin
+    this.formationService.togglePin(formation.id!).subscribe({
+      next: (updatedFormation) => {
+        // Update local formation
+        const index = this.formations.findIndex(f => f.id === formation.id);
+        if (index !== -1) {
+          this.formations[index] = updatedFormation;
+          // Re-sort formations to reflect pinned status
+          this.formations.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return (b.id || 0) - (a.id || 0);
+          });
+        }
+        this.notificationService.show(
+          updatedFormation.pinned ? 'Formation épinglée' : 'Formation désépinglée', 
+          'success'
+        );
+      },
+      error: (err) => {
+        console.error('Error toggling pin:', err);
+        this.notificationService.show('Erreur lors de l\'épinglage', 'error');
+      }
+    });
   }
 }

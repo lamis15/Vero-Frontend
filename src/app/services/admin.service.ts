@@ -41,7 +41,7 @@ export class AdminService {
   constructor(private http: HttpClient) {}
 
   getAllUsers(): Observable<AdminUserListItem[]> {
-    return this.http.get<AdminUserListItem[]>(`${this.API}/all`);
+    return this.http.get<AdminUserListItem[]>(this.API);
   }
 
   createUser(request: AdminCreateUserRequest): Observable<UserResponse> {

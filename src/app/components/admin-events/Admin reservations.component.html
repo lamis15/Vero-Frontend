@@ -1,0 +1,283 @@
+<section class="admin-reservations-page">
+
+  <div class="admin-reservations-header">
+    <div>
+      <span class="admin-reservations-kicker">BOOKING INTELLIGENCE</span>
+      <h2 class="admin-reservations-title">
+        @if (eventTitle) { Bookings — {{ eventTitle }} }
+        @else { Reservations }
+      </h2>
+      <p class="admin-reservations-subtitle">
+        Analyse comportementale · Filtrage intelligent des demandes en attente.
+      </p>
+    </div>
+
+    <div class="admin-reservations-actions">
+      <button class="admin-reservations-btn secondary" type="button" (click)="goTo('/admin?tab=events')">
+        ← All Events
+      </button>
+      @if (eventTitle) {
+        <button class="admin-reservations-btn secondary" type="button" (click)="clearEventFilter()">
+          Clear filter
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (stats) {
+    <div class="admin-reservations-stats">
+      <div class="admin-reservations-stat">
+        <span>Pending</span>
+        <strong>{{ stats.total }}</strong>
+      </div>
+      <div class="admin-reservations-stat">
+        <span>Score moyen</span>
+        <strong>{{ stats.avgScore }}</strong>
+      </div>
+      <div class="admin-reservations-stat">
+        <span>Ann. moyen</span>
+        <strong>{{ stats.avgCancelRate }}%</strong>
+      </div>
+      <div class="admin-reservations-stat">
+        <span>Éco moyen</span>
+        <strong>{{ stats.avgEco }}</strong>
+      </div>
+    </div>
+  }
+
+  @if (stats && stats.total > 0) {
+    <section class="admin-reservations-score-card">
+      <div class="admin-reservations-score-label">
+        <span>Répartition des scores</span>
+        <span>{{ stats.total }} réservations</span>
+      </div>
+
+      <div class="admin-reservations-dist-bar">
+        <div class="admin-reservations-dist-seg ok" [style.width]="reliablePct + '%'"></div>
+        <div class="admin-reservations-dist-seg warn" [style.width]="moderatePct + '%'"></div>
+        <div class="admin-reservations-dist-seg bad" [style.width]="riskPct + '%'"></div>
+      </div>
+
+      <div class="admin-reservations-legend">
+        <span><i class="ok"></i> Fiable ≥75 — {{ stats.reliableCount }}</span>
+        <span><i class="warn"></i> Modéré 50–74 — {{ stats.moderateCount }}</span>
+        <span><i class="bad"></i> Risqué &lt;50 — {{ stats.riskCount }}</span>
+      </div>
+    </section>
+  }
+
+  @if (successMessage) {
+    <div class="vc-banner ok">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="vc-banner err">{{ errorMessage }}</div>
+  }
+
+  @if (stats && stats.riskCount > 0) {
+    <div class="admin-reservations-insight warn">
+      <span>⚠</span>
+      <p><strong>{{ stats.riskCount }}</strong> réservation(s) à risque — vérification manuelle recommandée.</p>
+    </div>
+  }
+
+  @if (stats && stats.reliableCount > 0) {
+    <div class="admin-reservations-insight ok">
+      <span>✓</span>
+      <p><strong>{{ stats.reliableCount }}</strong> membre(s) fiables — confirmation sans risque significatif.</p>
+    </div>
+  }
+
+  <section class="admin-reservations-card">
+    <div class="admin-reservations-toolbar">
+      <button class="admin-reservations-chip" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
+        Tous <span>{{ countForFilter('all') }}</span>
+      </button>
+      <button class="admin-reservations-chip" [class.active]="activeFilter === 'reliable'" (click)="setFilter('reliable')">
+        Fiables ≥75 <span>{{ countForFilter('reliable') }}</span>
+      </button>
+      <button class="admin-reservations-chip" [class.active]="activeFilter === 'cancel-high'" (click)="setFilter('cancel-high')">
+        Ann. élevées <span>{{ countForFilter('cancel-high') }}</span>
+      </button>
+      <button class="admin-reservations-chip" [class.active]="activeFilter === 'eco'" (click)="setFilter('eco')">
+        Éco+ ≥8 <span>{{ countForFilter('eco') }}</span>
+      </button>
+      <button class="admin-reservations-chip" [class.active]="activeFilter === 'new'" (click)="setFilter('new')">
+        Nouveaux <span>{{ countForFilter('new') }}</span>
+      </button>
+
+      <select class="admin-reservations-input" [(ngModel)]="activeSortKey" (ngModelChange)="setSort($event)">
+        <option value="score-desc">Score décroissant</option>
+        <option value="score-asc">Score croissant</option>
+        <option value="eco-desc">Éco score ↓</option>
+        <option value="cancel-desc">Annulations ↑</option>
+        <option value="events-desc">Participations ↓</option>
+      </select>
+    </div>
+
+    @if (scoringLoading) {
+      <div class="admin-reservations-loading">Chargement des réservations...</div>
+    } @else if (filteredScored.length === 0) {
+      <div class="admin-reservations-empty">
+        <div>🎟️</div>
+        <h3>Aucune réservation trouvée</h3>
+        <p>Aucune demande ne correspond au filtre sélectionné.</p>
+      </div>
+    } @else {
+      <div class="admin-reservations-table-wrap">
+        <table class="admin-reservations-table">
+          <thead>
+            <tr>
+              <th>Membre</th>
+              <th>Événement</th>
+              <th>Score global</th>
+              <th>Éco</th>
+              <th>Ann.</th>
+              <th>Activité</th>
+              <th>Profil</th>
+              <th class="right">Décision</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (row of filteredScored; track row.reservation.id) {
+              <tr
+                class="admin-reservations-row"
+                [attr.data-profile]="row.profile"
+                [class.processed]="isProcessed(row.reservation.id)"
+              >
+                <td>
+                  <div class="admin-reservations-person">
+                    <div class="admin-reservations-avatar">{{ initials(row.reservation.user?.fullName) }}</div>
+                    <div>
+                      <strong>{{ row.reservation.user?.fullName }}</strong>
+                      <small>{{ row.reservation.user?.email }}</small>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <strong class="admin-reservations-event">{{ row.reservation.event?.title }}</strong>
+                  <small class="admin-reservations-event-sub">
+                    {{ row.reservation.event?.startDate | date:'dd MMM' }} · {{ row.reservation.event?.location }}
+                  </small>
+                </td>
+
+                <td>
+                  <div class="admin-reservations-score-cell">
+                    <div class="admin-reservations-score-ring">
+                      <svg width="42" height="42" viewBox="0 0 42 42">
+                        <circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3" />
+                        <circle
+                          cx="21"
+                          cy="21"
+                          r="18"
+                          fill="none"
+                          [attr.stroke]="ringColor(row.globalScore)"
+                          stroke-width="3"
+                          [attr.stroke-dasharray]="2 * 3.14159 * 18"
+                          [attr.stroke-dashoffset]="ringOffset(row.globalScore)"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      <span [style.color]="ringColor(row.globalScore)">{{ row.globalScore }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="admin-reservations-mono" [style.color]="ecoColor(row.ecoScore)">
+                    {{ row.ecoScore }}/10
+                  </span>
+                </td>
+
+                <td>
+                  <span class="admin-reservations-tag" [ngClass]="cancelClass(row.cancelRate)">
+                    {{ row.cancelRate }}%
+                  </span>
+                </td>
+
+                <td>
+                  <span class="admin-reservations-mono muted">
+                    {{ row.confirmedReservations }} évén.
+                  </span>
+                </td>
+
+                <td>
+                  <span class="admin-reservations-tag" [ngClass]="scoreClass(row.globalScore)">
+                    {{ scoreLabel(row.globalScore) }}
+                  </span>
+                  @if (row.newMember) {
+                    <span class="admin-reservations-tag new">New</span>
+                  }
+                </td>
+
+                <td class="right">
+                  <div class="admin-reservations-row-actions">
+                    <button class="admin-reservations-icon-btn" (click)="toggleExpand(row.reservation.id)">
+                      {{ isExpanded(row.reservation.id) ? '−' : '+' }}
+                    </button>
+
+                    @if (isProcessed(row.reservation.id)) {
+                      <span class="admin-reservations-tag" [ngClass]="statusClass(row.reservation.status)">
+                        {{ row.reservation.status }}
+                      </span>
+                      <button class="admin-reservations-link danger" (click)="deleteReservation(row.reservation.id)">
+                        Supprimer
+                      </button>
+                    } @else {
+                      <button class="admin-reservations-link ok" (click)="confirmReservation(row)">Confirmer</button>
+                      <button class="admin-reservations-link warn" (click)="rejectReservation(row)">Rejeter</button>
+                      <button class="admin-reservations-link danger" (click)="deleteReservation(row.reservation.id)">Supprimer</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+
+              @if (isExpanded(row.reservation.id)) {
+                <tr class="admin-reservations-detail-row">
+                  <td colspan="8">
+                    <div class="admin-reservations-detail">
+                      <div class="admin-reservations-detail-grid">
+                        <div>
+                          <span>Participations confirmées</span>
+                          <strong>{{ row.confirmedReservations }}</strong>
+                          <small>événements complétés</small>
+                        </div>
+
+                        <div>
+                          <span>Taux d'annulation</span>
+                          <strong [ngClass]="cancelClass(row.cancelRate)">{{ row.cancelRate }}%</strong>
+                          <small>{{ row.cancelledReservations }} annulation(s) / {{ row.totalReservations }} total</small>
+                        </div>
+
+                        <div>
+                          <span>Score écologique</span>
+                          <strong [ngClass]="row.ecoScore >= 8 ? 'ok' : row.ecoScore >= 5 ? 'warn' : 'bad'">
+                            {{ row.ecoScore }}/10
+                          </strong>
+                          <small>basé sur l'engagement vert</small>
+                        </div>
+
+                        <div>
+                          <span>Score global</span>
+                          <strong [ngClass]="scoreClass(row.globalScore)">{{ row.globalScore }}/100</strong>
+                          <small>{{ scoreLabel(row.globalScore) }}</small>
+                        </div>
+                      </div>
+
+                      <div class="admin-reservations-ai-note">
+                        <span>✦</span>
+                        <p>{{ row.aiNote }}</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+</section>

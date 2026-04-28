@@ -1,25 +1,102 @@
-<div class="quiz-page">
+<div class="quiz-shell">
 
-  <!-- Top Bar -->
-  <header class="quiz-topbar">
-    <button class="quiz-back-btn" (click)="goBack()">
-      <span class="material-symbols-outlined">arrow_back</span>
-      {{ fromAdmin ? 'Retour Admin' : 'Retour à la formation' }}
-    </button>
-    @if (quiz && !result) {
-      <div class="quiz-topbar-info">
-        <span class="material-symbols-outlined" style="color:#3e6a00">quiz</span>
-        <span class="quiz-topbar-title">{{ quiz.title }}</span>
+  <!-- ── SIDEBAR FIXE ── -->
+  @if (quiz && !result && !loading) {
+    <aside class="quiz-sidebar">
+
+      <!-- Back -->
+      <button class="qs-back" (click)="goBack()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        {{ fromAdmin ? 'Back to Admin' : 'Back' }}
+      </button>
+
+      <div class="qs-divider"></div>
+
+      <!-- Titre -->
+      <div class="qs-label">Quiz</div>
+      <h2 class="qs-title">{{ quiz.title }}</h2>
+
+      <div class="qs-divider"></div>
+
+      <!-- Stats -->
+      <div class="qs-stat">
+        <span class="qs-stat-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        <div>
+          <span class="qs-stat-val">{{ quiz.questions.length }}</span>
+          <span class="qs-stat-lbl">questions</span>
+        </div>
       </div>
-      <span class="quiz-topbar-progress">{{ answers.size }} / {{ quiz.questions.length }}</span>
-    }
-  </header>
 
-  <div class="quiz-body">
+      <div class="qs-stat">
+        <span class="qs-stat-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </span>
+        <div>
+          <span class="qs-stat-val">{{ quiz.passingScore }}%</span>
+          <span class="qs-stat-lbl">score minimum</span>
+        </div>
+      </div>
+
+      @if (isPreviewMode) {
+        <div class="qs-admin-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Mode Admin
+        </div>
+      }
+
+      <div class="qs-divider"></div>
+
+      <!-- Progression donut -->
+      <div class="qs-progress-label">Progression</div>
+      <div class="qs-donut-wrap">
+        <svg viewBox="0 0 80 80" class="qs-donut-svg">
+          <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="8"/>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="#7dd8e0" stroke-width="8"
+            stroke-linecap="round"
+            stroke-dasharray="188.5"
+            [attr.stroke-dashoffset]="188.5 - (188.5 * answers.size / quiz.questions.length)"
+            transform="rotate(-90 40 40)"
+            style="transition: stroke-dashoffset .4s ease"/>
+        </svg>
+        <div class="qs-donut-inner">
+          <span class="qs-donut-num">{{ answers.size }}</span>
+          <span class="qs-donut-den">/{{ quiz.questions.length }}</span>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="qs-bar-track">
+        <div class="qs-bar-fill" [style.width.%]="(answers.size / quiz.questions.length) * 100"></div>
+      </div>
+      <span class="qs-bar-pct">{{ ((answers.size / quiz.questions.length) * 100).toFixed(0) }}% complété</span>
+
+      <!-- Spacer -->
+      <div class="qs-spacer"></div>
+
+      <!-- Submit -->
+      <button class="qs-submit-btn" (click)="submitQuiz()" [disabled]="!allAnswered() || submitting">
+        @if (submitting) {
+          <span class="qs-spinner"></span> Envoi...
+        } @else {
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Soumettre
+        }
+      </button>
+      @if (!allAnswered()) {
+        <p class="qs-submit-hint">{{ quiz.questions.length - answers.size }} réponse(s) manquante(s)</p>
+      }
+
+    </aside>
+  }
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="quiz-main">
 
     <!-- Loading -->
     @if (loading) {
-      <div class="quiz-center-state">
+      <div class="quiz-state">
         <div class="quiz-spinner"></div>
         <p>Chargement du quiz...</p>
       </div>
@@ -27,153 +104,80 @@
 
     <!-- Error -->
     @if (error && !loading) {
-      <div class="quiz-center-state quiz-error-state">
-        <span class="material-symbols-outlined" style="font-size:3rem;color:#c0392b">error_outline</span>
+      <div class="quiz-state quiz-state--error">
         <p>{{ error }}</p>
-        <button class="quiz-btn-secondary" (click)="goBack()">Retour</button>
+        <button class="qs-back" (click)="goBack()">Retour</button>
       </div>
     }
 
-    <!-- ── RESULT SCREEN ── -->
+    <!-- ── RESULT ── -->
     @if (result && !loading) {
-      <div class="quiz-result-page">
-        <div class="quiz-result-card" [class.quiz-result-card--pass]="result.passed" [class.quiz-result-card--fail]="!result.passed">
-
-          <div class="quiz-result-emoji">{{ result.passed ? '🏆' : '😔' }}</div>
-
-          <h2 class="quiz-result-heading">
-            {{ result.passed ? 'Félicitations !' : 'Dommage...' }}
-          </h2>
-
-          <div class="quiz-score-ring" [class.quiz-score-ring--pass]="result.passed" [class.quiz-score-ring--fail]="!result.passed">
-            <svg viewBox="0 0 120 120" class="quiz-score-svg">
-              <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e8e0" stroke-width="10"/>
+      <div class="quiz-result-wrap">
+        <div class="quiz-result-card" [class.pass]="result.passed" [class.fail]="!result.passed">
+          <div class="qr-icon">{{ result.passed ? '🏆' : '😔' }}</div>
+          <h2 class="qr-heading">{{ result.passed ? 'Congratulations!' : 'Not quite...' }}</h2>
+          <div class="qr-ring" [class.pass]="result.passed" [class.fail]="!result.passed">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#cce8ec" stroke-width="10"/>
               <circle cx="60" cy="60" r="50" fill="none"
-                [attr.stroke]="result.passed ? '#3e6a00' : '#c0392b'"
-                stroke-width="10"
-                stroke-linecap="round"
+                [attr.stroke]="result.passed ? '#00586A' : '#c0392b'"
+                stroke-width="10" stroke-linecap="round"
                 stroke-dasharray="314"
                 [attr.stroke-dashoffset]="314 - (314 * result.score / 100)"
                 transform="rotate(-90 60 60)"/>
             </svg>
-            <div class="quiz-score-inner">
-              <span class="quiz-score-pct">{{ result.score }}%</span>
-              <span class="quiz-score-sub">Score</span>
+            <div class="qr-ring-inner">
+              <span class="qr-pct">{{ result.score }}%</span>
+              <span class="qr-sub">Score</span>
             </div>
           </div>
-
-          <p class="quiz-result-detail">
-            Score minimum requis : <strong>{{ quiz?.passingScore }}%</strong>
+          <p class="qr-min">Minimum required score: <strong>{{ quiz?.passingScore }}%</strong></p>
+          <p class="qr-msg">
+            @if (result.passed) { You passed this quiz. Your certificate has been generated and sent by email. }
+            @else { You did not reach the minimum score. Review the resources and try again. }
           </p>
-
-          <p class="quiz-result-msg">
-            @if (result.passed) {
-              Vous avez validé ce quiz. Votre certificat a été généré et envoyé par email.
-            } @else {
-              Vous n'avez pas atteint le score minimum. Réessayez après avoir revu les ressources.
-            }
-          </p>
-
           @if (result.passed) {
             <button class="quiz-btn-cert" (click)="downloadCertificate()">
-              <span class="material-symbols-outlined">workspace_premium</span>
-              Télécharger mon certificat
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+              Download my certificate
             </button>
           }
-
-          <button class="quiz-btn-secondary" (click)="goBack()">
-            <span class="material-symbols-outlined">arrow_back</span>
-            {{ fromAdmin ? 'Retour Admin' : 'Retour à la formation' }}
+          <button class="quiz-btn-back" (click)="goBack()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            {{ fromAdmin ? 'Back to Admin' : 'Back to formation' }}
           </button>
         </div>
       </div>
     }
 
-    <!-- ── QUIZ QUESTIONS ── -->
+    <!-- ── QUESTIONS ── -->
     @if (quiz && !loading && !result) {
-      <div class="quiz-content">
-
-        <!-- Quiz Header -->
-        <div class="quiz-header-card">
-          <div class="quiz-header-left">
-            <h1 class="quiz-title">{{ quiz.title }}</h1>
-            <div class="quiz-chips">
-              <span class="quiz-chip"><span class="material-symbols-outlined">help_outline</span>{{ quiz.questions.length }} questions</span>
-              <span class="quiz-chip"><span class="material-symbols-outlined">grade</span>Score min : {{ quiz.passingScore }}%</span>
-              @if (isPreviewMode) {
-                <span class="quiz-chip quiz-chip--admin"><span class="material-symbols-outlined">admin_panel_settings</span>Mode Admin</span>
+      <div class="quiz-questions"
+           (copy)="$event.preventDefault()"
+           (cut)="$event.preventDefault()"
+           (contextmenu)="$event.preventDefault()">
+        @for (q of quiz.questions; track q.id; let qi = $index) {
+          <div class="quiz-q-card" [class.done]="answers.has(q.id)">
+            <div class="quiz-q-head">
+              <span class="quiz-q-num">{{ qi + 1 }}</span>
+              <p class="quiz-q-text">{{ q.text }}</p>
+              @if (answers.has(q.id)) {
+                <span class="quiz-q-done-icon">✓</span>
+              }
+            </div>
+            <div class="quiz-opts">
+              @for (opt of q.options; track opt.id; let oi = $index) {
+                <button class="quiz-opt" [class.selected]="isSelected(q.id, opt.id)" (click)="selectOption(q.id, opt.id)">
+                  <span class="quiz-opt-letter">{{ ['A','B','C','D'][oi] }}</span>
+                  <span class="quiz-opt-text">{{ opt.text }}</span>
+                  <span class="quiz-opt-radio" [class.checked]="isSelected(q.id, opt.id)"></span>
+                </button>
               }
             </div>
           </div>
-          <div class="quiz-header-right">
-            <div class="quiz-donut">
-              <svg viewBox="0 0 60 60">
-                <circle cx="30" cy="30" r="24" fill="none" stroke="#e8e8e0" stroke-width="6"/>
-                <circle cx="30" cy="30" r="24" fill="none" stroke="#3e6a00" stroke-width="6"
-                  stroke-linecap="round"
-                  stroke-dasharray="150.8"
-                  [attr.stroke-dashoffset]="150.8 - (150.8 * answers.size / quiz.questions.length)"
-                  transform="rotate(-90 30 30)"
-                  style="transition: stroke-dashoffset 0.3s ease"/>
-              </svg>
-              <span class="quiz-donut-label">{{ answers.size }}/{{ quiz.questions.length }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Progress bar -->
-        <div class="quiz-progress">
-          <div class="quiz-progress-fill" [style.width.%]="(answers.size / quiz.questions.length) * 100"></div>
-        </div>
-
-        <!-- Questions -->
-        <div class="quiz-questions">
-          @for (q of quiz.questions; track q.id; let qi = $index) {
-            <div class="quiz-q-card" [class.quiz-q-card--done]="answers.has(q.id)">
-              <div class="quiz-q-top">
-                <span class="quiz-q-badge">{{ qi + 1 }}</span>
-                <p class="quiz-q-text">{{ q.text }}</p>
-                @if (answers.has(q.id)) {
-                  <span class="material-symbols-outlined quiz-q-check">check_circle</span>
-                }
-              </div>
-              <div class="quiz-opts">
-                @for (opt of q.options; track opt.id; let oi = $index) {
-                  <button class="quiz-opt" [class.quiz-opt--selected]="isSelected(q.id, opt.id)" (click)="selectOption(q.id, opt.id)">
-                    <span class="quiz-opt-letter">{{ ['A','B','C','D'][oi] }}</span>
-                    <span class="quiz-opt-text">{{ opt.text }}</span>
-                    @if (isSelected(q.id, opt.id)) {
-                      <span class="material-symbols-outlined quiz-opt-icon">radio_button_checked</span>
-                    } @else {
-                      <span class="material-symbols-outlined quiz-opt-icon quiz-opt-icon--empty">radio_button_unchecked</span>
-                    }
-                  </button>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
-        <!-- Submit -->
-        <div class="quiz-submit-bar">
-          @if (!allAnswered()) {
-            <p class="quiz-submit-hint">
-              <span class="material-symbols-outlined">info</span>
-              Répondez à toutes les questions pour soumettre ({{ quiz.questions.length - answers.size }} restante(s))
-            </p>
-          }
-          <button class="quiz-btn-submit" (click)="submitQuiz()" [disabled]="!allAnswered() || submitting">
-            @if (submitting) {
-              <span class="quiz-spinner-sm"></span> Envoi en cours...
-            } @else {
-              <span class="material-symbols-outlined">send</span>
-              Soumettre mes réponses
-            }
-          </button>
-        </div>
-
+        }
       </div>
     }
 
-  </div>
+  </main>
 </div>

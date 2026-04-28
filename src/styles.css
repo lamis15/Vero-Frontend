@@ -47,20 +47,21 @@ body {
   background: #0a1a14;
   color: var(--charcoal);
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
 main {
   display: block;
   width: 100%;
-  min-height: calc(100vh - var(--nav-h));
+  min-height: 100vh;
 }
 
 app-chatbot {
   display: block;
   width: 100%;
 }
-
-
 
 .section-tag {
   display: inline-flex;
@@ -115,8 +116,6 @@ app-chatbot {
   transform: translateY(0);
 }
 
-
-
 /* ══════════════════════════════════════════════════════════
    ADD THESE RULES TO YOUR GLOBAL styles.css
    They prevent the white app shell from bleeding through
@@ -133,12 +132,6 @@ body.map-page-active app-root {
 
 /* Option B — simpler, global dark base (won't affect other pages
    since each page/component sets its own background): */
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: #04161B;
-}
 
 /* ── Leaflet container must always fill its host ── */
 .leaflet-container {

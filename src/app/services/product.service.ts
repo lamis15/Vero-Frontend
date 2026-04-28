@@ -61,4 +61,9 @@ export class ProductService {
       params: { quantity: quantity.toString() }
     });
   }
+
+  // Debug method to check products with images
+  getDebugImages(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API}/debug/images`);
+  }
 }
