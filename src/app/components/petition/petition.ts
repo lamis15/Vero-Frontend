@@ -71,6 +71,11 @@ export class PetitionComponent implements OnInit, OnDestroy {
   deletingId: number | null = null;
   selectedPetition: Petition | null = null;
 
+  readonly pageSize = 9;
+  browsePage = 1;
+  myPage     = 1;
+  adminPage  = 1;
+
   get isAdmin(): boolean { return this.authService.isAdmin; }
 
   constructor(
@@ -314,7 +319,7 @@ export class PetitionComponent implements OnInit, OnDestroy {
 
   // ── Filtres ───────────────────────────────────────────────────────────────
 
-  filterBy(category: string) { this.activeFilter = category; this.applyFilter(); }
+  filterBy(category: string) { this.activeFilter = category; this.browsePage = 1; this.applyFilter(); }
 
   applyFilter() {
     this.filteredPetitions = this.activeFilter === 'all'
@@ -327,6 +332,43 @@ export class PetitionComponent implements OnInit, OnDestroy {
       ? this.allPetitions
       : this.allPetitions.filter(p => p.status === this.adminFilter);
   }
+
+  // ── Pagination helpers ────────────────────────────────────────────────────
+
+  private paginate(list: Petition[], page: number) {
+    const start = (page - 1) * this.pageSize;
+    return list.slice(start, start + this.pageSize);
+  }
+
+  private totalPages(list: Petition[]) {
+    return Math.max(1, Math.ceil(list.length / this.pageSize));
+  }
+
+  private buildPageNumbers(current: number, total: number): number[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: number[] = [1];
+    if (current > 3) pages.push(-1);
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
+  }
+
+  get pagedBrowse()    { return this.paginate(this.filteredPetitions, this.browsePage); }
+  get browseTotal()    { return this.totalPages(this.filteredPetitions); }
+  get browsePages()    { return this.buildPageNumbers(this.browsePage, this.browseTotal); }
+
+  get pagedMy()        { return this.paginate(this.myPetitions, this.myPage); }
+  get myTotal()        { return this.totalPages(this.myPetitions); }
+  get myPages()        { return this.buildPageNumbers(this.myPage, this.myTotal); }
+
+  get pagedAdminAll()  { return this.paginate(this.getFilteredAdmin(), this.adminPage); }
+  get adminTotal()     { return this.totalPages(this.getFilteredAdmin()); }
+  get adminPages()     { return this.buildPageNumbers(this.adminPage, this.adminTotal); }
+
+  goToBrowsePage(p: number)  { if (p >= 1 && p <= this.browseTotal) this.browsePage = p; }
+  goToMyPage(p: number)      { if (p >= 1 && p <= this.myTotal)     this.myPage = p; }
+  goToAdminPage(p: number)   { if (p >= 1 && p <= this.adminTotal)  this.adminPage = p; }
 
   countByStatus(status: string): number {
     return this.allPetitions.filter(p => p.status === status).length;

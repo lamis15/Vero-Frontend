@@ -119,7 +119,7 @@
       <p>There are no active events at the moment.</p>
     </div>
     <div class="petition-grid" *ngIf="events.length > 0">
-      <div class="p-card" *ngFor="let ev of events; let i = index" [class.selected]="selectedEventIndex === i"
+      <div class="p-card" *ngFor="let ev of pagedEvents; let i = index" [class.selected]="selectedEventIndex === i"
         [style.animation-delay]="i * 0.07 + 's'" (click)="selectEvent(i)">
         <div class="p-card-img">
           <div class="p-card-img-emoji">🌍</div>
@@ -145,6 +145,21 @@
           <span class="p-deadline" *ngIf="ev.startDate">📅 {{ ev.startDate | date:'dd MMM yyyy' }}</span>
           <button class="btn-sign" (click)="selectEvent(i); $event.stopPropagation()">Donate 💚</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Events pagination -->
+    <div class="pag-bar" *ngIf="eventsTotal > 1">
+      <span class="pag-info">
+        {{ (eventsPage - 1) * pageSize + 1 }}–{{ eventsPage * pageSize > events.length ? events.length : eventsPage * pageSize }} of {{ events.length }}
+      </span>
+      <div class="pag-controls">
+        <button class="pag-btn" [disabled]="eventsPage === 1" (click)="goToEventsPage(eventsPage - 1)">‹</button>
+        <ng-container *ngFor="let p of eventsPageNumbers">
+          <span class="pag-ellipsis" *ngIf="p === -1">…</span>
+          <button class="pag-btn" *ngIf="p !== -1" [class.active]="p === eventsPage" (click)="goToEventsPage(p)">{{ p }}</button>
+        </ng-container>
+        <button class="pag-btn" [disabled]="eventsPage === eventsTotal" (click)="goToEventsPage(eventsPage + 1)">›</button>
       </div>
     </div>
   </div>
@@ -407,7 +422,7 @@
     </div>
 
     <div class="donation-list" *ngIf="!donationsLoading && donations.length > 0">
-      <div class="donation-item" *ngFor="let d of donations; let i = index" [style.animation-delay]="i * 0.04 + 's'">
+      <div class="donation-item" *ngFor="let d of pagedHistory; let i = index" [style.animation-delay]="i * 0.04 + 's'">
         <div class="di-header">
           <div class="di-avatar" [class.anon]="d.anonymous">{{ getDonorInitials(d) }}</div>
           <div class="di-info">
@@ -449,6 +464,21 @@
             <button class="di-action-btn validate" *ngIf="canValidate() && d.status!=='VALIDATED'"
               (click)="validateDonation(d)" [disabled]="validatingId===d.id" title="Validate">✅</button>
           </div>
+        </div>
+      </div>
+
+      <!-- History pagination -->
+      <div class="pag-bar" *ngIf="historyTotal > 1">
+        <span class="pag-info">
+          {{ (historyPage - 1) * pageSize + 1 }}–{{ historyPage * pageSize > donations.length ? donations.length : historyPage * pageSize }} of {{ donations.length }}
+        </span>
+        <div class="pag-controls">
+          <button class="pag-btn" [disabled]="historyPage === 1" (click)="goToHistoryPage(historyPage - 1)">‹</button>
+          <ng-container *ngFor="let p of historyPageNumbers">
+            <span class="pag-ellipsis" *ngIf="p === -1">…</span>
+            <button class="pag-btn" *ngIf="p !== -1" [class.active]="p === historyPage" (click)="goToHistoryPage(p)">{{ p }}</button>
+          </ng-container>
+          <button class="pag-btn" [disabled]="historyPage === historyTotal" (click)="goToHistoryPage(historyPage + 1)">›</button>
         </div>
       </div>
     </div>

@@ -65,7 +65,7 @@
 
   @else {
     <div class="don-cards-grid">
-      @for (don of filtered; track don.id) {
+      @for (don of pagedDonations; track don.id) {
 
         <article class="don-review-card">
 
@@ -152,6 +152,29 @@
 
       }
     </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1) {
+      <div class="pag-bar">
+        <span class="pag-info">
+          {{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > filtered.length ? filtered.length : currentPage * pageSize }} of {{ filtered.length }}
+        </span>
+
+        <div class="pag-controls">
+          <button class="pag-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">‹</button>
+
+          @for (p of pageNumbers; track $index) {
+            @if (p === -1) {
+              <span class="pag-ellipsis">…</span>
+            } @else {
+              <button class="pag-btn" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+            }
+          }
+
+          <button class="pag-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">›</button>
+        </div>
+      </div>
+    }
   }
 
 </div>
