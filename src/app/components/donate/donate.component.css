@@ -1875,3 +1875,50 @@ body {
   pointer-events: none;
   user-select: none;
 }
+
+/* ── Stripe embedded payment modal ─────────────────────────────── */
+.payment-modal-card {
+  width: min(480px, 94vw);
+}
+
+.stripe-card-wrapper {
+  margin-bottom: 16px;
+}
+
+.stripe-card-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--eco-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+
+.stripe-card-box {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(20,199,165,.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color .2s;
+}
+
+.stripe-card-box:focus-within {
+  border-color: var(--eco-teal);
+  box-shadow: 0 0 0 3px rgba(20,199,165,.15);
+}
+
+.stripe-card-error {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #f87171;
+}
+
+.stripe-secure-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--eco-muted);
+  justify-content: center;
+}

@@ -1,21 +1,28 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ChangeDetectorRef,
+  ViewEncapsulation,
+  ViewChild,
+  ElementRef
+} from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { DonationService, Donation, RecurringDonationRequest, RecurringDonationResponse } from '../../services/donation.service';
+import { loadStripe, Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
+import { DonationService, Donation, RecurringDonationResponse } from '../../services/donation.service';
 import { EventApiService, Event } from '../../services/Event api.service';
 import { AuthService } from '../../services/auth.service';
+import { PaymentService } from '../../services/payment.service';
 
-// ═══════════════════════════════════════════════════════════════
-// DONOR PROFILE TYPES (K-Means Clustering)
-// ═══════════════════════════════════════════════════════════════
 export type DonorProfile =
-  | 'OCCASIONNEL'    // 🌱 — New / few donations
-  | 'REGULIER'       // 💚 — Regular money donor
-  | 'MATERIEL'       // 📦 — Material donor
-  | 'BENEVOLE'       // ⏰ — Time/volunteer donor
-  | 'PHILANTHROPE'   // 👑 — High amount / admin
-  | 'ECO_WARRIOR';   // 🌍 — Balanced across all types
+  | 'OCCASIONNEL'
+  | 'REGULIER'
+  | 'MATERIEL'
+  | 'BENEVOLE'
+  | 'PHILANTHROPE'
+  | 'ECO_WARRIOR';
 
 export interface DonorProfileConfig {
   label: string;
@@ -87,6 +94,8 @@ export const DONOR_PROFILES: Record<DonorProfile, DonorProfileConfig> = {
 })
 export class DonateComponent implements OnInit, OnDestroy {
 
+  @ViewChild('cardElementContainer') cardElementContainer!: ElementRef<HTMLDivElement>;
+
   heroTexts = ['Save Our Environment.', 'Take Action.', 'Make a Difference.'];
   heroTextIndex = 0;
   heroTextExit = -1;
@@ -130,26 +139,29 @@ export class DonateComponent implements OnInit, OnDestroy {
   currentUserId: number | null = null;
   private roleSub!: Subscription;
 
+  stripe: Stripe | null = null;
+  private stripeElements: StripeElements | null = null;
+  private cardElement: StripeCardElement | null = null;
+  showPaymentModal = false;
+  paymentError = '';
+
   deletingId: number | null = null;
   validatingId: number | null = null;
   activeTab: 'browse' | 'donate' | 'history' = 'browse';
   currentStep = 1;
 
   readonly pageSize = 6;
-  eventsPage   = 1;
-  historyPage  = 1;
+  eventsPage = 1;
+  historyPage = 1;
   showConfirmModal = false;
   showSuccessModal = false;
   pendingDonation: Donation | null = null;
   historyFilter: 'all' | 'MONEY' | 'MATERIAL' | 'TIME' = 'all';
   Math = Math;
 
-  // ═══════════════════════════════════════════════════════════════
-  // K-MEANS CLUSTERING — Donor Profile State
-  // ═══════════════════════════════════════════════════════════════
   currentDonorProfile: DonorProfile = 'OCCASIONNEL';
   donorProfileConfig = DONOR_PROFILES['OCCASIONNEL'];
-  userDonationHistory: Donation[] = []; // All user's donations across events
+  userDonationHistory: Donation[] = [];
   showProfileBadge = true;
 
   donationSteps = [
@@ -163,22 +175,25 @@ export class DonateComponent implements OnInit, OnDestroy {
     private donationService: DonationService,
     private eventService: EventApiService,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private cdr: ChangeDetectorRef,
+    private paymentService: PaymentService
+  ) {}
 
   ngOnInit(): void {
     this.currentUserEmail = this.authService.currentUserEmail;
     this.currentUserId = this.authService.currentUser?.id ?? null;
+
     this.roleSub = this.authService.roleStream$.subscribe((role: string | null) => {
       this.currentRole = role;
       this.currentUserId = this.authService.currentUser?.id ?? null;
       this.cdr.markForCheck();
     });
+
     this.startHeroAnimation();
     this.loadEvents();
-    this.loadUserDonationHistory(); // Load for K-Means clustering
+    this.loadUserDonationHistory();
+    this.initStripe();
 
-    // ── Détecter redirection depuis Stripe ?status=success&recurringId=X ──
     const urlParams = new URLSearchParams(window.location.search);
     const status = urlParams.get('status');
     const recurringId = urlParams.get('recurringId');
@@ -189,7 +204,7 @@ export class DonateComponent implements OnInit, OnDestroy {
         Number(recurringId),
         sessionId || undefined
       ).subscribe({
-        next: (res: RecurringDonationResponse) => {
+        next: () => {
           this.successMessage = '🌱 Donation mensuelle activée avec succès !';
           this.showSuccessModal = true;
           setTimeout(() => {
@@ -212,19 +227,175 @@ export class DonateComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     clearInterval(this.heroInterval);
     this.roleSub?.unsubscribe();
+    this.cardElement?.destroy();
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // K-MEANS CLUSTERING — Profile Computation
-  // ═══════════════════════════════════════════════════════════════
+  private initStripe(): void {
+    this.paymentService.getConfig().subscribe({
+      next: async (config) => {
+        this.stripe = await loadStripe(config.publishableKey);
 
-  /**
-   * Load all user's donations for clustering analysis
-   */
+        if (this.stripe) {
+          this.stripeElements = this.stripe.elements();
+        }
+      },
+      error: () => {
+        this.paymentError = 'Impossible de charger Stripe.';
+      }
+    });
+  }
+
+  openPaymentModal(): void {
+    this.showConfirmModal = false;
+    this.donateState = 'idle';
+    this.paymentError = '';
+    this.showPaymentModal = true;
+
+    this.cdr.detectChanges();
+
+    setTimeout(() => {
+      this.mountCardElement();
+    }, 0);
+  }
+
+  private mountCardElement(): void {
+    if (!this.stripeElements) {
+      this.paymentError = 'Stripe n’est pas encore initialisé.';
+      return;
+    }
+
+    if (!this.cardElementContainer?.nativeElement) {
+      this.paymentError = 'Champ de carte introuvable.';
+      return;
+    }
+
+    if (this.cardElement) {
+      this.cardElement.destroy();
+      this.cardElement = null;
+    }
+
+    this.cardElementContainer.nativeElement.innerHTML = '';
+
+    this.cardElement = this.stripeElements.create('card', {
+      hidePostalCode: true,
+      style: {
+        base: {
+          fontSize: '16px',
+          color: '#ffffff',
+          fontFamily: '"DM Sans", sans-serif',
+          iconColor: '#14C7A5',
+          '::placeholder': {
+            color: '#9ca3af'
+          }
+        },
+        invalid: {
+          color: '#ef4444',
+          iconColor: '#ef4444'
+        }
+      }
+    });
+
+    this.cardElement.mount(this.cardElementContainer.nativeElement);
+
+    this.cardElement.on('change', (event: any) => {
+      this.paymentError = event.error?.message || '';
+      this.cdr.markForCheck();
+    });
+  }
+
+  async processPayment(): Promise<void> {
+    if (!this.stripe || !this.cardElement || !this.pendingDonation) {
+      this.paymentError = 'Stripe ou donation non prêt.';
+      return;
+    }
+
+    const ev = this.selectedEvent;
+    if (!ev?.id) {
+      this.paymentError = 'Événement introuvable.';
+      return;
+    }
+
+    this.donateState = 'processing';
+    this.paymentError = '';
+
+    const snapshot = { ...this.pendingDonation };
+
+    this.donationService.createDonationForEvent(snapshot, ev.id).subscribe({
+      next: (donation: Donation) => {
+        if (!donation?.id) {
+          this.paymentError = 'Impossible de créer la donation.';
+          this.donateState = 'idle';
+          return;
+        }
+
+        this.donationService.createDonationPaymentIntent(donation.id, snapshot.amount).subscribe({
+          next: async (res) => {
+            const { error, paymentIntent } = await this.stripe!.confirmCardPayment(
+              res.clientSecret,
+              {
+                payment_method: {
+                  card: this.cardElement!
+                }
+              }
+            );
+
+            if (error) {
+              this.paymentError = error.message || 'Paiement échoué.';
+              this.donateState = 'idle';
+              this.cdr.markForCheck();
+              return;
+            }
+
+            if (paymentIntent?.status === 'succeeded') {
+              this.showPaymentModal = false;
+
+              this.allDonations = [donation, ...this.allDonations];
+              this.donations = this.visibleDonations;
+
+              this.donateState = 'confirmed';
+              this.showSuccessModal = true;
+              this.successMessage = 'Donation confirmée ! Merci 💚';
+
+              this.refreshProfileAfterDonation();
+              this.resetForm();
+
+              setTimeout(() => {
+                this.donateState = 'idle';
+                this.successMessage = '';
+              }, 3000);
+
+              this.cdr.markForCheck();
+            }
+          },
+          error: () => {
+            this.paymentError = 'Initialisation du paiement échouée.';
+            this.donateState = 'idle';
+            this.cdr.markForCheck();
+          }
+        });
+      },
+      error: (err: any) => {
+        this.paymentError = this._extractError(err);
+        this.donateState = 'idle';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  cancelPaymentModal(): void {
+    this.showPaymentModal = false;
+    this.paymentError = '';
+    this.donateState = 'idle';
+
+    if (this.cardElement) {
+      this.cardElement.destroy();
+      this.cardElement = null;
+    }
+  }
+
   loadUserDonationHistory(): void {
     if (!this.isLoggedIn || !this.currentUserId) return;
 
-    // ✅ Appel avec userId récupéré de l'AuthService
     this.donationService.getMyDonations(this.currentUserId).subscribe({
       next: (donations: Donation[]) => {
         this.userDonationHistory = donations;
@@ -238,10 +409,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * K-Means-like clustering to determine donor profile
-   * Features: [money_count, material_count, time_count, total_money, avg_amount]
-   */
   computeDonorProfile(): void {
     const history = this.userDonationHistory;
 
@@ -251,7 +418,6 @@ export class DonateComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Feature extraction
     const moneyCount = history.filter(d => d.type === 'MONEY').length;
     const materialCount = history.filter(d => d.type === 'MATERIAL').length;
     const timeCount = history.filter(d => d.type === 'TIME').length;
@@ -261,59 +427,39 @@ export class DonateComponent implements OnInit, OnDestroy {
     const avgAmount = history.length > 0 ? totalMoney / history.length : 0;
     const totalDonations = history.length;
 
-    // K-Means clustering logic (simplified centroid-based classification)
     let profile: DonorProfile = 'OCCASIONNEL';
 
-    // Admin/Philanthrope: high total or admin role
     if (this.isAdmin || totalMoney > 500 || avgAmount > 100) {
       profile = 'PHILANTHROPE';
-    }
-    // Eco Warrior: balanced across all types (at least 2 of each)
-    else if (moneyCount >= 2 && materialCount >= 2 && timeCount >= 2) {
+    } else if (moneyCount >= 2 && materialCount >= 2 && timeCount >= 2) {
       profile = 'ECO_WARRIOR';
-    }
-    // Bénévole: mostly time donations
-    else if (timeCount >= 3 && timeCount > moneyCount && timeCount > materialCount) {
+    } else if (timeCount >= 3 && timeCount > moneyCount && timeCount > materialCount) {
       profile = 'BENEVOLE';
-    }
-    // Matériel: mostly material donations (3+)
-    else if (materialCount >= 3 && materialCount > moneyCount && materialCount > timeCount) {
+    } else if (materialCount >= 3 && materialCount > moneyCount && materialCount > timeCount) {
       profile = 'MATERIEL';
-    }
-    // Régulier: mostly money donations with consistent giving
-    else if (moneyCount >= 3 && moneyCount > materialCount && moneyCount > timeCount) {
+    } else if (moneyCount >= 3 && moneyCount > materialCount && moneyCount > timeCount) {
       profile = 'REGULIER';
-    }
-    // Occasionnel: few donations or mixed with no dominance
-    else if (totalDonations <= 2) {
+    } else if (totalDonations <= 2) {
       profile = 'OCCASIONNEL';
-    }
-    // Default to regular if money is dominant
-    else if (moneyCount > materialCount && moneyCount > timeCount) {
+    } else if (moneyCount > materialCount && moneyCount > timeCount) {
       profile = 'REGULIER';
-    }
-    // Default to occasionnel for edge cases
-    else {
-      profile = 'OCCASIONNEL';
     }
 
     this.currentDonorProfile = profile;
     this.donorProfileConfig = DONOR_PROFILES[profile];
   }
 
-  /**
-   * Called after each successful donation to recompute profile
-   */
   refreshProfileAfterDonation(): void {
     this.loadUserDonationHistory();
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // GETTERS
-  // ═══════════════════════════════════════════════════════════════
+  get isAdmin(): boolean {
+    return this.currentRole === 'ADMIN';
+  }
 
-  get isAdmin(): boolean { return this.currentRole === 'ADMIN'; }
-  get isLoggedIn(): boolean { return this.authService.isLoggedIn; }
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn;
+  }
 
   get visibleDonations(): Donation[] {
     if (this.isAdmin) return this.allDonations;
@@ -334,10 +480,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     return this.authService.currentUserEmail || 'User';
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // HERO & NAVIGATION
-  // ═══════════════════════════════════════════════════════════════
-
   startHeroAnimation(): void {
     this.heroInterval = setInterval(() => {
       this.heroTextExit = this.heroTextIndex;
@@ -352,10 +494,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     document.querySelector('.donate-section')
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // EVENTS
-  // ═══════════════════════════════════════════════════════════════
 
   loadEvents(): void {
     this.eventsLoading = true;
@@ -399,7 +537,9 @@ export class DonateComponent implements OnInit, OnDestroy {
   loadDonationsForEvent(): void {
     const ev = this.selectedEvent;
     if (!ev?.id) return;
+
     this.donationsLoading = true;
+
     this.donationService.getDonationsByEvent(ev.id).subscribe({
       next: (data: Donation[]) => {
         this.allDonations = data;
@@ -412,15 +552,12 @@ export class DonateComponent implements OnInit, OnDestroy {
         this.donationsLoading = false;
       }
     });
+
     this.donationService.getTotalByEvent(ev.id).subscribe({
       next: (total: number) => this.totalDonated = total,
       error: () => this.totalDonated = 0
     });
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // DONATION FORM
-  // ═══════════════════════════════════════════════════════════════
 
   selectAmount(amount: number): void {
     this.selectedAmount = amount;
@@ -448,11 +585,13 @@ export class DonateComponent implements OnInit, OnDestroy {
       this.autoClearError();
       return;
     }
+
     if (this.donationType === 'MATERIAL' && !this.materialQuantity.trim()) {
       this.errorMessage = 'Please describe what you are donating';
       this.autoClearError();
       return;
     }
+
     if (this.donationType === 'TIME' && (!this.volunteerHours || this.volunteerHours <= 0)) {
       this.errorMessage = 'Please select volunteer hours';
       this.autoClearError();
@@ -473,6 +612,7 @@ export class DonateComponent implements OnInit, OnDestroy {
       anonymous: this.isAnonymous,
       transactionId: `TXN-${Date.now()}`
     };
+
     this.showConfirmModal = true;
   }
 
@@ -495,13 +635,17 @@ export class DonateComponent implements OnInit, OnDestroy {
           this.donateState = 'confirmed';
           this.showSuccessModal = true;
           this.successMessage = 'Donation mensuelle activée ! 🌱';
-          setTimeout(() => { this.donateState = 'idle'; }, 3000);
+          setTimeout(() => {
+            this.donateState = 'idle';
+          }, 3000);
         }
       },
       error: (err: any) => {
         this.donateState = 'error';
         this.errorMessage = err?.error?.message || 'Erreur activation donation mensuelle';
-        setTimeout(() => { this.donateState = 'idle'; }, 5000);
+        setTimeout(() => {
+          this.donateState = 'idle';
+        }, 5000);
       }
     });
   }
@@ -522,19 +666,7 @@ export class DonateComponent implements OnInit, OnDestroy {
     const snapshot = { ...this.pendingDonation };
 
     if (this.donationType === 'MONEY') {
-      this.donationService.createDonationForEvent(snapshot, ev.id).subscribe({
-        next: (donation: Donation) => {
-          if (!donation?.id) {
-            this._showError('Could not create donation record.');
-            return;
-          }
-          this.donationService.createStripeCheckout(snapshot.amount, donation.id).subscribe({
-            next: (res: any) => { window.location.href = res.url; },
-            error: () => { this._showError('Payment initialization failed. Please try again.'); }
-          });
-        },
-        error: (err: any) => { this._showError(this._extractError(err)); }
-      });
+      this.openPaymentModal();
       return;
     }
 
@@ -546,19 +678,19 @@ export class DonateComponent implements OnInit, OnDestroy {
         this.showSuccessModal = true;
         this.successMessage = 'Donation confirmed! Thank you 💚';
 
-        // ═══════════════════════════════════════════════════════
-        // REFRESH PROFILE AFTER SUCCESSFUL DONATION
-        // ═══════════════════════════════════════════════════════
         this.refreshProfileAfterDonation();
-
         this.resetForm();
+
         setTimeout(() => {
           this.donateState = 'idle';
           this.successMessage = '';
         }, 3000);
+
         this.cdr.markForCheck();
       },
-      error: (err: any) => { this._showError(this._extractError(err)); }
+      error: (err: any) => {
+        this._showError(this._extractError(err));
+      }
     });
   }
 
@@ -574,10 +706,12 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.donateState = 'error';
     this.errorMessage = msg;
     this.showSuccessModal = false;
+
     setTimeout(() => {
       this.donateState = 'idle';
       this.errorMessage = '';
     }, 5000);
+
     this.cdr.markForCheck();
   }
 
@@ -592,10 +726,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.currentStep = 1;
     this.activeTab = 'history';
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // EDIT / DELETE / VALIDATE
-  // ═══════════════════════════════════════════════════════════════
 
   openEdit(donation: Donation): void {
     this.editingDonation = { ...donation };
@@ -615,11 +745,13 @@ export class DonateComponent implements OnInit, OnDestroy {
 
   submitEdit(): void {
     if (this.editState !== 'idle' || !this.editingDonation?.id) return;
+
     if (this.editType === 'MONEY' && this.editAmount <= 0) {
       this.errorMessage = 'Amount must be greater than 0';
       this.autoClearError();
       return;
     }
+
     this.errorMessage = '';
     this.editState = 'processing';
 
@@ -637,6 +769,7 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.editState = 'confirmed';
     this.editingDonation = null;
     this.successMessage = 'Donation updated! ✅';
+
     setTimeout(() => this.successMessage = '', 3000);
 
     this.donationService.update(id, patch).subscribe({
@@ -656,39 +789,48 @@ export class DonateComponent implements OnInit, OnDestroy {
   deleteDonation(donation: Donation): void {
     if (!donation.id || this.deletingId === donation.id) return;
     if (!confirm('Delete this donation?')) return;
+
     this.deletingId = donation.id;
 
     this.allDonations = this.allDonations.filter(d => d.id !== donation.id);
     this.donations = this.visibleDonations;
+
     if (donation.type === 'MONEY') {
       this.totalDonated = Math.max(0, this.totalDonated - (donation.amount || 0));
     }
+
     this.successMessage = 'Donation deleted! 🗑️';
     setTimeout(() => this.successMessage = '', 3000);
 
     this.donationService.delete(donation.id).subscribe({
       next: () => {
         this.deletingId = null;
-        // Refresh profile after deletion
         this.refreshProfileAfterDonation();
       },
-      error: () => { this.deletingId = null; this.loadDonationsForEvent(); }
+      error: () => {
+        this.deletingId = null;
+        this.loadDonationsForEvent();
+      }
     });
   }
 
   validateDonation(donation: Donation): void {
     if (!donation.id || this.validatingId === donation.id) return;
+
     this.validatingId = donation.id;
 
     this.allDonations = this.allDonations.map(d =>
       d.id === donation.id ? { ...d, status: 'VALIDATED' } : d
     );
     this.donations = this.visibleDonations;
+
     this.successMessage = 'Donation validated! ✅';
     setTimeout(() => this.successMessage = '', 3000);
 
     this.donationService.validate(donation.id).subscribe({
-      next: () => { this.validatingId = null; },
+      next: () => {
+        this.validatingId = null;
+      },
       error: (err: any) => {
         this.validatingId = null;
         this.allDonations = this.allDonations.map(d =>
@@ -717,20 +859,25 @@ export class DonateComponent implements OnInit, OnDestroy {
     this.pendingDonation = null;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════════════════════
-
   isOwner(donation: Donation): boolean {
     if (this.currentUserId && donation.userId) {
       return donation.userId === this.currentUserId;
     }
+
     return !!(this.currentUserEmail && donation.userName === this.currentUserEmail);
   }
 
-  canEdit(donation: Donation): boolean { return this.isOwner(donation) || this.isAdmin; }
-  canDelete(donation: Donation): boolean { return this.isOwner(donation) || this.isAdmin; }
-  canValidate(): boolean { return this.isAdmin; }
+  canEdit(donation: Donation): boolean {
+    return this.isOwner(donation) || this.isAdmin;
+  }
+
+  canDelete(donation: Donation): boolean {
+    return this.isOwner(donation) || this.isAdmin;
+  }
+
+  canValidate(): boolean {
+    return this.isAdmin;
+  }
 
   getFraudClass(score: number): string {
     if (score == null) return '';
@@ -738,10 +885,6 @@ export class DonateComponent implements OnInit, OnDestroy {
     if (score < 0.7) return 'fraud-medium';
     return 'fraud-high';
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // DONOR PROFILE GETTERS (Updated for K-Means)
-  // ═══════════════════════════════════════════════════════════════
 
   get donorProfile(): string {
     return this.donorProfileConfig.label;
@@ -761,12 +904,17 @@ export class DonateComponent implements OnInit, OnDestroy {
 
   getTimeAgo(dateStr?: string): string {
     if (!dateStr) return '';
+
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
+
     if (mins < 1) return 'Just now';
     if (mins < 60) return `${mins}min ago`;
+
     const hours = Math.floor(mins / 60);
+
     if (hours < 24) return `${hours}h ago`;
+
     return `${Math.floor(hours / 24)}d ago`;
   }
 
@@ -781,7 +929,12 @@ export class DonateComponent implements OnInit, OnDestroy {
   }
 
   getDonationTypeIcon(type: string): string {
-    const icons: Record<string, string> = { MONEY: '💶', MATERIAL: '📦', TIME: '⏰' };
+    const icons: Record<string, string> = {
+      MONEY: '💶',
+      MATERIAL: '📦',
+      TIME: '⏰'
+    };
+
     return icons[type] || '💚';
   }
 
@@ -792,46 +945,85 @@ export class DonateComponent implements OnInit, OnDestroy {
       COMPLETED: 'status-completed',
       CANCELLED: 'status-cancelled'
     };
+
     return classes[status || ''] || '';
   }
 
-  getMoneyCount(): number { return this.donations.filter(d => d.type === 'MONEY').length; }
-  getMaterialCount(): number { return this.donations.filter(d => d.type === 'MATERIAL').length; }
-  getTimeCount(): number { return this.donations.filter(d => d.type === 'TIME').length; }
-  getValidatedCount(): number { return this.donations.filter(d => d.status === 'VALIDATED').length; }
+  getMoneyCount(): number {
+    return this.donations.filter(d => d.type === 'MONEY').length;
+  }
+
+  getMaterialCount(): number {
+    return this.donations.filter(d => d.type === 'MATERIAL').length;
+  }
+
+  getTimeCount(): number {
+    return this.donations.filter(d => d.type === 'TIME').length;
+  }
+
+  getValidatedCount(): number {
+    return this.donations.filter(d => d.status === 'VALIDATED').length;
+  }
 
   filterMoneyTotal(history: any[]): number {
     if (!history) return 0;
+
     return history
       .filter(d => d.type === 'MONEY')
       .reduce((sum, d) => sum + (d.amount || 0), 0);
   }
 
-  // ── Pagination ────────────────────────────────────────────────────────────
-
   get pagedEvents(): Event[] {
     const start = (this.eventsPage - 1) * this.pageSize;
     return this.events.slice(start, start + this.pageSize);
   }
-  get eventsTotal(): number { return Math.max(1, Math.ceil(this.events.length / this.pageSize)); }
-  get eventsPageNumbers(): number[] { return this.buildPages(this.eventsPage, this.eventsTotal); }
-  goToEventsPage(p: number) { if (p >= 1 && p <= this.eventsTotal) this.eventsPage = p; }
+
+  get eventsTotal(): number {
+    return Math.max(1, Math.ceil(this.events.length / this.pageSize));
+  }
+
+  get eventsPageNumbers(): number[] {
+    return this.buildPages(this.eventsPage, this.eventsTotal);
+  }
+
+  goToEventsPage(p: number): void {
+    if (p >= 1 && p <= this.eventsTotal) this.eventsPage = p;
+  }
 
   get pagedHistory(): Donation[] {
     const start = (this.historyPage - 1) * this.pageSize;
     return this.donations.slice(start, start + this.pageSize);
   }
-  get historyTotal(): number { return Math.max(1, Math.ceil(this.donations.length / this.pageSize)); }
-  get historyPageNumbers(): number[] { return this.buildPages(this.historyPage, this.historyTotal); }
-  goToHistoryPage(p: number) { if (p >= 1 && p <= this.historyTotal) this.historyPage = p; }
+
+  get historyTotal(): number {
+    return Math.max(1, Math.ceil(this.donations.length / this.pageSize));
+  }
+
+  get historyPageNumbers(): number[] {
+    return this.buildPages(this.historyPage, this.historyTotal);
+  }
+
+  goToHistoryPage(p: number): void {
+    if (p >= 1 && p <= this.historyTotal) this.historyPage = p;
+  }
 
   private buildPages(current: number, total: number): number[] {
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
     const pages: number[] = [1];
+
     if (current > 3) pages.push(-1);
-    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+
     if (current < total - 2) pages.push(-1);
+
     pages.push(total);
+
     return pages;
   }
 }

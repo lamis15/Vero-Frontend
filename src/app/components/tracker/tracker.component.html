@@ -292,20 +292,58 @@
           <!-- Goal form -->
           @if (showGoalForm) {
             <div class="eco-goal-form">
-              <div class="eco-gf-row">
-                <select [(ngModel)]="newGoal.activityType" class="eco-field sm">
+              <!-- Category & Target -->
+              <div class="eco-gf-section">
+                <label class="eco-gf-label">Goal Category</label>
+                <div class="eco-gf-category-grid">
                   @for (t of activityTypes; track t) {
-                    <option [value]="t">{{ labels[t] }}</option>
+                    <button class="eco-gf-cat-btn"
+                            [class.active]="newGoal.activityType === t"
+                            [style.--cat-color]="categoryColors[t]"
+                            (click)="newGoal.activityType = $any(t)">
+                      <span class="eco-gf-cat-icon">{{ icons[t] }}</span>
+                      <span class="eco-gf-cat-name">{{ labels[t] }}</span>
+                    </button>
                   }
-                </select>
-                <input type="number" [(ngModel)]="newGoal.targetValue"class="eco-field sm" placeholder="Target kg" />
+                </div>
               </div>
-              <div class="eco-gf-row">
-                <input type="date" [(ngModel)]="newGoal.startDate" class="eco-field sm" />
-                <span class="eco-gf-to">to</span>
-                <input type="date" [(ngModel)]="newGoal.endDate" class="eco-field sm" />
+
+              <!-- Target Value -->
+              <div class="eco-gf-section">
+                <label class="eco-gf-label">Target Reduction</label>
+                <div class="eco-gf-target-wrap">
+                  <input type="number" [(ngModel)]="newGoal.targetValue" class="eco-gf-input" placeholder="0" min="0" step="0.1" />
+                  <span class="eco-gf-unit">kg CO₂</span>
+                </div>
               </div>
-              <button class="eco-submit-btn sm" (click)="submitGoal()" [disabled]="submitting">Set Goal</button>
+
+              <!-- Time Period -->
+              <div class="eco-gf-section">
+                <label class="eco-gf-label">Time Period</label>
+                <div class="eco-gf-dates">
+                  <div class="eco-gf-date-field">
+                    <span class="eco-gf-date-label">From</span>
+                    <input type="date" [(ngModel)]="newGoal.startDate" class="eco-gf-input" />
+                  </div>
+                  <div class="eco-gf-date-arrow">→</div>
+                  <div class="eco-gf-date-field">
+                    <span class="eco-gf-date-label">Until</span>
+                    <input type="date" [(ngModel)]="newGoal.endDate" class="eco-gf-input" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="eco-gf-actions">
+                <button class="eco-gf-cancel" (click)="showGoalForm = false">Cancel</button>
+                <button class="eco-gf-submit" (click)="submitGoal()" [disabled]="submitting || !newGoal.targetValue || !newGoal.startDate || !newGoal.endDate">
+                  @if (submitting) {
+                    <span class="eco-gf-spinner"></span> Creating...
+                  } @else {
+                    Create Goal
+                  }
+                </button>
+              </div>
             </div>
           }
 
@@ -400,23 +438,67 @@
         </div>
       </div>
 
-      <!-- ─── INPUT STRIP (Moved here) ─── -->
-      <div class="eco-input-strip">
-        <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
-        <div class="eco-ai-dot" [class.active]="aiLoading"></div>
-        <input type="text" [(ngModel)]="aiText" class="eco-ai-input"
-               placeholder="Describe an activity — AI calculates impact..."
-               (keyup.enter)="analyzeWithAI()" />
-        <button class="eco-ai-send" (click)="analyzeWithAI()" [disabled]="aiLoading">
-          @if (aiLoading) { <div class="eco-spinner"></div> }
-          @else {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          }
+      <!-- ─── FLOATING AI CHAT BUBBLE ─── -->
+      <input type="file" #fileInput hidden accept="image/*,application/pdf" (change)="onFileSelected($event)" />
+
+      <!-- Collapsed FAB Button -->
+      @if (!showAIBubble) {
+        <button class="eco-ai-fab" (click)="showAIBubble = true" title="Ask Vero AI">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-10-10 10 10 0 0 1 10-10z" opacity="0.2"/>
+            <path d="M8 10h8M8 14h5"/>
+            <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="eco-ai-fab-pulse" [class.active]="aiLoading"></span>
         </button>
-        <button class="eco-scan-pill" (click)="triggerFileSelect()" [disabled]="scanLoading">Scan</button>
-      </div>
+      }
+
+      <!-- Expanded Chat Bubble -->
+      @if (showAIBubble) {
+        <div class="eco-ai-bubble" [class.eco-ai-bubble-loading]="aiLoading">
+          <div class="eco-ai-bubble-header">
+            <div class="eco-ai-bubble-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10 10 10 0 0 1-10-10 10 10 0 0 1 10-10z" opacity="0.2"/>
+                <path d="M8 10h8M8 14h5"/>
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+              <span>Vero AI</span>
+            </div>
+            <button class="eco-ai-bubble-close" (click)="showAIBubble = false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="eco-ai-bubble-body">
+            <p class="eco-ai-bubble-hint">Describe an activity and I'll calculate its environmental impact</p>
+            <div class="eco-ai-bubble-input-wrap">
+              <input type="text" [(ngModel)]="aiText" class="eco-ai-bubble-input"
+                     placeholder="e.g., Drove 20km to work..."
+                     (keyup.enter)="analyzeWithAI()" />
+              <button class="eco-ai-bubble-send" (click)="analyzeWithAI()" [disabled]="aiLoading || !aiText.trim()">
+                @if (aiLoading) {
+                  <div class="eco-spinner"></div>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            <div class="eco-ai-bubble-actions">
+              <button class="eco-ai-bubble-scan" (click)="triggerFileSelect()" [disabled]="scanLoading">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+                Scan Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </main>
 
 

@@ -143,6 +143,14 @@ export class DonationService {
     );
   }
 
+  createDonationPaymentIntent(donationId: number, amount: number): Observable<{ clientSecret: string }> {
+    return this.http.post<{ clientSecret: string }>(
+      `http://${this.host}:8080/api/stripe/donation-payment-intent`,
+      { donationId, amount },
+      { headers: this.getHeaders() }
+    );
+  }
+
   verifyStripePayment(sessionId: string, donationId: number): Observable<any> {
     return this.http.get(
       `http://${this.host}:8080/api/stripe/verify?sessionId=${sessionId}&donationId=${donationId}`,
@@ -182,4 +190,4 @@ export class DonationService {
       { headers: this.getHeaders() }
     );
   }
-}
+}

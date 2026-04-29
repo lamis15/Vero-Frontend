@@ -28,7 +28,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('trendCanvas', { static: false }) trendCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('islandCanvas', { static: false }) islandCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('islandCanvas', { static: false }) set islandCanvas(ref: ElementRef<HTMLCanvasElement> | undefined) {
+    // Re-initialize Three.js when canvas becomes available (after loading state changes)
+    if (ref && ref.nativeElement) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => this.reinitThreeSceneIfNeeded(ref.nativeElement), 50);
+    }
+  }
 
   // ─── Single source of truth ───
   dashboard: EcoDashboardDTO | null = null;
@@ -95,6 +101,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   aiText = '';
   aiLoading = false;
   aiResult: CarbonActivity | null = null;
+  showAIBubble = false;
 
   // ─── Scan ───
   scanLoading = false;
@@ -139,22 +146,62 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    // Delay slightly so the canvas element is in the DOM
-    setTimeout(() => this.initThreeScene(), 200);
+    // The ViewChild setter will handle initialization when canvas is available
+    // Delay slightly to ensure DOM is fully ready
+    setTimeout(() => {
+      // Trigger re-check of canvas if available
+      const canvas = this.trendCanvas?.nativeElement?.closest('.eco-page')?.querySelector('.dash-island-canvas') as HTMLCanvasElement;
+      if (canvas) {
+        this.reinitThreeSceneIfNeeded(canvas);
+      }
+    }, 200);
   }
 
   ngOnDestroy(): void {
-    // Clean up Three.js
-    if (this.threeAnimId) cancelAnimationFrame(this.threeAnimId);
-    if (this.resizeHandler) window.removeEventListener('resize', this.resizeHandler);
+    // Clean up all Three.js resources
+    this.cleanupThreeScene();
+  }
 
-    // Clean up mouse events
-    const canvas = this.islandCanvas?.nativeElement;
-    if (canvas) {
-      canvas.removeEventListener('mousedown', this.onMouseDown);
-      canvas.removeEventListener('mousemove', this.onMouseMove);
-      canvas.removeEventListener('mouseup', this.onMouseUp);
-      canvas.removeEventListener('mouseleave', this.onMouseUp);
+  // ─── Three.js Re-init ───
+
+  private onMouseDown!: (e: MouseEvent) => void;
+  private onMouseMove!: (e: MouseEvent) => void;
+  private onMouseUp!: () => void;
+
+  private reinitThreeSceneIfNeeded(canvas: HTMLCanvasElement): void {
+    // If we already have a renderer but the canvas is different, we need to re-init
+    if (this.threeRenderer) {
+      const currentCanvas = this.threeRenderer.domElement;
+      if (currentCanvas === canvas) {
+        // Same canvas, no need to re-init
+        return;
+      }
+      // Different canvas - cleanup old scene
+      this.cleanupThreeScene();
+    }
+    // Initialize new scene
+    this.initThreeSceneForCanvas(canvas);
+  }
+
+  private cleanupThreeScene(): void {
+    if (this.threeAnimId) {
+      cancelAnimationFrame(this.threeAnimId);
+      this.threeAnimId = 0;
+    }
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+      this.resizeHandler = null;
+    }
+
+    // Clean up mouse events from old canvas
+    if (this.threeRenderer) {
+      const oldCanvas = this.threeRenderer.domElement;
+      if (oldCanvas) {
+        oldCanvas.removeEventListener('mousedown', this.onMouseDown);
+        oldCanvas.removeEventListener('mousemove', this.onMouseMove);
+        oldCanvas.removeEventListener('mouseup', this.onMouseUp);
+        oldCanvas.removeEventListener('mouseleave', this.onMouseUp);
+      }
     }
 
     if (this.threeRenderer) {
@@ -171,14 +218,11 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       });
       this.threeScene = null;
     }
+    this.islandModel = null;
+    this.threeCamera = null;
   }
 
-  // ─── Three.js Scene ───
-
-  private initThreeScene(): void {
-    const canvas = this.islandCanvas?.nativeElement;
-    if (!canvas) return;
-
+  private initThreeSceneForCanvas(canvas: HTMLCanvasElement): void {
     const wrap = canvas.parentElement;
     if (!wrap) return;
     const W = wrap.clientWidth;
@@ -187,17 +231,17 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     // Scene
     this.threeScene = new THREE.Scene();
 
-    // Camera — balanced view
+    // Camera
     this.threeCamera = new THREE.PerspectiveCamera(35, W / H, 0.1, 1000);
     this.threeCamera.position.set(0, 5, 12);
     this.threeCamera.lookAt(0, 0, 0);
 
-    // Renderer — optimized: no shadows, no tone mapping
+    // Renderer
     this.threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.threeRenderer.setSize(W, H);
     this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
-    // Lights — simplified: no shadow casting
+    // Lights
     const ambient = new THREE.AmbientLight(0xffffff, 0.8);
     this.threeScene.add(ambient);
 
@@ -214,21 +258,18 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     loader.load('assets/images/low_poly_island.glb', (gltf) => {
       this.islandModel = gltf.scene;
 
-      // Center and normalize scale so the model fits within ~3 units
       const box = new THREE.Box3().setFromObject(this.islandModel);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 10; // fit within 10 world units
+      const targetSize = 10;
       const scaleFactor = targetSize / maxDim;
       this.islandModel.scale.setScalar(scaleFactor);
 
-      // Re-center after scaling
       const scaledBox = new THREE.Box3().setFromObject(this.islandModel);
       const center = scaledBox.getCenter(new THREE.Vector3());
       this.islandModel.position.sub(center);
       this.islandBaseY = this.islandModel.position.y;
 
-      // Enable rendering on all meshes (no shadows needed)
       this.islandModel.traverse((child: any) => {
         if (child.isMesh) {
           child.castShadow = false;
@@ -253,7 +294,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     window.addEventListener('resize', this.resizeHandler);
 
-    // Drag interaction handlers
+    // Mouse events
     this.onMouseDown = (e: MouseEvent) => {
       this.isDragging = true;
       this.lastMousePos.x = e.clientX;
@@ -263,16 +304,11 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.onMouseMove = (e: MouseEvent) => {
       if (!this.isDragging || !this.islandModel) return;
-
       const deltaX = e.clientX - this.lastMousePos.x;
       const deltaY = e.clientY - this.lastMousePos.y;
-
       this.targetRotation.y += deltaX * this.dragSensitivity;
       this.targetRotation.x += deltaY * this.dragSensitivity;
-
-      // Clamp vertical rotation to prevent flipping
       this.targetRotation.x = Math.max(-0.5, Math.min(0.5, this.targetRotation.x));
-
       this.lastMousePos.x = e.clientX;
       this.lastMousePos.y = e.clientY;
     };
@@ -295,14 +331,11 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
       const elapsed = clock.getElapsedTime();
 
       if (this.islandModel) {
-        // Smooth interpolation (lerp) for fluid movement
         const smoothFactor = 0.1;
         this.currentRotation.x += (this.targetRotation.x - this.currentRotation.x) * smoothFactor;
         this.currentRotation.y += (this.targetRotation.y - this.currentRotation.y) * smoothFactor;
-
-        // Apply rotations + idle floating
         this.islandModel.rotation.x = this.currentRotation.x;
-        this.islandModel.rotation.y = this.currentRotation.y + Math.sin(elapsed * 0.3) * 0.05; // Subtle idle sway
+        this.islandModel.rotation.y = this.currentRotation.y + Math.sin(elapsed * 0.3) * 0.05;
         this.islandModel.position.y = this.islandBaseY + Math.sin(elapsed * 0.5) * 0.15;
       }
 
@@ -312,10 +345,6 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     animate();
   }
-
-  private onMouseDown!: (e: MouseEvent) => void;
-  private onMouseMove!: (e: MouseEvent) => void;
-  private onMouseUp!: () => void;
 
   // ─── Data Loading ───
 
@@ -639,6 +668,7 @@ export class TrackerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.aiResult = result;
         this.aiLoading = false;
         this.aiText = '';
+        this.showAIBubble = false; // Close bubble after success
         this.loadDashboard();
       },
       error: () => {
