@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2, ElementRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, Renderer2, ElementRef, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -108,7 +108,8 @@ export class FormationsComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private router: Router,
     private renderer: Renderer2,
-    private el: ElementRef
+    private el: ElementRef,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -138,7 +139,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
     // Create FAB button and append directly to body
     this.fabButton = this.renderer.createElement('button');
     this.renderer.addClass(this.fabButton, 'fab-add-formation-global');
-    this.renderer.setAttribute(this.fabButton, 'title', 'Ajouter une formation');
+    this.renderer.setAttribute(this.fabButton, 'title', 'Add a training');
     this.renderer.setStyle(this.fabButton, 'position', 'fixed');
     this.renderer.setStyle(this.fabButton, 'bottom', '32px');
     this.renderer.setStyle(this.fabButton, 'right', '32px');
@@ -214,7 +215,11 @@ export class FormationsComponent implements OnInit, OnDestroy {
           return (b.id || 0) - (a.id || 0);
         });
         this.loading = false;
-        // Check quiz availability for COMPLETED formations
+        
+        // Force change detection to ensure UI updates immediately
+        this.cdr.detectChanges();
+        
+        // Check quiz availability for COMPLETED formations (non-blocking)
         data.filter(f => f.status === 'COMPLETED').forEach(f => {
           this.formationService.getQuiz(f.id!).subscribe({
             next: () => this.quizAvailableIds.add(f.id!),
@@ -223,8 +228,9 @@ export class FormationsComponent implements OnInit, OnDestroy {
         });
       },
       error: (err) => {
-        this.error = 'Erreur lors du chargement des formations';
+        this.error = 'Error loading trainings';
         this.loading = false;
+        this.cdr.detectChanges();
         console.error(err);
       }
     });
@@ -272,7 +278,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   register(formationId: number): void {
     if (!this.authService.isLoggedIn) {
-      this.notificationService.show('Veuillez vous connecter pour vous inscrire', 'warning');
+      this.notificationService.show('Please log in to register', 'warning');
       this.router.navigate(['/login']);
       return;
     }
@@ -314,7 +320,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
   }
   
   getDisplayPrice(formation: Formation): string {
-    if (!this.hasPrice(formation)) return 'Gratuit';
+    if (!this.hasPrice(formation)) return 'Free';
     
     const price = formation.price!;
     if (this.currency === 'EUR') {
@@ -348,9 +354,9 @@ export class FormationsComponent implements OnInit, OnDestroy {
 
   badgeLabel(status: string): string {
     const map: Record<string, string> = {
-      'PLANNED': 'Planifiée',
-      'IN_PROGRESS': 'En cours',
-      'COMPLETED': 'Terminée'
+      'PLANNED': 'Planned',
+      'IN_PROGRESS': 'In Progress',
+      'COMPLETED': 'Completed'
     };
     return map[status] || status;
   }
@@ -419,7 +425,7 @@ export class FormationsComponent implements OnInit, OnDestroy {
     event.stopPropagation(); // Prevent card click
     
     if (!this.authService.isLoggedIn) {
-      this.notificationService.show('Veuillez vous connecter pour épingler une formation', 'warning');
+      this.notificationService.show('Please log in to pin a training', 'warning');
       return;
     }
 
@@ -438,13 +444,13 @@ export class FormationsComponent implements OnInit, OnDestroy {
           });
         }
         this.notificationService.show(
-          updatedFormation.pinned ? 'Formation épinglée' : 'Formation désépinglée', 
+          updatedFormation.pinned ? 'Training pinned' : 'Training unpinned', 
           'success'
         );
       },
       error: (err) => {
         console.error('Error toggling pin:', err);
-        this.notificationService.show('Erreur lors de l\'épinglage', 'error');
+        this.notificationService.show('Error pinning training', 'error');
       }
     });
   }

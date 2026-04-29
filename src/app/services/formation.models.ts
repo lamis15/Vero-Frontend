@@ -75,6 +75,21 @@ export interface QuizResult {
   score: number;
   passed: boolean;
   certificateUrl?: string;
+  questionResults?: QuestionResult[];
+}
+
+export interface QuestionResult {
+  questionId: number;
+  questionText: string;
+  selectedOptionId: number;
+  correctOptionId: number;
+  correct: boolean;
+  options: OptionInfo[];
+}
+
+export interface OptionInfo {
+  id: number;
+  text: string;
 }
 
 export interface AnswerDto {

@@ -147,6 +147,41 @@
             {{ fromAdmin ? 'Back to Admin' : 'Back to formation' }}
           </button>
         </div>
+
+        <!-- ── ANSWERS REVIEW ── -->
+        @if (result.questionResults && result.questionResults.length > 0) {
+          <div class="quiz-answers-review">
+            <h3 class="qar-title">📝 Review Your Answers</h3>
+            @for (qr of result.questionResults; track qr.questionId; let qi = $index) {
+              <div class="qar-card" [class.correct]="qr.correct" [class.incorrect]="!qr.correct">
+                <div class="qar-header">
+                  <span class="qar-num">Question {{ qi + 1 }}</span>
+                  <span class="qar-badge" [class.correct]="qr.correct" [class.incorrect]="!qr.correct">
+                    {{ qr.correct ? '✓ Correct' : '✗ Incorrect' }}
+                  </span>
+                </div>
+                <p class="qar-question">{{ qr.questionText }}</p>
+                <div class="qar-options">
+                  @for (opt of qr.options; track opt.id; let oi = $index) {
+                    <div class="qar-option"
+                         [class.selected]="opt.id === qr.selectedOptionId"
+                         [class.correct]="opt.id === qr.correctOptionId"
+                         [class.wrong]="opt.id === qr.selectedOptionId && opt.id !== qr.correctOptionId">
+                      <span class="qar-opt-letter">{{ ['A','B','C','D'][oi] }}</span>
+                      <span class="qar-opt-text">{{ opt.text }}</span>
+                      @if (opt.id === qr.correctOptionId) {
+                        <span class="qar-opt-icon correct">✓</span>
+                      }
+                      @if (opt.id === qr.selectedOptionId && opt.id !== qr.correctOptionId) {
+                        <span class="qar-opt-icon wrong">✗</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
     }
 

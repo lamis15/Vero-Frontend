@@ -873,28 +873,47 @@ export class AdminFormationsComponent implements OnInit {
   uploadResource(formationId: number): void {
     if (!this.selectedResourceFile) { this.notificationService.error('Please select a file.'); return; }
     this.resourceUploading = true;
+    this.cdr.detectChanges(); // Force UI update
+    
     this.formationService.uploadResource(formationId, this.selectedResourceFile).subscribe({
       next: () => {
         this.notificationService.success('Resource uploaded successfully.');
         this.selectedResourceFile = null;
         this.resourceUploading = false;
         this.loadResources(formationId);
+        this.cdr.detectChanges(); // Force UI update
       },
-      error: () => { this.notificationService.error('Error uploading resource.'); this.resourceUploading = false; }
+      error: (err) => { 
+        console.error('Upload error:', err);
+        const errorMsg = err?.error?.error || err?.message || 'Error uploading resource.';
+        this.notificationService.error(errorMsg); 
+        this.resourceUploading = false;
+        this.cdr.detectChanges(); // Force UI update
+      }
     });
   }
 
   deleteResource(formationId: number, resourceId: number): void {
     if (!confirm('Delete this resource?')) return;
     this.formationService.deleteResource(formationId, resourceId).subscribe({
-      next: () => { this.notificationService.success('Resource deleted.'); this.loadResources(formationId); },
-      error: () => this.notificationService.error('Error deleting resource.')
+      next: () => { 
+        this.notificationService.success('Resource deleted.'); 
+        this.loadResources(formationId);
+        this.cdr.detectChanges(); // Force UI update
+      },
+      error: () => {
+        this.notificationService.error('Error deleting resource.');
+        this.cdr.detectChanges(); // Force UI update
+      }
     });
   }
 
   loadResources(formationId: number): void {
     this.formationService.getResources(formationId).subscribe({
-      next: (resources) => { this.formationResources = resources; },
+      next: (resources) => { 
+        this.formationResources = resources;
+        this.cdr.detectChanges(); // Force UI update
+      },
       error: () => { }
     });
   }

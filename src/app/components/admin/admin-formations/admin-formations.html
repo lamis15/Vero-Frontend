@@ -330,6 +330,9 @@
         <div class="res-card-actions">
           <button (click)="uploadResource(selectedFormationForSessions.id!)" class="vc-btn gold" style="width:100%"
             [disabled]="resourceUploading">
+            @if (resourceUploading) {
+              <span class="upload-spinner"></span>
+            }
             {{ resourceUploading ? 'Uploading...' : 'Upload' }}
           </button>
         </div>

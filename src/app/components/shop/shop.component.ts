@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -74,16 +74,22 @@ export class ShopComponent implements OnInit, AfterViewInit {
     private cartService: CartService,
     private recommendationService: RecommendationService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngAfterViewInit() {
-    const video = this.heroVideoRef?.nativeElement;
-    if (video) {
-      video.muted = true;
-      video.loop = true;
-      video.play().catch(() => {});
-    }
+    // Video setup - non-blocking
+    setTimeout(() => {
+      const video = this.heroVideoRef?.nativeElement;
+      if (video) {
+        video.muted = true;
+        video.loop = true;
+        video.play().catch(() => {
+          console.log('Video autoplay blocked by browser');
+        });
+      }
+    }, 0);
   }
 
   ngOnInit() {
@@ -117,23 +123,40 @@ export class ShopComponent implements OnInit, AfterViewInit {
     this.error = null;
     
     this.productService.getAll().subscribe({
-      next: async (products) => {
-        this.products = await Promise.all(
-          products.map(async (p) => {
-            const qrCodeUrl = await this.generateQRCode(p);
-            return { ...p, added: false, qrCodeUrl };
-          })
-        );
+      next: (products) => {
+        // Set products immediately for fast display
+        this.products = products.map(p => ({ ...p, added: false }));
         this.filteredProducts = [...this.products];
         this.calculatePriceRange();
         this.loading = false;
+        
+        // Force change detection to ensure UI updates
+        this.cdr.detectChanges();
+
+        // Generate QR codes asynchronously in the background (non-blocking)
+        this.generateQRCodesInBackground(products);
       },
       error: (err) => {
         console.error('Error loading products:', err);
         this.error = 'Failed to load products. Please try again later.';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  private async generateQRCodesInBackground(products: Product[]) {
+    for (const product of products) {
+      try {
+        const qrCodeUrl = await this.generateQRCode(product);
+        const productInList = this.products.find(p => p.id === product.id);
+        if (productInList) {
+          productInList.qrCodeUrl = qrCodeUrl;
+        }
+      } catch (err) {
+        console.error(`Error generating QR code for product ${product.id}:`, err);
+      }
+    }
   }
 
   async generateQRCode(product: Product): Promise<string> {
