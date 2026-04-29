@@ -543,11 +543,11 @@
   line-height: 1.25;
 }
 .pf-promo-badge {
-  width: 110px;
-  height: 110px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
   align-self: center;
-  margin: 4px 0 2px;
+  margin: 8px 0 6px;
   filter: drop-shadow(0 6px 18px rgba(0,0,0,0.3));
 }
 .pf-promo-list {

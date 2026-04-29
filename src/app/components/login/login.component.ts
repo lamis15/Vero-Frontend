@@ -129,7 +129,7 @@ export const slideAnimation = trigger('slideAnimation', [
   animations: [slideAnimation],
 })
 export class LoginComponent implements OnInit {
-  returnUrl = '/track';
+  returnUrl = '/';
   loginEmail = '';
   loginPassword = '';
   registerFullName = '';
@@ -292,12 +292,12 @@ export class LoginComponent implements OnInit {
             if (user.role === 'ADMIN') {
               this.router.navigate(['/admin']);
             } else {
-              this.router.navigate(['/track']);
+              this.router.navigate(['/']);
             }
           },
           error: () => {
-            // If we can't get user info, just go to track
-            this.router.navigate(['/track']);
+            // If we can't get user info, just go to landing
+            this.router.navigate(['/']);
           }
         });
       },
@@ -367,6 +367,7 @@ export class LoginComponent implements OnInit {
           this.loginLoading = false;
           this.registrationSuccess = true;
           this.canOfferPasskeyEnroll = true;
+          // Stay on page to show email verification notice
         },
         error: (err) => {
           this.loginLoading = false;

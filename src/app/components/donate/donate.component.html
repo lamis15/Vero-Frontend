@@ -316,7 +316,7 @@
             </div>
             <div>
               <div class="toggle-text">Donation mensuelle automatique</div>
-              <div style="font-size:11px;color:var(--eco-muted);margin-top:2px">Soutenez-nous de manière récurrente
+              <div style="font-size:11px;color:var(--eco-muted);margin-top:2px">Support us on a recurring basis
                 chaque mois</div>
             </div>
           </div>
@@ -339,7 +339,7 @@
               <ng-container *ngSwitchCase="'idle'">
                 <span [ngSwitch]="donationType">
                   <ng-container *ngSwitchCase="'MONEY'">
-                    <span *ngIf="isRecurring">Activer {{ getFinalAmount() }} DT/mois →</span>
+                    <span *ngIf="isRecurring">Activate {{ getFinalAmount() }} DT/mois →</span>
                     <span *ngIf="!isRecurring">Donate Securely →</span>
                   </ng-container>
                   <ng-container *ngSwitchCase="'MATERIAL'">Pledge Materials →</ng-container>
