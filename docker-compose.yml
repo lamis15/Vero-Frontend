@@ -1,0 +1,86 @@
+services:
+
+  # ── Angular Frontend (nginx) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vero-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - vero-net
+    restart: unless-stopped
+
+  # ── Spring Boot Backend ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../../../../IdeaProjects/pii
+      dockerfile: Dockerfile
+    container_name: vero-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Database — points to the "db" service on the Docker network
+      DB_HOST: db
+      SPRING_DATASOURCE_URL:      jdbc:mysql://db:3306/pii?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root_secret
+
+      # App URLs (adjusted for Docker)
+      APP_FRONTEND_URL:                    http://localhost
+      APP_BASE_URL:                        http://localhost
+      APP_API_PUBLIC_BASE_URL:             http://localhost/api
+      APP_OAUTH2_FRONTEND_SUCCESS_URL:     http://localhost/login
+      APP_OAUTH2_FRONTEND_FAILURE_URL:     http://localhost/login?socialError=true
+
+      # Server
+      SERVER_PORT: 8080
+    volumes:
+      - backend-uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vero-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8080/api/auth/health || exit 0"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ── MySQL Database ───────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.4
+    container_name: vero-db
+    ports:
+      - "3307:3306"          # 3307 on host to avoid conflicts with local MySQL
+    environment:
+      MYSQL_DATABASE:      pii
+      MYSQL_ROOT_PASSWORD: root_secret
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - vero-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_secret"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+networks:
+  vero-net:
+    driver: bridge
+
+volumes:
+  db-data:
+  backend-uploads:

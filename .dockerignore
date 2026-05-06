@@ -1,0 +1,20 @@
+# Build artifacts
+dist/
+.angular/
+
+# Dependencies (reinstalled inside Docker)
+node_modules/
+
+# Dev / IDE
+.vscode/
+.editorconfig
+.prettierrc
+*.pdf
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Tests & docs
+README.md
