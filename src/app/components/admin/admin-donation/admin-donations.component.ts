@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { timeout, catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 export interface AdminDonation {
   id: number;
@@ -51,7 +52,7 @@ export class AdminDonationsComponent implements OnInit {
   @Output() success = new EventEmitter<string>();
   @Output() error = new EventEmitter<string>();
 
-  private readonly API = 'http://localhost:8080';
+  private readonly API = environment.apiUrl;
 
   donations: AdminDonation[] = [];
   loading = false;

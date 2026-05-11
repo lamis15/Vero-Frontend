@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface Petition {
   id?: number;
@@ -43,7 +44,7 @@ export interface PetitionStats {
 @Injectable({ providedIn: 'root' })
 export class PetitionService {
 
-  private apiUrl = 'http://localhost:8080/api/petitions';
+  private apiUrl = `${environment.apiUrl}/api/petitions`;
 
   constructor(private http: HttpClient) { }
 

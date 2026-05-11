@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AdminService, AdminUserListItem } from '../../services/admin.service';
+import { environment } from '../../../environments/environment';
 
 export interface FeatureExplanation {
   feature: string;
@@ -45,7 +46,7 @@ changeDetection: ChangeDetectionStrategy.OnPush
 export class AnomalyDetectorComponent implements OnInit, OnDestroy {
 
   // ── HuggingFace API ───────────────────────────────────────────────────────
-  private readonly HF_API = 'http://localhost:8080';
+  private readonly HF_API = environment.apiUrl;
 
   mode: 'manual' | 'batch' | 'realtime' = 'manual';
 

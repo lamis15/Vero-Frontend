@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -28,7 +28,7 @@ export class EventsComponent implements OnInit, OnDestroy {
   showVismeModal = false;
 
   // ── HuggingFace API ───────────────────────────────────────────────────────
-  private readonly HF_API = 'http://localhost:8080';
+  private readonly HF_API = environment.apiUrl;
 
   // ── Data ──────────────────────────────────────────────────────────────────
   events: Event[]  = [];

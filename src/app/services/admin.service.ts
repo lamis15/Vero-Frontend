@@ -68,7 +68,7 @@ export class AdminService {
     return this.http.put<UserResponse>(`${this.API}/${id}/unban`, {});
   }
   getUsers(page: number = 0, size: number = 10, search: string = '', role: string = '') {
-  let url = `http://localhost:8080/api/admin/users?page=${page}&size=${size}`;
+  let url = `${environment.apiUrl}/api/admin/users?page=${page}&size=${size}`;
 
   if (search) {
     url += `&search=${encodeURIComponent(search)}`;
