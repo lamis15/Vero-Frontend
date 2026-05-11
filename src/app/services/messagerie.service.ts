@@ -27,11 +27,11 @@ export interface DirectMessage {
 }
 
 export type TopicCounts = {
-  eco: number;
+  other: number;
   lifestyle: number;
   product: number;
   transport: number;
-  other: number;
+  eco: number;
 };
 
 export interface ConversationSummary {

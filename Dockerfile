@@ -20,8 +20,9 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built Angular app from the builder stage
 COPY --from=builder /app/dist/vero-platform/browser /usr/share/nginx/html
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx template — the official nginx image auto-runs envsubst
+# at container start, replacing ${BACKEND_URL} with the runtime env var.
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 
